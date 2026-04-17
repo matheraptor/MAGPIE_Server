@@ -7,7 +7,7 @@
  * @author Matheraptor
  * @license GNUv3
  * 
- * @version 1.0.0 20260407
+ * @version 0.19.0 20260407
  * 
  * @dependency NodeJS
  * @dependency Express
@@ -16,7 +16,7 @@
  * 
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 1.0.0 2026 04 07
+ * @version 0.19.0 2026 04 07
  * - production build
  * 
  * @version 0.18.9 2026 03 25
@@ -221,54 +221,44 @@
 // #endregion - META
 //========================================================================
 /**
- * @namespace MAGPIE
- * @desc index of MAGPIE
- * - {@link MAGPIE_KEY} | {@link MAGPIE.KEYS}
- * - {@link MAGPIE_SYSTEM}
- * 
+ * @name Index
+ *
  */
 //========================================================================
 // #region - INDEX
 //========================================================================
+const {
+  MAGPIE,
+  MAGPIE_KEY,
+  MAGPIE_SYSTEM,
+  MAGPIE_RUNTIME,
+  MAGPIE_SERVER,
+  MAGPIE_PHYSICS,
+  MAGPIE_CONSOLE,
+  MAGPIE_HIMS,
+  MAGPIE_ARK,
+  MAGPIE_CORE,
+  MAGPIE_DATA,
+  MAGPIE_TIME,
+  MAGPIE_METASTATE,
+  MAGPIE_ENTITY,
+  MAGPIE_CELESTIAL,
+  MAGPIE_STRUCTURE,
+  MAGPIE_COMPONENT,
+  MAGPIE_PLAYER,
+  MAGPIE_EVENT,
+  MAGPIE_STATE,
+  MAGPIE_EMOTE,
+  MAGPIE_DRONE,
+  MAGPIE_EXP,
+  MAGPIE_CARD,
+  MAGPIE_TICKET,
+} = require("../main");
 /**
- * @name classes
- * @desc 
- * 
- */
-//========================================================================
-// #region > classes
-//========================================================================
-class MAGPIE {
-	static {
-		this.meta = {
-			name: "M.A.G.P.I.E.",
-			desc: "(M)odular (A)lgorithmic (G)eneral (P)urpose (I)ntelligence (E)ngine",
-			version: [1,0,0],
-			firmwareName: "MAGPIE",
-			firmwareDate: "20260407"
-		}
-	}
-}
-/**
- * 
- * @typedef {{
- *		name: String,
- * 		desc: String,		
- * 		firmwareName: String
- * }} system_data
- * @param {system_data} data 
- */
-function MAGPIE_SYSTEM(data = {})
-{
-	this.initialize(data);
-}
-// #endregion
-//========================================================================
-/**
- * 
+ *
  * @desc back to {@link MAGPIE}
  *
- *  
+ *
  */
 //========================================================================
 // #endregion - INDEX
@@ -276,14 +266,15 @@ function MAGPIE_SYSTEM(data = {})
 /**
  * @name KEYS
  * @desc enum library
- * 
+ *
  */
 //========================================================================
 // #region - KEYS
 //========================================================================
-MAGPIE.KEYS = {};
+MAGPIE.KEYS.SERVER = {};
+
 /**
- * 
+ *
  * @desc back to {@link MAGPIE.KEYS}
  *
  */
@@ -292,35 +283,34 @@ MAGPIE.KEYS = {};
 //========================================================================
 /**
  * @name MAGPIE_SYSTEM
- * 
- * 
+ *
+ *
  */
 //========================================================================
 // #region - SYSTEM
 //========================================================================
 MAGPIE_SYSTEM.meta = {
-	name: "M.A.G.P.I.E. System prototype",
-	desc: "Prototype system",
-	firmwareName: "MAGPIE_SYSTEM",
-	firmwareDate: MAGPIE.meta.firmwareDate
+  name: "M.A.G.P.I.E. System prototype",
+  desc: "Prototype system",
+  firmwareName: "MAGPIE_SYSTEM",
+  firmwareDate: MAGPIE.meta.firmwareDate,
 };
 /**
  * @name prototype
- * @desc 
- * 
+ * @desc
+ *
  */
 //========================================================================
 // #region > prototype
 //========================================================================
-MAGPIE_SYSTEM.prototype.initialize = function initialize(data)
-{
-	/** @type {system_data} */
-	this.meta = data?.meta || MAGPIE_SYSTEM.meta;
-}
+MAGPIE_SYSTEM.prototype.initialize = function initialize(data) {
+  /** @type {system_data} */
+  this.meta = data?.meta || MAGPIE_SYSTEM.meta;
+};
 // #endregion
 //========================================================================
 /**
- * 
+ *
  * @desc back to {@link MAGPIE_SYSTEM.meta}
  *
  */
@@ -329,24 +319,24 @@ MAGPIE_SYSTEM.prototype.initialize = function initialize(data)
 //========================================================================
 /**
  * @name exports
- * @desc 
- * 
+ * @desc
+ *
  */
 //========================================================================
 // #region - EXPORT
 //========================================================================
 module.exports = {
-	MAGPIE,
-	MAGPIE_KEY,
-	MAGPIE_SYSTEM
-}
+  MAGPIE,
+  MAGPIE_KEY,
+  MAGPIE_SYSTEM,
+};
 /**
- * 
+ *
  * @desc back to {@link }
  *
  */
 //========================================================================
-// #endregion - 
+// #endregion -
 //========================================================================
 //
 //
