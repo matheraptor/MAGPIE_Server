@@ -1,0 +1,55 @@
+<!-- @version 0.18.9 2026 03 31 -->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="home.css">
+        <link rel="icon" href="icon.png" type="image/png">
+        <title>M.A.G.P.I.E. Shelder Evolution</title>
+    </head>
+    <body style="background-color: black">
+        <nav style="margin-bottom: 20px;">
+            <button onClick="router.go('inspector')" style="cursor: pointer;">Open Inspector</button>
+        </nav>
+        <img src="SEtitle.png" alt="ShelderEvolution">
+        <div id="metadate" style="color: white; font-family: monospace;">Waiting for server...</div>
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" SRC="main.js"></script>
+        <section id="view-inspector" style="display:none;">
+            <h3>Entity Data Monitor</h3>
+            <div class="controls">
+                <input type="text" id="targetID" placeholder="Enter Entity ID (e.g. 101)">
+                <button onClick="inspector.subscribe()">Subscribe</button>
+                <button onClick="inspector.unsubscribe()">Disconnect</button>
+                <button onclick="inspector.copyToClipboard(this)">Copy Telemetry</button>
+            </div>
+            <div class="monitor-box">
+                <h3>Live Stream:</h3>
+                <div id="physics-stream" class="console-box telemetry-grid">
+                    <!-- Row 1: Primary ID and Full Name -->
+                    <div class="grid-item">ID: <span id="val-id">---</span></div>
+                    <div class="grid-item full-width">Name: <span id="val-name">---</span></div>
+                    
+                    <!-- Row 2: Location Data -->
+                    <div class="grid-item full-width">Coords: [<span id="val-lat">---</span>, <span id="val-lon">---</span>]</div>
+                    
+                    <!-- Row 3: Flight/Motion Telemetry -->
+                    <div class="grid-item">ASL: <span id="val-asl">---</span>m</div>
+                    <div class="grid-item">VSpeed: <span id="val-vspeed">---</span></div>
+                    <div class="grid-item">Knots: <span id="val-knots">---</span></div>
+                    <div class="grid-item">Accel: <span id="val-accel">---</span></div>
+                    <div class="grid-item">Heading: <span id="val-heading">---</span>°</div>
+                    <div class="grid-item">Body: <span id="val-body">---</span></div>
+
+                    <!-- Row 4: Status Metadata -->
+                    <div class="grid-item full-width">Meta: <span id="val-meta">---</span></div>
+
+                    <!-- Row 5: Navigation Targets -->
+                    <div class="grid-item">Dist: <span id="val-dist">---</span>m</div>
+                    <div class="grid-item">ETA: <span id="val-eta">---</span></div>
+                </div>
+            </div>
+        </section>
+    </body>
+</html>
