@@ -3,7 +3,7 @@
  * @author Matheraptor
  * @version 0.18.9 20260331
  * 
- * @type {import('../MAGPIE_SERVER.js')} 
+ * 
  * 
  * @description stuff below here is wiped after save
  */
@@ -16,7 +16,7 @@ const {
     MAGPIE_ENTITY, 
     MAGPIE_DATE,
     MAGPIE_CELESTIAL,
- } = require("../SERVER");
+ } = require("../database");
 //========================================================================
 // #region - Scratchpad
 
