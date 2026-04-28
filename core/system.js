@@ -6,7 +6,7 @@
 //========================================================================
 // #region - INDEX
 //========================================================================
-const { MAGPIE, r } = require("./index");
+const { MAGPIE } = require("./index");
 function MAGPIE_SYSTEM()
 {
     this.initialize();
@@ -25,9 +25,20 @@ function MAGPIE_RUNTIME()
 {
     this.initialize(...arguments);
 }
+/** @param {metastate_data} data @returns {new MAGPIE_METASTATE} */
 function MAGPIE_METASTATE(data = {})
 {
     this.initialize(data);
+}
+/** @param {calendar_data} data @returns {new MAGPIE_CALENDAR} */
+function MAGPIE_CALENDAR(data)
+{
+	this.initialize(data);
+}
+/** @param {date_data} data @param {date_options} options @returns {new MAGPIE_DATE} */
+function MAGPIE_DATE(data, options = {})
+{
+	this.initialize(data, options)
 }
 /**
  * 
@@ -229,6 +240,95 @@ MAGPIE_SYSTEM.PS.playSound = function playSound(soundfile = "", options = {})
 // #endregion 
 //------------------------------------------------------------------------
 /**
+ * @name logging
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Logging
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {String} message 
+ * @returns {log} [timestamp] message
+*/
+MAGPIE_SYSTEM.error = function error(message)
+{
+	/** @type {log}  */
+	const log = this.log(message, null, {millisecond: true});
+	return log
+}
+/**
+ * 
+ * @param {String} message 
+ * @param {String} prefix 
+ * @param {Boolean} logToConsole 
+ */
+MAGPIE_SYSTEM.log = function log(message, prefix = "console", logToConsole = true)
+{
+	const date = MAGPIE_SYSTEM.Utility.CTZD();
+	const logTime = this._logTime();
+	const consoleTime = this._consoleTime();
+	const log = (typeof message === "object" 
+		? JSON.stringify(message, null, 2)
+		: message
+	);
+	if(logToConsole)
+	{
+		if(this.CLI?.loadbar?.isActive)
+			this.CLI.loadbar.log('\x1b[1A\x1b[2K\r' + consoleTime + log + '\n')
+		else logToConsole.log(consoleTime + log);
+		global.r?.displayPrompt(true);
+	}
+	if(typeof prefix === 'string')
+		this.IO.append(`logs/${prefix}${date}.txt`, logTime + log + "\n");
+}
+MAGPIE_SYSTEM.prototype.log = MAGPIE_SYSTEM.log;
+/**
+ * 
+ * @param {String} errorMessage 
+ */
+MAGPIE_SYSTEM.error = function error(errorMessage)
+{
+	const log = errorMessage;
+	const date = this._CTZD();
+	const full = `[${this._CTZF()}]`;
+	this.LOG.errors.push(log);
+	console.error(`[ERROR] ${errorMessage} | `, error);
+	const logged = MAGPIE_SERVER.DATA.append(`logs/error${date}.txt`, 
+		full + log + "\n" + error?.stack + "\n\n");
+	console.log(logged);
+	r.displayPrompt();
+}
+MAGPIE_SYSTEM.prototype.error = MAGPIE_SYSTEM.error;
+/**
+ * 
+ * @param {String} message 
+ * @returns 
+ */
+MAGPIE_SYSTEM._debug = function _debug(message)
+{
+	if(r.cursor > 0)
+		return
+	console.clear();
+	console.log(message);
+	r.displayPrompt();
+	// lastMessage = message;
+}
+MAGPIE_SYSTEM.prototype._debug = MAGPIE_SYSTEM._debug;
+/**
+ * 
+ * @param {String} message 
+ * @returns 
+ */
+MAGPIE_SYSTEM.log_exp = function logExpActivity(message)
+{
+	return MAGPIE_SYSTEM.log(message, "exp", false)
+}
+MAGPIE_SYSTEM.prototype.log_exp = MAGPIE_SYSTEM.log_exp;
+// #endregion
+//------------------------------------------------------------------------
+/**
  * @name Utility
  * @desc 
  * 
@@ -240,10 +340,6 @@ MAGPIE_SYSTEM.Utility = {};
 /**
  * @typedef {{millisecond: Boolean, second: Boolean, date: Boolean}} date_options {second: boolean, millisecond: boolean, date: boolean}
  * @typedef {String} CTZ YYYYMMDDHHMM
- * @typedef {String} CTZF YYYYMMDDHHMMSSmmm
- * @typedef {String} CTZT HHMM
- * @typedef {String} CTZTS HHMMSS
- * @typedef {String} CTZD YYYYMMDD
  * 
  * @option {second: true} to include seconds
  * @option {millisecond: true} to include both seconds and milliseconds
@@ -287,6 +383,38 @@ MAGPIE_SYSTEM.Utility.CTZ = function CTZ(date, options = {})
 	const stamp = year + month + day + hour + minute + second + millisecond;
 	return stamp
 }
+/**
+ * @typedef {String} CTZD YYYYMMDD
+ * @returns {CTZD} YYYYMMDD
+ */
+MAGPIE_SYSTEM.Utility.CTZD = function CTZD()
+{
+	return MAGPIE_SYSTEM.Utility.CTZ({date: true})
+}
+/**
+ * @typedef {String} CTZT HHMM
+ * @returns {CTZT} HHMM
+ */
+MAGPIE_SYSTEM.Utility._CTZT = function CTZT()
+{
+	return MAGPIE_SYSTEM.Utility.CTZ({time: true});
+}
+/**
+ * @typedef {String} CTZTS HHMMSS
+ * @returns {CTZTS} HHMMSS
+ */
+MAGPIE_SYSTEM.Utility.CTZTS = function CTZTS()
+{
+	return MAGPIE_SYSTEM.Utility.CTZ({time: true, second: true})
+}
+/**
+ * @typedef {String} CTZF YYYYMMDDHHMMSSmmm
+ * @returns {CTZF} YYYYMMDDHHMMSSmmm
+ */
+MAGPIE_SYSTEM.Utility.CTZF = function CTZF()
+{
+	return MAGPIE_SYSTEM.Utility.CTZ({millisecond: true})
+}
 MAGPIE_SYSTEM.prototype.CTZ = MAGPIE_SYSTEM.Utility.CTZ;
 /**
  * @typedef {Number} epoch_real Date.now() - ms since true epoch
@@ -309,29 +437,7 @@ MAGPIE_SYSTEM.Utility.now = function now()
 	return now
 }
 MAGPIE_SYSTEM.prototype.now = MAGPIE_SYSTEM.Utility.now;
-/**
- * @typedef {String} log "[timestamp] message"
- * 
- * @param {String} message 
- * @param {Date} date
- * @param {date_options} options {second: boolean, millisecond: boolean, date: boolean}
- * @returns {log} 
-*/
-MAGPIE_SYSTEM.Utility.log = function log(message = "", date = null, options = {})
-{
-	return `[${MAGPIE_SYSTEM.Utility.date(date, options)}] ${message}`;
-}
-/**
- * 
- * @param {String} message 
- * @returns {log} [timestamp] message
-*/
-MAGPIE_SYSTEM.Utility.error = function error(message)
-{
-	/** @type {log}  */
-	const log = this.log(message, null, {millisecond: true});
-	return log
-}
+
 MAGPIE_SYSTEM.Utility.aggregator = function aggregator(list = [])
 {
 	if(list.length < 1) return [];
@@ -439,7 +545,7 @@ MAGPIE_SYSTEM.Utility.isValidID = function isValidID(ID)
 	}
 	catch(e)
 	{
-		MAGPIE_SERVER.error(ePrefix + e.message, e);
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
 		return e
 	}
 }
@@ -457,7 +563,7 @@ MAGPIE_SYSTEM.prototype.isValidID = MAGPIE_SYSTEM.Utility.isValidID;
 /**
  * @name METASTATE
  * @desc 
- * 
+ * @typedef {{}} metastate_data
  */
 //========================================================================
 // #region - METAST.
@@ -466,6 +572,101 @@ MAGPIE_METASTATE.meta = {};
 MAGPIE_METASTATE.prototype.initialize = function initialize(data)
 {
     //
+}
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name MAGPIE_CALENDAR
+ * @desc 
+ * @typedef {import("./index").calendar_data} calendar_data
+ * @param {calendar_data} data
+ * @returns {new MAGPIE_CALENDAR}
+ */
+//========================================================================
+// #region - CALENDAR
+//========================================================================
+MAGPIE_CALENDAR.prototype.initialize = function initialize(data)
+{
+	this.calendarID = Number(data?.ID);
+	this.days = Number(data?.days);
+	/** @type {Object} */
+	this.months = data?.months;
+	this.leapMonth = Number(data?.leapMonth);
+	this.leapYear = Number(data?.leapYear);
+	this.dayLength = Number(data?.dayLength);
+	this.epochYear = Number(data?.epoch);
+}
+//========================================================================
+// #endregion MAGPIE_CALENDAR
+//========================================================================
+/**
+ * @name DATE
+ * @desc 
+ * @typedef {Number} millisecond time in milliseconds (ms)
+ * @typedef {Number} second time in seconds (s)
+ * @typedef {Number} minute time in minutes (m)
+ * @typedef {Number} hour time in hours (h)
+ * @typedef {Number} day time in days (D)
+ * @typedef {Number} month time in months (M)
+ * @typedef {Number} year time in years (Y)
+ * @typedef {Number} weekDay index of the day within the week array
+ * @typedef {CTZ} gamedate CTZ of current METASTATE date
+ * @typedef {Number} epoch_game ms since metadate epoch
+ * 
+ * @typedef {{
+ * 	calendar: MAGPIE_CALENDAR,
+ * 	year: year,
+ * 	month: month,
+ * 	day: day,
+ *  weekDay: weekDay,
+ * 	hour: hour,
+ * 	minute: minute,
+ * 	second: second,
+ * 	millisecond: millisecond,
+ * 	epoch: epoch_game
+ * }} date_data
+ * 
+ * @param {date_data} date
+ * @param {{}} options
+ * @returns {new MAGPIE_DATE}
+ */
+//========================================================================
+// #region - DATE
+//========================================================================
+MAGPIE_DATE.prototype.initialize = function initialize(date, options)
+{
+	const real = new Date();
+	const C = MAGPIE.KEY.CALENDAR.GREGORIAN;
+	this.calendar = date?.calendar || new MAGPIE_CALENDAR(C);
+	this.year = date?.year || real.getUTCFullYear();
+	this.month = date?.month || real.getUTCMonth() + 1;
+	this.day = date?.day || real.getUTCDate();
+	this.weekDay = date?.weekDay || real.getUTCDay();
+	this.hour = date?.hour || real.getUTCHours();
+	this.minute = date?.minute || real.getUTCMinutes();
+	this.second = date?.second || real.getUTCSeconds();
+	this.millisecond = date?.millisecond || real.getUTCMilliseconds();
+	this.epoch = Number(date?.epoch) || this.getEpoch();
+	this._yearday = Number(this.yearday())
+	this["@"] = "MAGPIE_DATE";
+}
+MAGPIE_DATE.prototype.getEpoch = function getEpoch()
+{
+	const ePrefix = "[DATE].getEpoch: ";
+	try
+	{
+		//
+	} 
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 /**
  * 
@@ -507,6 +708,12 @@ MAGPIE_RUNTIME.prototype.initialize = function initialize()
     this._TICKultra = 0;
     this._busy = false;
     this._loop = null;
+	this._GuestsBase = new Map();
+	this._GuestsGame = new Map();
+	this._GuestsStandard = new Map();
+	this._GuestsSuper = new Map();
+	this._GuestsMega = new Map();
+	this._GuestsUltra = new Map();
     /** @type {MAGPIE_METASTATE} */
     this.metastate = {};
 }
@@ -3108,8 +3315,6 @@ MAGPIE_PHYSICS.targetVelocity = function targetVelocity(P0, P1, cruiseSpeed = 1)
 		return [NaN, NaN, NaN]
 	}
 }
-//#endregion
-//------------------------------------------------------------------------
 /**
  * 
  * @param {second} dt 
@@ -3165,6 +3370,8 @@ MAGPIE_PHYSICS._POVART_applyTargetT = function _POVART_applyTargetT(dt, O0, Tt, 
 		MAGPIE_SERVER.error(ePrefix + e.message, e);
 	}
 }
+//#endregion
+//------------------------------------------------------------------------
 /**
  * @desc back to {@link MAGPIE_PHYSICS.meta}
  * 

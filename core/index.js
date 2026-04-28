@@ -253,13 +253,12 @@
 //========================================================================
 //#region - CLASS
 //========================================================================
-class MAGPIE
-{
+class MAGPIE {
     static {
         this.meta = {
             name: "M.A.G.P.I.E",
             desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-            version: [0,20,0],
+            version: [0, 20, 0],
             firmwareName: "MAGPIE",
             firmwareDate: "20260425"
         };
@@ -361,12 +360,12 @@ MAGPIE.KEY.RUNTIME.meta = {
     name: "M.A.G.P.I.E. runtime"
 };
 MAGPIE.KEY.RUNTIME.LAYER = new Map();
-MAGPIE.KEY.RUNTIME.LAYER.set(0, {name: "Base", delta: 0.001});
-MAGPIE.KEY.RUNTIME.LAYER.set(1, {name: "Game", delta: 0.016});
-MAGPIE.KEY.RUNTIME.LAYER.set(2, {name: "Standard", delta: 1});
-MAGPIE.KEY.RUNTIME.LAYER.set(3, {name: "Super", delta: 60});
-MAGPIE.KEY.RUNTIME.LAYER.set(4, {name: "Mega", delta: 60**2});
-MAGPIE.KEY.RUNTIME.LAYER.set(5, {name: "ultra", delta: 60**2 * 24});
+MAGPIE.KEY.RUNTIME.LAYER.set(0, { name: "Base", delta: 0.001 });
+MAGPIE.KEY.RUNTIME.LAYER.set(1, { name: "Game", delta: 0.016 });
+MAGPIE.KEY.RUNTIME.LAYER.set(2, { name: "Standard", delta: 1 });
+MAGPIE.KEY.RUNTIME.LAYER.set(3, { name: "Super", delta: 60 });
+MAGPIE.KEY.RUNTIME.LAYER.set(4, { name: "Mega", delta: 60 ** 2 });
+MAGPIE.KEY.RUNTIME.LAYER.set(5, { name: "ultra", delta: 60 ** 2 * 24 });
 //
 MAGPIE.KEY.HIVE = {};
 MAGPIE.KEY.HIVE.LAYER = new Map();
@@ -374,6 +373,49 @@ Array.from(MAGPIE.KEY.RUNTIME.LAYER.entries()).forEach((entry, index) => {
     if(index > 0)
         MAGPIE.KEY.HIVE.LAYER.set(entry[0], entry[1]);
 })
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name Date
+ * @desc 
+ * 
+ * @typedef {{
+ * calendarID: Number,
+ * days: Number,
+ * months: {month: days<Number>},
+ * leapMonth: Number,
+ * leapYear: Number,
+ * dayLength: Number,
+ * epochYear: Number
+ * }} calendar_data
+ */
+//------------------------------------------------------------------------
+// #region > Date
+//------------------------------------------------------------------------
+MAGPIE.KEY.CALENDAR = {};
+/** @type {calendar_data} */
+MAGPIE.KEY.CALENDAR.GREGORIAN = {
+    calendarID: 0,
+    days: 365.25,
+    months: {
+        January: 31,
+        February: 28,
+        March: 31,
+        April: 30,
+        May: 30,
+        June: 30,
+        July: 31,
+        August: 31,
+        September: 30,
+        October: 31,
+        November: 30,
+        December: 31
+    },
+    leapMonth: 2,
+    leapYear: 4,
+    dayLength: 24,
+    epochYear: 0
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -395,4 +437,9 @@ Array.from(MAGPIE.KEY.RUNTIME.LAYER.entries()).forEach((entry, index) => {
 //========================================================================
 // #endregion - 
 //========================================================================
+// const REPL = require("repl");
+// const r = REPL.start({
+//     prompt: "MAGPIE_SERVER > ",
+//     terminal: true
+// });
 module.exports = { MAGPIE };

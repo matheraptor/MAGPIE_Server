@@ -17,10 +17,6 @@ class MAGPIE_SERVER
 //========================================================================
 // #region - IMPORT
 //========================================================================
-MAGPIE_SERVER.meta = {}
-MAGPIE_SERVER.perf = {};
-MAGPIE_SERVER.perf.start = performance.now();
-MAGPIE_SERVER.perf.end = NaN;
 /**
  * @name internal
  * @desc MAGPIE dependencies
@@ -40,6 +36,10 @@ const {
 	MAGPIE_PHYSICS
 } = require("./core/system");
 const { MAGPIE_DATABASE } = require("./core/database");
+MAGPIE_SERVER.meta = {}
+MAGPIE_SERVER.perf = {};
+MAGPIE_SERVER.perf.start = performance.now();
+MAGPIE_SERVER.perf.end = NaN;
 MAGPIE_SERVER.config = require("./core/config");
 // #endregion
 //------------------------------------------------------------------------
@@ -219,65 +219,21 @@ MAGPIE_LOG.prototype.initialize = function initialize(contents)
 	this.ID = Date.now();
 	this.contents = contents;
 }
-/**
- * 
- * @param {String} message 
- * @param {String} prefix 
- * @param {Boolean} logToConsole 
- */
-MAGPIE_SERVER.log = function log(message, prefix = "console", logToConsole = true)
+MAGPIE_SERVER.log = function log(message, prefix, logToConsole)
 {
-	const date = this._CTZD();
-	const logTime = this._logTime();
-	const consoleTime = this._consoleTime();
-	const log = (typeof message === "object" 
-		? JSON.stringify(message, null, 2)
-		: message
-	);
-	if(logToConsole)
-	{
-		if(this.CLI.loadbar?.isActive)
-			this.CLI.loadbar.log('\x1b[1A\x1b[2K\r' + consoleTime + log + '\n')
-		else logToConsole.log(consoleTime + log);
-		r.displayPrompt(true);
-	}
-	if(typeof prefix === 'string')
-		this.IO.append(`logs/${prefix}${date}.txt`, logTime + log + "\n");
+	return MAGPIE_SYSTEM.log(message, prefix, logToConsole);
 }
-/**
- * 
- * @param {String} message 
- * @returns {String}
- */
-MAGPIE_SERVER.log_exp = function expLog(message)
+MAGPIE_SERVER.error = function error(message)
 {
-	return MAGPIE_SERVER.log(message, "exp", false);
+	return MAGPIE_SYSTEM.error(message);
 }
-/**
- * 
- * @param {String} message 
- * @returns 
- */
 MAGPIE_SERVER._debug = function debug(message)
 {
-	if(r.cursor > 0)
-		return
-	console.clear();
-	console.log(message);
-	r.displayPrompt();
-	// lastMessage = message;
+	return MAGPIE_SYSTEM._debug(message);
 }
-MAGPIE_SERVER.error = function error(errorMessage, error)
+MAGPIE_SERVER.log_exp = function logExpActivity(message)
 {
-	const log = errorMessage;
-	const date = this._CTZD();
-	const full = `[${this._CTZF()}]`;
-	this.LOG.errors.push(log);
-	console.error(`[ERROR] ${errorMessage} | `, error);
-	const logged = MAGPIE_SERVER.DATA.append(`logs/error${date}.txt`, 
-		full + log + "\n" + error?.stack + "\n\n");
-	console.log(logged);
-	r.displayPrompt();
+	return MAGPIE_SYSTEM.log_exp(message);
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -307,7 +263,7 @@ MAGPIE_SERVER.version = function version(version)
  */
 MAGPIE_SERVER._CTZD = function CTZD()
 {
-	return MAGPIE_SYSTEM.Utility.CTZ({date: true})
+	return MAGPIE_SYSTEM.Utility.CTZD()
 }
 /**
  * @typedef {import("./core/system").CTZ} CTZ
@@ -323,7 +279,7 @@ MAGPIE_SERVER._CTZ = function CTZ()
  */
 MAGPIE_SERVER._CTZT = function CTZT()
 {
-	return MAGPIE_SYSTEM.Utility.CTZ({time: true});
+	return MAGPIE_SYSTEM.Utility.CTZT();
 }
 /**
  * @typedef {import("./core/system").CTZTS} CTZTS
@@ -331,7 +287,7 @@ MAGPIE_SERVER._CTZT = function CTZT()
  */
 MAGPIE_SERVER._CTZTS = function CTZTS()
 {
-	return MAGPIE_SYSTEM.Utility.CTZ({time: true, second: true})
+	return MAGPIE_SYSTEM.Utility.CTZTS()
 }
 /**
  * @typedef {import("./core/system").CTZF} CTZF
@@ -339,7 +295,7 @@ MAGPIE_SERVER._CTZTS = function CTZTS()
  */
 MAGPIE_SERVER._CTZF = function CTZF()
 {
-	return MAGPIE_SYSTEM.Utility.CTZ({millisecond: true})
+	return MAGPIE_SYSTEM.Utility.CTZF()
 }
 /**
  * @typedef {import("./core/system").epoch_real} epoch_real
@@ -375,11 +331,6 @@ MAGPIE_SERVER._logTime = function logTime()
 //------------------------------------------------------------------------
 // #region > REPL
 //------------------------------------------------------------------------
-const REPL = require("repl");
-const r = REPL.start({
-	prompt: "MAGPIE_SERVER > ",
-	terminal: true
-});
 MAGPIE_SERVER.context = {};
 MAGPIE_SERVER.registry = require("./core/database");
 Object.keys(MAGPIE_SERVER.registry).forEach(k => {
@@ -493,7 +444,11 @@ MAGPIE_SERVER.BOOT.connect = async function connect()
 //========================================================================
 // #region - BOOT
 //========================================================================
-
+const REPL = require("repl");
+const r = REPL.start({
+    prompt: "MAGPIE_SERVER > ",
+    terminal: true
+});
 console.clear();
 MAGPIE_SERVER.CLI._createLoadBar();
 MAGPIE_SERVER.CLI._updateLoadBar();
