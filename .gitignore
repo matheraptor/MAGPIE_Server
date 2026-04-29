@@ -3,6 +3,14 @@ _.env
 *.pub
 ssh-key.*
 
+# agent folders
+.agent
+.agents
+.claude
+.gemini
+.planning
+.remember
+
 # Google Drive temporary/sync files
 .tmp
 ~$*
