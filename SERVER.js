@@ -30,12 +30,16 @@ MAGPIE_SERVER.meta = MAGPIE.meta;
 MAGPIE_SERVER.meta.name += " server";
 const { 
 	MAGPIE_SYSTEM,
+	MAGPIE_LOG,
 	MAGPIE_IO,
 	MAGPIE_RUNTIME,
+	MAGPIE_HIVE,
 	MAGPIE_METASTATE,
 	MAGPIE_PHYSICS
 } = require("./core/system");
-const { MAGPIE_DATABASE } = require("./core/database");
+const { MAGPIE_COMPONENT } = require("./core/component");
+const { MAGPIE_ENTITY } = require("./core/entity");
+const MAGPIE_DATABASE = require("./core/database")
 MAGPIE_SERVER.meta = {}
 MAGPIE_SERVER.perf = {};
 MAGPIE_SERVER.perf.start = performance.now();
@@ -154,6 +158,53 @@ MAGPIE_SERVER.IO = MAGPIE_IO;
 //------------------------------------------------------------------------
 MAGPIE_SERVER.SYS = MAGPIE_SYSTEM;
 MAGPIE_SERVER.IO = MAGPIE_IO;
+MAGPIE_SERVER.SYS._log = MAGPIE_SYSTEM.log;
+MAGPIE_SYSTEM.log = function log(message, prefix, logToConsole)
+{
+	MAGPIE_SERVER.SYS._log.call(this, message, prefix, logToConsole);
+	r.displayPrompt();
+}
+MAGPIE_SERVER.SYS._error = MAGPIE_SYSTEM.error;
+MAGPIE_SYSTEM.error = function error(message)
+{
+	MAGPIE_SERVER.SYS._error.call(this, message);
+	r.displayPrompt();
+}
+MAGPIE_SERVER.SYS._runtime_refreshGuest = MAGPIE_RUNTIME.prototype.refreshGuest;
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name runtime
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Runtime
+//------------------------------------------------------------------------
+MAGPIE_RUNTIME.prototype.refreshGuest = async function refreshGuest(guest, layerID)
+{
+	MAGPIE_SERVER.SYS._runtime_refreshGuest.call(this, guest, layerID);
+	const system = r.context[guest];
+	if(!system || isNaN(layerID)) return
+	system.refresh(layerID);
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name Hive
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Hive
+//------------------------------------------------------------------------
+/**
+ * @typedef {MAGPIE_ENTITY[]} hive_buffer
+ */
+MAGPIE_HIVE.prototype.refresh = function refresh()
+{
+	//
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -203,22 +254,14 @@ MAGPIE_SERVER.CLI._stop = function stopLoadBar()
 //------------------------------------------------------------------------
 // #region > logging
 //------------------------------------------------------------------------
-MAGPIE_SERVER.LOG = {};
-MAGPIE_SERVER.LOG.errors = [];
+MAGPIE_SERVER.LOG = MAGPIE_LOG;
 /**
  * 
- * @param {String} contents 
- * @returns {new MAGPIE_LOG}
+ * @param {String} message 
+ * @param {String} prefix 
+ * @param {Boolean} logToConsole 
+ * @returns 
  */
-function MAGPIE_LOG(contents = "")
-{
-	this.initialize(contents)
-}
-MAGPIE_LOG.prototype.initialize = function initialize(contents)
-{
-	this.ID = Date.now();
-	this.contents = contents;
-}
 MAGPIE_SERVER.log = function log(message, prefix, logToConsole)
 {
 	return MAGPIE_SYSTEM.log(message, prefix, logToConsole);
@@ -231,9 +274,9 @@ MAGPIE_SERVER._debug = function debug(message)
 {
 	return MAGPIE_SYSTEM._debug(message);
 }
-MAGPIE_SERVER.log_exp = function logExpActivity(message)
+MAGPIE_SERVER.LOG.exp = function logExpActivity(message)
 {
-	return MAGPIE_SYSTEM.log_exp(message);
+	return MAGPIE_SYSTEM.logging.log_exp(message);
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -245,12 +288,13 @@ MAGPIE_SERVER.log_exp = function logExpActivity(message)
 //------------------------------------------------------------------------
 // #region > Utility
 //------------------------------------------------------------------------
+MAGPIE_SERVER.UTILITY = {};
 /**
  * 
  * @param {Number[]} version 
  * @returns {String} MAJOR.MINOR.PATCH
  */
-MAGPIE_SERVER.version = function version(version)
+MAGPIE_SERVER.UTILITY.version = function version(version)
 {
 	if(!version || version.length < 2 || version.some(n => isNaN(n)))
 		version = [0,1,0];
@@ -261,7 +305,7 @@ MAGPIE_SERVER.version = function version(version)
  * @typedef {import("./core/system").CTZD} CTZD
  * @returns {CTZD} YYYYMMDD
  */
-MAGPIE_SERVER._CTZD = function CTZD()
+MAGPIE_SERVER.UTILITY.CTZD = function CTZD()
 {
 	return MAGPIE_SYSTEM.Utility.CTZD()
 }
@@ -269,7 +313,7 @@ MAGPIE_SERVER._CTZD = function CTZD()
  * @typedef {import("./core/system").CTZ} CTZ
  * @returns {CTZ} YYYYMMDDHHMM
  */
-MAGPIE_SERVER._CTZ = function CTZ()
+MAGPIE_SERVER.UTILITY.CTZ = function CTZ()
 {
 	return MAGPIE_SYSTEM.Utility.CTZ();
 }
@@ -277,7 +321,7 @@ MAGPIE_SERVER._CTZ = function CTZ()
  * @typedef {import("./core/system").CTZT} CTZT
  * @returns {CTZT} HHMM
  */
-MAGPIE_SERVER._CTZT = function CTZT()
+MAGPIE_SERVER.UTILITY.CTZT = function CTZT()
 {
 	return MAGPIE_SYSTEM.Utility.CTZT();
 }
@@ -285,7 +329,7 @@ MAGPIE_SERVER._CTZT = function CTZT()
  * @typedef {import("./core/system").CTZTS} CTZTS
  * @returns {CTZTS} HHMMSS
  */
-MAGPIE_SERVER._CTZTS = function CTZTS()
+MAGPIE_SERVER.UTILITY.CTZTS = function CTZTS()
 {
 	return MAGPIE_SYSTEM.Utility.CTZTS()
 }
@@ -293,7 +337,7 @@ MAGPIE_SERVER._CTZTS = function CTZTS()
  * @typedef {import("./core/system").CTZF} CTZF
  * @returns {CTZF} YYYYMMDDHHMMSSmmm
  */
-MAGPIE_SERVER._CTZF = function CTZF()
+MAGPIE_SERVER.UTILITY.CTZF = function CTZF()
 {
 	return MAGPIE_SYSTEM.Utility.CTZF()
 }
@@ -301,7 +345,7 @@ MAGPIE_SERVER._CTZF = function CTZF()
  * @typedef {import("./core/system").epoch_real} epoch_real
  * @returns {epoch_real}
  */
-MAGPIE_SERVER._epoch = function epoch()
+MAGPIE_SERVER.UTILITY.epoch = function epoch()
 {
 	return Date.now();
 }
@@ -309,24 +353,23 @@ MAGPIE_SERVER._epoch = function epoch()
  * 
  * @returns {CTZ} [YYYYMMDDHHMM]
  */
-MAGPIE_SERVER._consoleTime = function consoleTime()
+MAGPIE_SERVER.UTILITY.consoleTime = function consoleTime()
 {
-	return `[${this._CTZ()}Z] `
+	return MAGPIE_SYSTEM.Utility.consoleTime();
 }
 /**
  * 
  * @returns {CTZF} [YYYYMMDDHHMMSSmmm]
  */
-MAGPIE_SERVER._logTime = function logTime()
+MAGPIE_SERVER.UTILITY.logTime = function logTime()
 {
-	return `[${this._CTZF()}Z] `
+	return MAGPIE_SYSTEM.Utility.logTime();
 }
 // #endregion
 //------------------------------------------------------------------------
 /**
  * @name REPL
  * @desc 
- * 
  */
 //------------------------------------------------------------------------
 // #region > REPL
@@ -426,6 +469,13 @@ MAGPIE_SERVER.BOOT.connect = async function connect()
 	MAGPIE_SERVER.CLI._incrementLoadBar(20);
 	return true
 }
+MAGPIE_SERVER.BOOT.logBootTime = function logBootTime()
+{
+	const bootTime = `[BOOT time: ${MAGPIE_SERVER.perf.end = performance.now()}]`;
+	const version = MAGPIE_SERVER.UTILITY.version(MAGPIE.meta.version);
+	const splash = `${MAGPIE.meta.name} v${version} ${MAGPIE.meta.firmwareDate}`
+	MAGPIE_SERVER.log(`${splash} ${bootTime}`)
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -445,34 +495,41 @@ MAGPIE_SERVER.BOOT.connect = async function connect()
 // #region - BOOT
 //========================================================================
 const REPL = require("repl");
-const r = REPL.start({
-    prompt: "MAGPIE_SERVER > ",
-    terminal: true
-});
+// const r = REPL.start({
+//     prompt: "MAGPIE_SERVER > ",
+//     terminal: true
+// });
+const r = REPL.start("MAGPIE_SERVER > ")
 console.clear();
 MAGPIE_SERVER.CLI._createLoadBar();
-MAGPIE_SERVER.CLI._updateLoadBar();
+MAGPIE_SERVER.CLI._updateLoadBar(0);
 MAGPIE_SERVER._REPL_boot();
+MAGPIE_SERVER.RUNTIME = new MAGPIE_RUNTIME();
+MAGPIE_SERVER.log()
+MAGPIE_SERVER.DATABASE = MAGPIE_DATABASE;
+MAGPIE_SERVER.HIVE = new MAGPIE_HIVE();
 r.context.SERVER = MAGPIE_SERVER;
-r.context.RUNTIME = new MAGPIE_RUNTIME();
-// r.context.HIVE = new MAGPIE_HIVE();
-r.context.DATABASE = MAGPIE_DATABASE;
+r.context.RUNTIME = MAGPIE_SERVER.RUNTIME;
+r.context.HIVE = MAGPIE_SERVER.HIVE;
+r.context.DATABASE = MAGPIE_SERVER.DATABASE;
 MAGPIE_SERVER.CLI._updateLoadBar(20);
 r.context.io = io;
 MAGPIE_SERVER.BOOT.connect()
 	.then(() => {
 		// MAGPIE_EMOTE.setup();
 		// MAGPIE_DATABASE.sitrep();
-		// MAGPIE_SERVER.RUNTIME.awake();
+		MAGPIE_SERVER.RUNTIME.awake();
+		MAGPIE_SERVER.CLI._incrementLoadBar(5);
+		const layers = Array.from(MAGPIE.KEY.RUNTIME.LAYER.keys());
+		MAGPIE_SERVER.RUNTIME.host("MAGPIE_HIVE", layers);
+		MAGPIE_SERVER.CLI._incrementLoadBar(5);
+		MAGPIE_SERVER.CLI._incrementLoadBar(10);
 		setTimeout(() => {
 			MAGPIE_SERVER.CLI._updateLoadBar(100);
 			MAGPIE_SERVER.CLI._stop();
 			r.displayPrompt();
 		}, 2000);
-		const bootTime = `[BOOT time: ${MAGPIE_SERVER.perf.end = performance.now()}]`;
-		const version = MAGPIE_SERVER.version(MAGPIE.meta.version);
-		const splash = `${MAGPIE.meta.name} v${version} ${MAGPIE.meta.firmwareDate}`
-		MAGPIE_SERVER.log(`${splash} ${bootTime}`)
+		MAGPIE_SERVER.BOOT.logBootTime();
 	});
 	// fs.watchFile(MAGPIE_SERVER.scratchpad.file, { interval: 1000 }, (curr, prev) => {
 // 	if(curr.mtime > prev.mtime) {

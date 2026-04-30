@@ -3,7 +3,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.20.0
+ * @version 0.20.2
  * 
  * @depdendencies 
  * - Node.js 
@@ -16,6 +16,12 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.20.2 2026 04 30
+ * - ADDED: MAGPIE_RUNTIME._memoryUsage() method
+ * - FIXED: REPL.start({terminal: true}) might be causing memory leaks
+ * - FIXED: invalid 0.19.3 MAGPIE_PHYSICS import in system.js
+ * - FIXED: orphaned logging methods called in system.js 
  * 
  * @version 0.20.0 2026 04 25
  * - TWEAKED: new project structure from scratch
@@ -258,12 +264,13 @@ class MAGPIE {
         this.meta = {
             name: "M.A.G.P.I.E",
             desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-            version: [0, 20, 0],
+            version: [0, 20, 2],
             firmwareName: "MAGPIE",
-            firmwareDate: "20260425"
+            firmwareDate: "20260430"
         };
     }
 }
+
 /**
  * 
  * back to {@link MAGPIE}
@@ -365,7 +372,7 @@ MAGPIE.KEY.RUNTIME.LAYER.set(1, { name: "Game", delta: 0.016 });
 MAGPIE.KEY.RUNTIME.LAYER.set(2, { name: "Standard", delta: 1 });
 MAGPIE.KEY.RUNTIME.LAYER.set(3, { name: "Super", delta: 60 });
 MAGPIE.KEY.RUNTIME.LAYER.set(4, { name: "Mega", delta: 60 ** 2 });
-MAGPIE.KEY.RUNTIME.LAYER.set(5, { name: "ultra", delta: 60 ** 2 * 24 });
+MAGPIE.KEY.RUNTIME.LAYER.set(5, { name: "Ultra", delta: 60 ** 2 * 24 });
 //
 MAGPIE.KEY.HIVE = {};
 MAGPIE.KEY.HIVE.LAYER = new Map();
@@ -373,6 +380,7 @@ Array.from(MAGPIE.KEY.RUNTIME.LAYER.entries()).forEach((entry, index) => {
     if(index > 0)
         MAGPIE.KEY.HIVE.LAYER.set(entry[0], entry[1]);
 })
+  
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -393,29 +401,9 @@ Array.from(MAGPIE.KEY.RUNTIME.LAYER.entries()).forEach((entry, index) => {
 // #region > Date
 //------------------------------------------------------------------------
 MAGPIE.KEY.CALENDAR = {};
-/** @type {calendar_data} */
-MAGPIE.KEY.CALENDAR.GREGORIAN = {
-    calendarID: 0,
-    days: 365.25,
-    months: {
-        January: 31,
-        February: 28,
-        March: 31,
-        April: 30,
-        May: 30,
-        June: 30,
-        July: 31,
-        August: 31,
-        September: 30,
-        October: 31,
-        November: 30,
-        December: 31
-    },
-    leapMonth: 2,
-    leapYear: 4,
-    dayLength: 24,
-    epochYear: 0
-}
+/** @type {Enumerator<Number>} */
+MAGPIE.KEY.CALENDAR.GREGORIAN = 0;
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -430,6 +418,36 @@ MAGPIE.KEY.CALENDAR.GREGORIAN = {
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name switches
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > SWITCH
+//------------------------------------------------------------------------
+MAGPIE.KEY.SWITCHES = {};
+/**
+ * @name date
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > date
+//------------------------------------------------------------------------
+MAGPIE.KEY.SWITCHES.SUPER_TICK = 131;
+MAGPIE.KEY.SWITCHES.MEGA_TICK = MAGPIE.KEY.SWITCHES.SUPER_TICK + 1;
+MAGPIE.KEY.SWITCHES.ULTRA_TICK = MAGPIE.KEY.SWITCHES.MEGA_TICK + 1;
+MAGPIE.KEY.SWITCHES.NEW_DAY = MAGPIE.KEY.SWITCHES.ULTRA_TICK + 1;
+MAGPIE.KEY.SWITCHES.NEW_MONTH = MAGPIE.KEY.SWITCHES.NEW_DAY + 1;
+MAGPIE.KEY.SWITCHES.NEW_YEAR = MAGPIE.KEY.SWITCHES.NEW_MONTH + 1;
+MAGPIE.KEY.SWITCHES.LEAP_DAY = MAGPIE.KEY.SWITCHES.NEW_YEAR + 1;
+MAGPIE.KEY.SWITCHES.LEAP_MONTH = MAGPIE.KEY.SWITCHES.LEAP_DAY + 1;
+MAGPIE.KEY.SWITCHES.LEAP_YEAR = MAGPIE.KEY.SWITCHES.LEAP_MONTH + 1;
+// #endregion
+//------------------------------------------------------------------------
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *
@@ -437,9 +455,12 @@ MAGPIE.KEY.CALENDAR.GREGORIAN = {
 //========================================================================
 // #endregion - 
 //========================================================================
-// const REPL = require("repl");
-// const r = REPL.start({
-//     prompt: "MAGPIE_SERVER > ",
-//     terminal: true
-// });
 module.exports = { MAGPIE };
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// END OF FILE
+//========================================================================

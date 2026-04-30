@@ -9,13 +9,11 @@
 const { response } = require("express");
 const { MAGPIE } = require("./index");
 const { 
-    MAGPIE_SYSTEM,
-    MAGPIE_IO,
-    MAGPIE_METASTATE,
-    MAGPIE_RUNTIME,
-    MAGPIE_PHYSICS
-} = require("./system");
-
+    MAGPIE_LOG, 
+    MAGPIE_METASTATE, 
+    MAGPIE_DATE 
+} = require("./system.js")
+const { MAGPIE_ENTITY } = require("./entity.js");
 class MAGPIE_DATABASE
 {
     static {
@@ -71,6 +69,7 @@ MAGPIE_DATABASE.pingWorker = async function pingWorker()
 }
 // #endregion
 //------------------------------------------------------------------------
+module.exports = MAGPIE_DATABASE;
 /**
  * 
  * @desc back to {@link }
@@ -79,12 +78,3 @@ MAGPIE_DATABASE.pingWorker = async function pingWorker()
 //========================================================================
 // #endregion - 
 //========================================================================
-module.exports = {
-    MAGPIE,
-    MAGPIE_SYSTEM,
-    MAGPIE_IO,
-    MAGPIE_METASTATE,
-    MAGPIE_RUNTIME,
-    MAGPIE_PHYSICS,
-    MAGPIE_DATABASE: MAGPIE_DATABASE
-}

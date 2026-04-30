@@ -71,7 +71,7 @@ parentPort?.on("message", async ({ method, args, requestID }) => {
 //========================================================================
 // #region - LOW
 //========================================================================
-worker.REGISTRY = require("./class");
+worker.REGISTRY = require("./index");
 
 /**
  * 
