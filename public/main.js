@@ -140,7 +140,8 @@ socket.on('metastate', (data) => {
 	const hour = date.hour.toString().padStart(2,0);
 	const minute = date.minute.toString().padStart(2,0);
 	const second = date.second.toString().padStart(2,0);
-	const timestring = `Y: ${year} M: ${month} D: ${day} - ${hour}:${minute}:${second}Z`
+	const weekDay = data.weekDayName;
+	const timestring = `Y: ${year} M: ${month} D: ${day} ${weekDay} - ${hour}:${minute}:${second}Z`
 	document.getElementById('metadate').textContent = `server metadate: ${timestring}`;
 });
 //#endregion

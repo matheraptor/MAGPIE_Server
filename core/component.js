@@ -14,6 +14,11 @@ function MAGPIE_STATE(data)
 {
     this.initialize(data)
 }
+/**
+ * 
+ * @param {exp_data} data 
+ * @returns {new MAGPIE_EXP}
+ */
 function MAGPIE_EXP(data)
 {
     this.initialize(data)
@@ -158,13 +163,13 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
 // #endregion - 
 //========================================================================
 module.exports = { 
-    MAGPIE_COMPONENT: MAGPIE_COMPONENT,
-    MAGPIE_STATE: MAGPIE_STATE,
-    MAGPIE_EMOTE: MAGPIE_EMOTE,
-    MAGPIE_EXP: MAGPIE_EXP,
-    MAGPIE_KEY: MAGPIE_EXP,
-    MAGPIE_CONTEXT: MAGPIE_CONTEXT,
-    MAGPIE_TICKET: MAGPIE_TICKET
+    MAGPIE_COMPONENT,
+    MAGPIE_STATE,
+    MAGPIE_EMOTE,
+    MAGPIE_EXP,
+    MAGPIE_KEY,
+    MAGPIE_CONTEXT,
+    MAGPIE_TICKET
 }
 /**
  * 

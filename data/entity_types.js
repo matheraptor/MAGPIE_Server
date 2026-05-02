@@ -8,27 +8,35 @@
  * 
  * @changelog 20260419 {@link MAGPIE.meta.version}
  * 
+ * @typedef {import("../core/system").day} day
+ * @typedef {import("../core/entity").entityID} entityID 
+ * @typedef {import("../core").orbit_data} orbit_data
+ * @typedef {import("../core/physics").POVART} POVART
+ * @typedef {Number} expID
+ * @typedef {Number} stateID
+ * @typedef {Number} traitID
+ * 
  * @typedef {{
  * name: String,
  * type: Enumerator<Number>,
- * birth: Number,
- * parents: Number[],
- * children: Number[],
+ * birth: day,
+ * parents: entityID[],
+ * children: entityID[],
  * orbit: orbit_data,
- * POVART: Number[],
- * STATS: entity_stats,
- * traits: Number[],
- * states: [ID,Count],
- * exps: MAGPIE_EXP[],
- * sensors: Number[],
- * emitters: Number[],
- * host: Number,
- * inventory: Number[],
- * equip: Number[],
- * deck: Number[],
- * vault: Number[]
- * }} entity_data
- * 
+ * POVART: POVART,
+ * STATS: {},
+ * traits: traitID[],
+ * states: stateID[],
+ * exps: expID[],
+ * sensors: entityID[],
+ * emitters: entityID[],
+ * host: entityID,
+ * inventory: entityID[],
+ * equip: entityID[],
+ * deck: traitID[],
+ * vault: expID[]
+ * }} entity_type_data
+ * @type {Map<String, entity_type_data>}
  */
 const ENTITY_TYPES = new Map();
 const ENTITY_GENERIC = {

@@ -33,6 +33,15 @@ INDEX.set(0, {
         November: 30,
         December: 31
     },
+    weekDays: {
+        0: "Sunday",
+        1: "Monday",
+        2: "Tuesday",
+        3: "Wednesday",
+        4: "Thursday",
+        5: "Friday",
+        6: "Saturday"
+    },
     leapMonth: 2,
     leapYear: 4,
     dayLength: 24,

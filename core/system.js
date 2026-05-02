@@ -10,7 +10,6 @@ const { MAGPIE } = require("./index");
 const fs = require("fs");
 const path = require("path");
 const { performance } = require("node:perf_hooks");
-const { MAGPIE_ENTITY } = require("./entity");
 function MAGPIE_SYSTEM()
 {
     this.initialize();
@@ -39,6 +38,10 @@ function MAGPIE_RUNTIME()
 {
     this.initialize(...arguments);
 }
+/**
+ * @constructor
+ * @returns {new MAGPIE_HIVE}
+ */
 function MAGPIE_HIVE()
 {
 	this.initialize(...arguments);
@@ -346,16 +349,10 @@ MAGPIE_SYSTEM.prototype.error = MAGPIE_SYSTEM.error;
  * @param {String} message 
  * @returns 
  */
-MAGPIE_SYSTEM.logging.debug = function debug(message)
+MAGPIE_SYSTEM._logging_debug = function _logging_debug(message)
 {
-	if(r.cursor > 0)
-		return
-	console.clear();
-	console.log(message);
-	// global?.r.displayPrompt();
-	// lastMessage = message;
+	//
 }
-MAGPIE_SYSTEM.prototype._debug = MAGPIE_SYSTEM.logging.debug;
 /**
  * 
  * @param {String} message 
@@ -722,28 +719,14 @@ MAGPIE_METASTATE.prototype.setup = async function setup()
  * @param {Number} layerID
  * @returns {Promise<Boolean>} 
  */
-MAGPIE_METASTATE.prototype.refresh = async function refresh(layerID = 0)
+MAGPIE_METASTATE.prototype.refresh = async function refresh(layerID, switchID)
 {
 	const ePrefix = "[METASTATE].refresh: ";
 	try
 	{
-		const rate = MAGPIE.KEY.RUNTIME.LAYER.get(layerID).delta;
-		if(!rate) 
-			throw new Error(`${layerID} is invalid layer`);
-		let millisecond = (rate * 1000) % 1000;
-		let second = Math.floor((rate) * 1000) / 1000;
-		const layerStandard = 2;
-		while (second > 0)
-		{
-			this.TICK_standard();
-			second--;
-		}
-		while (millisecond > 0)
-		{
-			this.TICK_base();
-			millisecond -= rate * 1000;
-		}
-		return true
+		this.TICK_base(layerID, switchID);
+		this.meta.updated = Date.now();
+		
 	}
 	catch(e)
 	{
@@ -761,10 +744,11 @@ MAGPIE_METASTATE.prototype.refresh = async function refresh(layerID = 0)
 //------------------------------------------------------------------------
 // #region > TICK
 //------------------------------------------------------------------------
-MAGPIE_METASTATE.prototype.TICK_base = async function TICK_base()
+MAGPIE_METASTATE.prototype.TICK_base = async function TICK_base(layerID, switchID)
 {
 	//
 }
+MAGPIE_METASTATE._TICK_base = MAGPIE_METASTATE.prototype.TICK_base;
 MAGPIE_METASTATE.prototype.TICK_game = async function TICK_game()
 {
 	//
@@ -813,12 +797,14 @@ MAGPIE_METASTATE.prototype.syncDate = function syncDate()
 	date.hour = now.getUTCHours();
 	date.minute = now.getUTCMinutes();
 	date.second = now.getUTCSeconds();
+	date.weekDay = now.getUTCDay();
 	return date.printDate();
 }
 MAGPIE_METASTATE.prototype._socketEmit = function _socketEmit()
 {
 	//
 }
+MAGPIE_METASTATE._socketEmit = {};
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -953,6 +939,13 @@ MAGPIE_DATE.prototype.getEpoch = function getEpoch()
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+MAGPIE_DATE.prototype.getWeekDayName = function getWeekDayName()
+{
+	const calendar = this.getCalendar();
+	const weekDay = this.weekDay;
+	const day = calendar.weekDays[weekDay];
+	return day
+}
 /**
  * 
  * @returns {day}
@@ -1064,56 +1057,57 @@ MAGPIE_DATE.prototype.pad0 = function pad0(number, length = 0)
 MAGPIE_DATE.prototype.TICK = function TICK()
 {
 	if(this.second >= 59) return this.superTICK();
-	const K = MAGPIE.KEY.SWITCHES.SUPER_TICK;
-	if(this.second > 10) MAGPIE_SYSTEM.switches.setValue(K, false);
+	this.millisecond = 0;
+	// const K = MAGPIE.KEY.SWITCHES.SUPER_TICK;
+	// if(this.second > 10) MAGPIE_SYSTEM.switches.setValue(K, false);
 	this.second++;
 }
 MAGPIE_DATE.prototype.superTICK = function superTICK()
 {
 	this.second = 0;
-	const K = MAGPIE.KEY.SWITCHES;
-	MAGPIE_SYSTEM.switches.setValue(K.SUPER_TICK, true);
+	// const K = MAGPIE.KEY.SWITCHES;
+	// MAGPIE_SYSTEM.switches.setValue(K.SUPER_TICK, true);
 	if(this.minute >= 59) return this.megaTICK();
-	if(this.minute > 0) MAGPIE_SYSTEM.switches.setValue(K.MEGA_TICK, false);
+	// if(this.minute > 0) MAGPIE_SYSTEM.switches.setValue(K.MEGA_TICK, false);
 	this.minute++;
 }
 MAGPIE_DATE.prototype.megaTICK = function megaTICK()
 {
 	this.minute = 0;
-	const K = MAGPIE.KEY.SWITCHES;
-	MAGPIE_SYSTEM.switches.setValue(K.MEGA_TICK, true);
+	// const K = MAGPIE.KEY.SWITCHES;
+	// MAGPIE_SYSTEM.switches.setValue(K.MEGA_TICK, true);
 	const day = this.getCalendar().dayLength || 24;
 	if(this.hour >= day - 1) return this.ultraTICK();
-	if(this.hour > 0) MAGPIE_SYSTEM.switches.setValue(K.ULTRA_TICK, false);
+	// if(this.hour > 0) MAGPIE_SYSTEM.switches.setValue(K.ULTRA_TICK, false);
 	this.hour++;
 }
 MAGPIE_DATE.prototype.ultraTICK = function ultraTICK()
 {
 	this.hour = 0;
-	const K = MAGPIE.KEY.SWITCHES;
-	MAGPIE_SYSTEM.switches.setValue(K.ULTRA_TICK, true);
+	// const K = MAGPIE.KEY.SWITCHES;
+	// MAGPIE_SYSTEM.switches.setValue(K.ULTRA_TICK, true);
 	const months = this.getCalendar().months;
 	const days = Object.values(months)[this.month - 1];
 	const leap = this.leapDay();
 	if(this.day >= days + leap) return this.newMonth();
-	if(this.day > 1) MAGPIE_SYSTEM.switches.setValue(K.NEW_MONTH, false);
+	// if(this.day > 1) MAGPIE_SYSTEM.switches.setValue(K.NEW_MONTH, false);
 	this.day++;
 }
 MAGPIE_DATE.prototype.newMonth = function newMonth()
 {
 	this.day = 1;
 	const months = Object.keys(this.getCalendar().months).length;
-	const K = MAGPIE.KEY.SWITCHES;
-	MAGPIE_SYSTEM.switches.setValue(K.NEW_MONTH, true);
+	// const K = MAGPIE.KEY.SWITCHES;
+	// MAGPIE_SYSTEM.switches.setValue(K.NEW_MONTH, true);
 	if(this.month >= months) return this.newYear();
-	if(this.month > 1) MAGPIE_SYSTEM.switches.setValue(K.NEW_YEAR, false);
+	// if(this.month > 1) MAGPIE_SYSTEM.switches.setValue(K.NEW_YEAR, false);
 	this.month++;
 }
 MAGPIE_DATE.prototype.newYear = function newYear()
 {
 	this.month = 1;
-	const K = MAGPIE.KEY.SWITCHES;
-	MAGPIE_SYSTEM.switches.setValue(K.NEW_YEAR, true);
+	// const K = MAGPIE.KEY.SWITCHES;
+	// MAGPIE_SYSTEM.switches.setValue(K.NEW_YEAR, true);
 	this.year++;
 }
 // #endregion
@@ -1250,11 +1244,13 @@ MAGPIE_RUNTIME.prototype.refresh = function refresh()
 	const switchGame = 1;
 	const gameDelta = layer.get(layerGame).delta * 1000;
 	if(Math.floor(performance.now()) % 16) 
+	{
+		this.tick_layer(layerBase, switchGame)
 		this.tick_layer(layerGame, switchGame);
+	}
 }
 MAGPIE_RUNTIME.prototype.TICK_standard = async function TICK_standard()
 {
-	// console.log("TICK_standard");
 	this._now = Date.now();
 	const secondsInMinute = 60;
 	if(this._TICK >= secondsInMinute - 1) 
@@ -1262,19 +1258,26 @@ MAGPIE_RUNTIME.prototype.TICK_standard = async function TICK_standard()
 	this._TICK++;
 	const layerStandard = 2;
 	const switchStandard = 2;
+	const layerBase = 0;
+	const layerGame = 1;
+	await this.tick_layer(layerBase, switchStandard);
+	await this.tick_layer(layerGame, switchStandard);
 	this.tick_layer(layerStandard, switchStandard);
 }
 MAGPIE_RUNTIME.prototype.TICK_super = async function TICK_super()
 {
-	// console.log("TICK_super");
 	this._TICK = 0;
 	const minutesInHour = 60;
 	if(this._TICKsuper >= minutesInHour - 1)
 		return this.TICK_mega();
 	this._TICKsuper++;
 	const layerSuper = 3;
-	const layerStandard = layerSuper - 1;
 	const switchSuper = 3;
+	const layerBase = 0;
+	const layerGame = 1;
+	const layerStandard = 2;
+	await this.tick_layer(layerBase, switchSuper);
+	await this.tick_layer(layerGame, switchSuper)
 	await this.tick_layer(layerStandard, switchSuper);
 	this.tick_layer(layerSuper, switchSuper);
 }
@@ -1288,8 +1291,12 @@ MAGPIE_RUNTIME.prototype.TICK_mega = async function TICK_mega()
 	this._TICKmega++;
 	const layerMega = 4;
 	const switchMega = 4;
-	const layerSuper = layerMega - 1;
-	const layerStandard = layerSuper - 1;
+	const layerBase = 0;
+	const layerGame = 1;
+	const layerStandard = 2;
+	const layerSuper = 3;
+	await this.tick_layer(layerBase, switchMega);
+	await this.tick_layer(layerGame, switchMega);
 	await this.tick_layer(layerStandard, switchMega);
 	await this.tick_layer(layerSuper, switchMega);
 	this.tick_layer(layerMega, switchMega);
@@ -1301,9 +1308,13 @@ MAGPIE_RUNTIME.prototype.TICK_ultra = async function TICK_ultra()
 	this._TICKultra++
 	const layerUltra = 5;
 	const switchUltra = 5;
-	const layerMega = layerUltra - 1;
-	const layerSuper = layerMega - 1;
-	const layerStandard = layerSuper - 1;
+	const layerBase = 0;
+	const layerGame = 1;
+	const layerStandard = 2;
+	const layerSuper = 3;
+	const layerMega = 4;
+	await this.tick_layer(layerBase, switchUltra);
+	await this.tick_layer(layerGame, switchUltra);
 	await this.tick_layer(layerStandard, switchUltra);
 	await this.tick_layer(layerSuper, switchUltra);
 	await this.tick_layer(layerMega, switchUltra);
@@ -1324,7 +1335,7 @@ MAGPIE_RUNTIME.prototype.tick_layer = async function tick_layer(layerID, switchI
 			throw new Error(`${layerID} is invalid layer index`)
 		for(const guest of this[layer])
 		{
-			await this.guestRefresh(guest, layerID);
+			await this.guestRefresh(guest, layerID, switchID);
 		}
 	}
 	catch(e)
@@ -1389,10 +1400,16 @@ MAGPIE_RUNTIME.prototype.kick = function kick(guestFirmwareName, layerID)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
 	}
 }
-MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layer)
+/**
+ * 
+ * @param {*} guest 
+ * @param {*} layer 
+ */
+MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layerID, switchID)
 {
 	//
 }
+MAGPIE_RUNTIME.__guestRefresh = MAGPIE_RUNTIME.prototype.guestRefresh;
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1431,6 +1448,12 @@ MAGPIE_HIVE.meta.desc = "";
 /**
  * @name proto
  * @desc 
+ * @typedef {{
+ * layerID: Number,
+ * slot: Number,
+ * target: Number,
+ * retrain: Boolean
+ * }} hive_entry
  * @typedef {Map<Number, hive_entry>} hive_registry
  * @typedef {import("../SERVER").hive_buffer} hive_buffer
  * @typedef {Float64Array<entityID>} hive_layer
@@ -1463,7 +1486,15 @@ MAGPIE_HIVE.prototype.initialize = function initialize()
 	this[layerMega.name] = new Float64Array(layerMega.slots).fill(0);
 	/** @type {hive_layer} default size: 100,000 */
 	this[layerUltra.name] = new Float64Array(layerUltra.slots).fill(0);
-	/** @type {hive_registry} */
+	/** 
+	 * @type {hive_registry}
+	 * @desc Map<entityID, hive_entry: {
+	 * layerID: Number,
+	 * slot: Number,
+	 * target: Number,
+	 * retrain: Boolean
+	 * }>
+	 * */
 	this._registry = new Map();
 }
 MAGPIE_HIVE.prototype.awake = function awake()
@@ -1481,10 +1512,14 @@ MAGPIE_HIVE.prototype.awake = function awake()
 		this.pause();
 	}
 }
+/**
+ * @method
+ */
 MAGPIE_HIVE.prototype.setup = function setup()
 {
 	//
 }
+MAGPIE_HIVE.__setup = MAGPIE_HIVE.prototype.setup;
 MAGPIE_HIVE.prototype.pause = function pause()
 {
 	const ePrefix = `[HIVE].method: `;
@@ -1508,10 +1543,6 @@ MAGPIE_HIVE.prototype.pause = function pause()
 // #region > Database
 //------------------------------------------------------------------------
 MAGPIE_HIVE.prototype.loadEntitySync = function loadEntitySync(entityID)
-{
-	//
-}
-MAGPIE_HIVE.prototype.loadEntity = async function loadEntity(entityID)
 {
 	//
 }
@@ -1551,6 +1582,7 @@ MAGPIE_HIVE.prototype.refresh = async function refresh(layerID, switchID)
 {
 	//
 }
+MAGPIE_HIVE.__refresh = MAGPIE_HIVE.prototype.refresh;
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1566,8 +1598,6 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 	const ePrefix = "[HIVE].host: ";
 	try
 	{
-		if(!(entity instanceof MAGPIE_ENTITY))
-			throw new Error(`${entity} is invalid MAGPIE_ENTITY`);
 		const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
 		const layerName = K?.name;
 		const slot = this.nextSlot(layerID);
@@ -1575,7 +1605,8 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 			throw new Error(`[LAYER-${layerID}] is full`);
 		this[layerName][slot] = entity;
 		this._registry.set(entity.ID, {
-			layerID: layerID, 
+			layerID: layerID,
+			slot: slot,  
 			target: targetLayerID, 
 			retain: true
 		});
@@ -1585,6 +1616,27 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+MAGPIE_HIVE.__host = MAGPIE_HIVE.prototype.host;
+MAGPIE_HIVE.prototype.kick = function kick(entityID)
+{
+	const entry = this._registry.get(entityID);
+	const layerID = entry?.layerID
+	const index = entry?.index;
+	const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
+	if(!K)
+		throw new Error(`[LAYER-${layerID}], for [ENTITY-${entityID}], is invalid layer`)
+	const layerName = K.name;
+	const slots = K.slots;
+	if(!this[layerName][index])
+		throw new Error(`[ENTITY-${entityID}] not at ${layerName}[${index}]`);
+	const last = this[layerName][slots - 1]
+	this[layerName][index] = last;
+	const lastEntry = this._registry.get(last.ID);
+	this._registry.delete(entityID);
+	lastEntry.slot = index;
+	this._registry.set(last.ID, lastEntry)
+}
+MAGPIE_HIVE.__kick = MAGPIE_HIVE.prototype.kick;
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1670,11 +1722,11 @@ MAGPIE_IO.append = function append(filename, content)
 // #endregion - 
 //========================================================================
 module.exports = {
-    MAGPIE_SYSTEM: MAGPIE_SYSTEM,
+    MAGPIE_SYSTEM,
     MAGPIE_IO: MAGPIE_IO,
 	MAGPIE_LOG: MAGPIE_LOG,
     MAGPIE_RUNTIME: MAGPIE_RUNTIME,
-	MAGPIE_HIVE: MAGPIE_HIVE,
+	MAGPIE_HIVE,
     MAGPIE_METASTATE: MAGPIE_METASTATE,
 	MAGPIE_CALENDAR: MAGPIE_CALENDAR,
 	MAGPIE_DATE: MAGPIE_DATE

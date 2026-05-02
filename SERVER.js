@@ -28,14 +28,18 @@ class MAGPIE_SERVER
 const { MAGPIE } = require("./core/index");
 MAGPIE_SERVER.meta = MAGPIE.meta;
 MAGPIE_SERVER.meta.name += " server";
+const SYSTEM = require("./core/system");
 const { 
 	MAGPIE_SYSTEM,
 	MAGPIE_LOG,
 	MAGPIE_IO,
-	MAGPIE_RUNTIME,
 	MAGPIE_HIVE,
+	MAGPIE_RUNTIME,
 	MAGPIE_METASTATE
-} = require("./core/system");
+} = SYSTEM;
+// const { MAGPIE_SYSTEM } = SYSTEM;
+// const { MAGPIE_RUNTIME } = SYSTEM;
+// const { MAGPIE_HIVE } = SYSTEM;
 const { MAGPIE_PHYSICS } = require("./core/physics");
 const { MAGPIE_COMPONENT } = require("./core/component");
 const { MAGPIE_ENTITY } = require("./core/entity");
@@ -170,7 +174,16 @@ MAGPIE_SYSTEM.error = function error(message, error)
 	MAGPIE_SERVER.SYS._error.call(this, message, error);
 	r.displayPrompt();
 }
-MAGPIE_SERVER.SYS._runtime_guestRefresh = MAGPIE_RUNTIME.prototype.guestRefresh;
+MAGPIE_SYSTEM._logging_debug = function server_debug(message)
+{
+	if(r.cursor > 0)
+		return
+	console.clear();
+	console.error(new Error(message + "\n"));
+	r.displayPrompt();
+	// lastMessage = message;
+}
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -197,16 +210,17 @@ MAGPIE_SERVER.HANDLER = fs.readdirSync(MAGPIE_SERVER.SYS._handlersPath)
  * 
  * @param {*} guest 
  * @param {Number} layerID 
+ * @param {Number} switchID
  * @returns 
  */
-MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layerID)
+MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layerID, switchID)
 {
-	MAGPIE_SERVER.SYS._runtime_guestRefresh.call(this, guest, layerID);
 	const system = r.context[guest];
 	if(!system || isNaN(layerID)) return
-	const pass = system.refresh(layerID)
+	const pass = system.refresh(layerID, switchID)
 	if(!pass) this.kick(guest, layerID);
 }
+MAGPIE_SERVER.SYS._runtime_guestRefresh = MAGPIE_RUNTIME.__guestRefresh;
 MAGPIE_RUNTIME.prototype.loadMetastate = function loadMetastate()
 {
 	const ePrefix = "[RUNTIME].loadMetastate: ";
@@ -248,6 +262,7 @@ MAGPIE_RUNTIME.prototype.saveMetastate = function saveMetastate()
 //------------------------------------------------------------------------
 // #region > Hive
 //------------------------------------------------------------------------
+MAGPIE_SERVER.SYS._hive_refresh = MAGPIE_HIVE.__refresh;
 /**
  * @typedef {import("./core/index").duration} duration 
  * @param {Number} layerID
@@ -257,21 +272,31 @@ MAGPIE_RUNTIME.prototype.saveMetastate = function saveMetastate()
  */
 MAGPIE_HIVE.prototype.refresh = async function refresh(layerID, switchID)
 {
-	const layerStandard = 2;
-	const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
-	const layerName = K.name;
-	const dt = K.delta;
-	if(layerID < layerStandard)
-		this.tick_buffer(layerName, layerID, switchID, dt);
-	this.tick_remote(layerName, layerID, switchID, dt);
+	for(let i = 0; i <= switchID; i++)
+	{
+		layerID = i;
+		const layerStandard = 2;
+		const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
+		const layerName = K.name;
+		const dt = K.delta;
+		if(layerID < layerStandard)
+			this.tick_buffer(layerName, layerID, switchID, dt);
+		if(switchID < layerStandard || layerID < layerStandard) continue
+		this.tick_remote(layerName, layerID, switchID, dt);
+	}
 }
 MAGPIE_HIVE.prototype.tick_buffer = async function tick_buffer(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_buffer: ";
-	for(const entity of this[layerName])
+	const layer = this[layerName];
+	const slots = MAGPIE.KEY.RUNTIME.LAYER.get(layerID).slots;
+	for(let i = 0; i < slots; i++)
 	{
 		try
 		{
+			const slot = i;
+			const entity = this.getSlot(slot, layerID)
+			if(!entity) return
 			const pass = await entity.refresh(layerID, switchID, dt)
 			if(!pass) this.kick(entity.ID, layerID);
 		}
@@ -281,6 +306,27 @@ MAGPIE_HIVE.prototype.tick_buffer = async function tick_buffer(layerName, layerI
 		}
 	}
 }
+/**
+ * 
+ * @param {Number} slot 
+ * @param {Number} layerID 
+ */
+MAGPIE_HIVE.prototype.getSlot = function getSlot(slot, layerID)
+{
+	const ePrefix = "[HIVE].isValidSlot: ";
+	try
+	{
+		const entity = this[MAGPIE.KEY.RUNTIME.LAYER.get(layerID)?.name][slot]
+		if(!(entity instanceof MAGPIE_ENTITY))
+			throw new Error(`[LAYER-${layerID}][${slot}] is invalid entity slot`)
+		if(!entity?.type) return
+		return entity
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
 MAGPIE_HIVE.prototype.tick_remote = async function tick_remote(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_remote: ";
@@ -288,17 +334,52 @@ MAGPIE_HIVE.prototype.tick_remote = async function tick_remote(layerName, layerI
 	{
 		try
 		{
+			if(isNaN(entityID))
+				throw new Error(`${entityID} is invalid entityID`)
+			if(!entityID) return
 			const entity = await this.loadEntity(entityID);
+			if(!entity instanceof MAGPIE_ENTITY)
+				throw new Error(`[ENTITY-${entityID}] is invalid entity`)
 			const pass = await entity.refresh(layerID, switchID, dt);
-			if(!pass) this.kick(entityID, layerID);
+			if(!pass) 
+				throw new Error(`[ENTITY-${entityID}] has failed to refresh`)
 		}
 		catch(e)
 		{
 			MAGPIE_SERVER.error(ePrefix + e.message, e)
+			this.kick(entityID, layerID);
 		}
 	}
 }
-MAGPIE_HIVE.prototype.setup = function setup()
+MAGPIE_SERVER.SYS._hive_host = MAGPIE_HIVE.__host;
+MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
+{
+	const ePrefix = "[HIVE].host: ";
+	try
+	{
+		if(!(entity instanceof MAGPIE_ENTITY))
+			throw new Error(`${entity} is invalid MAGPIE_ENTITY`);
+		return MAGPIE_SERVER.SYS._hive_host.call(this, entity, layerID, targetLayerID);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+MAGPIE_HIVE.prototype.kick = function kick(entityID)
+{
+	const ePrefix = "[HIVE].kick: ";
+	try
+	{
+		MAGPIE_HIVE.__kick.call(this, entityID)
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+MAGPIE_SERVER.SYS._hive_setup = MAGPIE_HIVE.__setup;
+MAGPIE_HIVE.prototype.setup = function setup2()
 {
 	const K = MAGPIE.KEY.RUNTIME.LAYER;
 	const layerBase = K.get(0).name;
@@ -340,7 +421,7 @@ MAGPIE_HIVE.prototype.saveEntity = async function saveEntity(entity)
  */
 MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
 {
-	return MAGPIE_DATABASE.saveEntitySync(entity);
+	// return MAGPIE_DATABASE.saveEntitySync(entity);
 }
 /**
  * 
@@ -369,9 +450,17 @@ MAGPIE_HIVE.prototype.saveEntities = async function saveEntities(entityArray)
 //------------------------------------------------------------------------
 // #region > Metastate
 //------------------------------------------------------------------------
-MAGPIE_METASTATE.prototype.TICK_base = async function TICK_base()
+MAGPIE_SERVER.SYS._metastate_tick_base = MAGPIE_METASTATE._TICK_base;
+MAGPIE_METASTATE.prototype.TICK_base = async function TICK_base(layerID, switchID)
 {
-	//
+	MAGPIE_SERVER.HIVE.refresh(layerID, switchID);
+	const now = performance.now();
+	this.date.millisecond = Math.floor(now % 1000);
+	if(switchID === 2) 
+	{
+		this._socketEmit();
+		return this.date.TICK();
+	}
 }
 MAGPIE_METASTATE.prototype.TICK_game = async function TICK_game()
 {
@@ -401,17 +490,22 @@ MAGPIE_METASTATE.prototype.load = function load()
 {
 	//
 }
+/**
+ * {@link MAGPIE_METASTATE._socketEmit}
+ */
 MAGPIE_METASTATE.prototype._socketEmit = function _socketEmit()
 {
-	const metastate = {
-		meta: this.meta,
-		date: this.date,
-		calendar: this.date.getCalendar(),
-		hive: this.hive,
-		contents: this.contents
-	}
+	const metastate = {};
+	const calendar = this.date.getCalendar();
+	metastate.meta = this.meta;
+	metastate.date = this.date;
+	metastate.weekDayName = this.date.getWeekDayName(); 
+	metastate.calendar = this.date.getCalendar(),
+	metastate.hive = this.hive,
+	metastate.contents = this.contents
 	io.emit("metastate", metastate);
 }
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -479,7 +573,7 @@ MAGPIE_SERVER.error = function error(message)
 }
 MAGPIE_SERVER._debug = function debug(message)
 {
-	return MAGPIE_SYSTEM._debug(message);
+	return MAGPIE_SYSTEM._logging_debug(message);
 }
 MAGPIE_SERVER.LOG.exp = function logExpActivity(message)
 {
@@ -1003,14 +1097,13 @@ MAGPIE_SERVER.scratchpad.log = function log(input)
 const REPL = require("repl");
 console.clear();
 const r = REPL.start("MAGPIE_SERVER > ")
-console.clear();
 MAGPIE_SERVER.CLI._createLoadBar();
 MAGPIE_SERVER.CLI._updateLoadBar(0);
 MAGPIE_SERVER._REPL_boot();
 MAGPIE_SERVER.RUNTIME = new MAGPIE_RUNTIME();
-MAGPIE_SERVER.log()
 MAGPIE_SERVER.DATABASE = MAGPIE_DATABASE;
 MAGPIE_SERVER.HIVE = new MAGPIE_HIVE();
+MAGPIE_SERVER.HIVE.setup();
 r.context.SERVER = MAGPIE_SERVER;
 r.context.RUNTIME = MAGPIE_SERVER.RUNTIME;
 r.context.HIVE = MAGPIE_SERVER.HIVE;
@@ -1021,25 +1114,28 @@ MAGPIE_SERVER.BOOT.connect()
 	.then(() => {
 		// MAGPIE_EMOTE.setup();
 		// MAGPIE_DATABASE.sitrep();
-		MAGPIE_SERVER.RUNTIME.awake();
-		MAGPIE_SERVER.CLI._incrementLoadBar(5);
-		MAGPIE_SERVER.RUNTIME.host("HIVE", 0);
 		MAGPIE_SERVER.CLI._incrementLoadBar(5);
 		MAGPIE_SERVER.RUNTIME.loadMetastate();
+		MAGPIE_SERVER.RUNTIME.host("HIVE", 0);
+		MAGPIE_SERVER.RUNTIME.awake();
+		MAGPIE_SERVER.HIVE.awake()
+		MAGPIE_SERVER.CLI._incrementLoadBar(5);
 		MAGPIE_SERVER.CLI._incrementLoadBar(10);
+		MAGPIE_SERVER.CLI._updateLoadBar(100);
+		MAGPIE_SERVER.CLI._stop();
 		setTimeout(() => {
-			MAGPIE_SERVER.CLI._updateLoadBar(100);
-			MAGPIE_SERVER.CLI._stop();
+			console.clear();
+			MAGPIE_SERVER.BOOT.logBootTime();
 			r.displayPrompt();
-		}, 2000);
-		MAGPIE_SERVER.BOOT.logBootTime();
+			}, 100);
+		
 	});
-	// fs.watchFile(MAGPIE_SERVER.scratchpad.file, { interval: 1000 }, (curr, prev) => {
-// 	if(curr.mtime > prev.mtime) {
-// 		console.log("--- Executing VS code scratchpad --- ")
-// 		MAGPIE_SERVER.scratchpad.load("scratchpad.js");
-// 	}
-// })
+	fs.watchFile(MAGPIE_SERVER.scratchpad.file, { interval: 1000 }, (curr, prev) => {
+	if(curr.mtime > prev.mtime) {
+		console.log("--- Executing VS code scratchpad --- ")
+		MAGPIE_SERVER.scratchpad.load("scratchpad.js");
+	}
+})
 /**
  * 
  * @desc back to {@link }
