@@ -1,9 +1,12 @@
+//========================================================================
+// #region - META
+//========================================================================
 /**
  * @namespace MAGPIE
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.20.2
+ * @version 0.20.3
  * 
  * @depdendencies 
  * - Node.js 
@@ -16,6 +19,10 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.20.3 2026 05 02
+ * - ADDED: DATABASE, HIVE, and METASTATE back online
+ * - FIXED: RUNTIME unable to complete loop
  * 
  * @version 0.20.2 2026 04 30
  * - ADDED: MAGPIE_RUNTIME._memoryUsage() method
@@ -50,10 +57,10 @@
  * - ADDED: SYSTEM.Utility.printETA(s)
  * - ADDED: ENTITY.refresh dt overflow protection
  * - ADDED: ENTITY.refresh dt overflow protection automatically attempts
-    to sync metadate by requesting HIVE layer promotion
+	to sync metadate by requesting HIVE layer promotion
  * - FIXED: MAGPIE_SERVER.error unreadable format
  * - FIXED: ENTITY.refresh dt overflow nested bugs  leading up
-    to HIVE.reqProm
+	to HIVE.reqProm
  * - FIXED: printETA minutes not % 60, and hours not % 24
  * 
  * @version 0.18.4 2026 03 17
@@ -112,9 +119,9 @@
  * - FIXED: server version not updated
  * 
  * @version 0.17.2 2026 03 06
- * - ADDED: Google Cloud server compute instance {@link MAGPIE_SERVER.config.instance}
- * 		and connected it to project MAGPIE {@link MAGPIE_SERVER.config.projectID}
- * - ADDED: configuration to run DuckDNS subdomain {@link MAGPIE_SERVER.config.domain}
+ * - ADDED: Google Cloud server compute instance {@link MAGPIE.config.instance_name}
+ * 		and connected it to project MAGPIE {@link MAGPIE.config.project_id}
+ * - ADDED: configuration to run DuckDNS subdomain {@link MAGPIE.config.domain}
  * - FIXED: git repo running behind and having branch issues
  * - FIXED: {@link MAGPIE_DATABASE} methods incorrectly setup for async calls by
  * 		client systems
@@ -257,18 +264,26 @@
  * @property {MAGPIE_SYSTEM}    MAGPIE.HIMS     {@link MAGPIE_HIMS}
  */
 //========================================================================
+// #endregion - 
+//========================================================================
+
+
+
+
+
+//========================================================================
 //#region - CLASS
 //========================================================================
 class MAGPIE {
-    static {
-        this.meta = {
-            name: "M.A.G.P.I.E",
-            desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-            version: [0, 20, 2],
-            firmwareName: "MAGPIE",
-            firmwareDate: "20260430"
-        };
-    }
+	static {
+		this.meta = {
+			name: "M.A.G.P.I.E",
+			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
+			version: [0, 20, 3],
+			firmwareName: "MAGPIE",
+			firmwareDate: "20260502"
+		};
+	}
 }
 
 /**
@@ -286,6 +301,18 @@ class MAGPIE {
 // #region - KEY
 //========================================================================
 MAGPIE.KEY = {};
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Config
+//------------------------------------------------------------------------
+MAGPIE.config = require("./config");
+
+// #endregion
+//------------------------------------------------------------------------
 /**
  * @name semantics
  * @desc component of {@link MAGPIE.KEY}
@@ -307,8 +334,8 @@ MAGPIE.KEY = {};
 //------------------------------------------------------------------------
 MAGPIE.KEY.SEMANTICS = {};
 MAGPIE.KEY.SEMANTICS.meta = {
-    firmwareName: "MAGPIE_SEMANTICS",
-    name: "M.A.G.P.I.E. semantic keys"
+	firmwareName: "MAGPIE_SEMANTICS",
+	name: "M.A.G.P.I.E. semantic keys"
 }
 /** @typedef {Enumerator<Number>} key_type */
 MAGPIE.KEY.TYPE = {};
@@ -363,24 +390,17 @@ MAGPIE.KEY.INDEX.TARGET = MAGPIE.KEY.INDEX.OBJECT + 1;
 //------------------------------------------------------------------------
 MAGPIE.KEY.RUNTIME = {};
 MAGPIE.KEY.RUNTIME.meta = {
-    firmwareName: "MAGPIE_RUNTIME",
-    name: "M.A.G.P.I.E. runtime"
+	firmwareName: "MAGPIE_RUNTIME",
+	name: "M.A.G.P.I.E. runtime"
 };
+/** @type {Map<Number, {name: String, delta: Number, slots: Number}} */
 MAGPIE.KEY.RUNTIME.LAYER = new Map();
-MAGPIE.KEY.RUNTIME.LAYER.set(0, { name: "Base", delta: 0.001 });
-MAGPIE.KEY.RUNTIME.LAYER.set(1, { name: "Game", delta: 0.016 });
-MAGPIE.KEY.RUNTIME.LAYER.set(2, { name: "Standard", delta: 1 });
-MAGPIE.KEY.RUNTIME.LAYER.set(3, { name: "Super", delta: 60 });
-MAGPIE.KEY.RUNTIME.LAYER.set(4, { name: "Mega", delta: 60 ** 2 });
-MAGPIE.KEY.RUNTIME.LAYER.set(5, { name: "Ultra", delta: 60 ** 2 * 24 });
-//
-MAGPIE.KEY.HIVE = {};
-MAGPIE.KEY.HIVE.LAYER = new Map();
-Array.from(MAGPIE.KEY.RUNTIME.LAYER.entries()).forEach((entry, index) => {
-    if(index > 0)
-        MAGPIE.KEY.HIVE.LAYER.set(entry[0], entry[1]);
-})
-  
+MAGPIE.KEY.RUNTIME.LAYER.set(0, { name: "_GuestsBase", delta: 0.001, slots: 100 });
+MAGPIE.KEY.RUNTIME.LAYER.set(1, { name: "_GuestsGame", delta: 0.016, slots: 1000 });
+MAGPIE.KEY.RUNTIME.LAYER.set(2, { name: "_GuestsStandard", delta: 1, slots: 5000 });
+MAGPIE.KEY.RUNTIME.LAYER.set(3, { name: "_GuestsSuper", delta: 60, slots: 10000 });
+MAGPIE.KEY.RUNTIME.LAYER.set(4, { name: "_GuestsMega", delta: 60 ** 2, slots: 50000 });
+MAGPIE.KEY.RUNTIME.LAYER.set(5, { name: "_GuestsUltra", delta: 60 ** 2 * 24, slots: 100000 });
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -414,7 +434,123 @@ MAGPIE.KEY.CALENDAR.GREGORIAN = 0;
 //------------------------------------------------------------------------
 // #region > Server
 //------------------------------------------------------------------------
-
+MAGPIE.KEY.SERVER = {};
+MAGPIE.KEY.SERVER.DOMAIN = MAGPIE.config.domain;
+MAGPIE.KEY.SERVER.JWT_SECRET = MAGPIE.config.jwtSecret;
+MAGPIE.KEY.SERVER.PORT = MAGPIE.config.port;
+MAGPIE.KEY.SERVER.LOGIN_COOLDOWN = 15;
+MAGPIE.KEY.SERVER.LOGIN_MAX_ATTEMPTS = 20;
+MAGPIE.KEY.SERVER.MESSAGE = {};
+MAGPIE.KEY.SERVER.MESSAGE.BOOT = "[BOOT SEQUENCE]";
+MAGPIE.KEY.SERVER.MESSAGE.BOOTED = "SERVER ONLINE listening on: ";
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Http
+//------------------------------------------------------------------------
+MAGPIE.KEY.SERVER.HTTP = {};
+/**
+ * @desc Successful
+ * @desc In simple terms, the HTTP status 200 response code means that a 
+ * server has successfully processed a request. Likewise, codes in the 
+ * 400s and 500s mean a request has failed.
+ */
+MAGPIE.KEY.SERVER.HTTP.STATUS_200 = {
+	message: "Successful",
+	desc: `In simple terms, the HTTP status 200 response code means 
+	that a server has successfully processed a request. Likewise, 
+	codes in the 400s and 500s mean a request has failed.`
+}
+/**
+ * @desc Bad Request
+ * @desc The 400 (Bad Request) status code indicates that the server 
+ * cannot or will not process the request due to something that is 
+ * perceived to be a client error. In response to an invalid request, 
+ * the server should issue the exact 4xx code in the case of an 
+ * unsuccessful request.
+ */
+MAGPIE.KEY.SERVER.HTTP.STATUS_400 = {
+	message: "Bad Request",
+	desc: `The 400 (Bad Request) status code indicates that the server 
+	cannot or will not process the request due to something that is 
+	perceived to be a client error. In response to an invalid request, 
+	the server should issue the exact 4xx code in the case of an 
+	unsuccessful request.`
+}
+/**
+ * @desc Unauthorized
+ * @desc The HTTP 401 Unauthorized client error response status 
+ * code indicates that a request was not successful because it lacks 
+ * valid authentication credentials for the requested resource.
+ */
+MAGPIE.KEY.SERVER.HTTP.STATUS_401 = {
+	message: "Unauthorized",
+	desc: `The  HTTP 401 Unauthorized client error response status code 
+	indicates that a request was not successful because it lacks valid 
+	authentication credentials for the requested resource.`
+}
+/**
+ * @desc "Forbidden"
+ * @desc A 403 'Forbidden' error is an HTTP status code indicating that 
+ * the server understood the request but refuses to authorize it, 
+ * usually due to insufficient permissions or intentional blocking. 
+ * It means the site is restricted or the user lacks access rights, 
+ * making repeated attempts without modification futile.
+ */
+MAGPIE.KEY.SERVER.HTTP.STATUS_403 = {
+	message: "Forbidden", 
+	desc: "A 403 'Forbidden' error is an HTTP status code indicating "
+		+ "that the server understood the request but refuses to authorize "
+		+ "it, usually due to insufficient permissions or intentional "
+		+ "blocking. It means the site is restricted or the user lacks "
+		+ "access rights, making repeated attempts without modification futile."
+};
+/**
+ * @desc Internal Server Error
+ * @desc An HTTP 500 status code (Internal Server Error) indicates 
+ * that the server encountered an unexpected condition that prevented 
+ * it from fulfilling the request.
+ */
+MAGPIE.KEY.SERVER.HTTP.STATUS_500 = {
+	message: "Internal Server Error",
+	desc: `An HTTP 500 status code (Internal Server Error) indicates 
+	that the server encountered an unexpected condition that prevented 
+	it from fulfilling the request.`
+}
+/**
+ * @desc "too many requests"
+ * @desc The HTTP 429 "Too Many Requests" status code indicates the user 
+ * has sent too many requests to a server within a given timeframe, 
+ * triggering rate limiting. This client-side error protects servers 
+ * from abuse, such as DDoS attacks, scrapers, or excessive bot activity. 
+ * It is commonly resolved by waiting, reducing request frequency, or 
+ * checking API limits.
+ */
+MAGPIE.KEY.SERVER.HTTP.STATUS_429 = {
+	message: "Too many requests!",
+	desc: "The HTTP 429 'Too Many Requests' status code indicates the user "
+		+ "has sent too many requests to a server within a given timeframe, "
+		+ "triggering rate limiting. This client-side error protects servers "
+		+ "from abuse, such as DDoS attacks, scrapers, or excessive bot activity. "
+		+ "It is commonly resolved by waiting, reducing request frequency, "
+		+ "or checking API limits."
+};
+// #endregion
+//------------------------------------------------------------------------
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * @typedef {Number} duration in s
+ */
+//------------------------------------------------------------------------
+// #region > Physics
+//------------------------------------------------------------------------
+MAGPIE.KEY.PHYSICS = {};
 // #endregion
 //------------------------------------------------------------------------
 /**

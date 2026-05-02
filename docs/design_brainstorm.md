@@ -33,6 +33,52 @@ stateDiagram
 
 ---
 
+## Hive loop
+
+```mermaid
+stateDiagram
+    [*] --> hive : awake
+    hive --> layer
+    layer --> refreshGuest : tick
+    refreshGuest --> entity : async
+    entity --> refreshGuest : return true
+    entity --> kick : return false
+    refreshGuest --> layer : loop
+    hive --> [*] : pause
+    hive --> host
+    host --> entity
+
+```
+
+### Dependency flow
+
+```mermaid
+gitGraph
+    commit id: "index" type: HIGHLIGHT tag: "enums"
+    commit id: "system"
+    branch repl
+    checkout main
+    branch hive
+    commit id: "hive"
+    commit id: "layer"
+    checkout main
+    commit id: "physics"
+    commit id: "database"
+    commit id: "entity"
+    commit id: "server"
+    checkout repl
+    commit id: "r.context.RUNTIME"
+    commit id: "r.context.HIVE"
+    merge hive
+    commit id: "refreshGuest"
+    checkout main
+    merge repl
+```
+
+[Back to top ⤴️](#design-brainstorm)
+
+---
+
 ## Entity refresh loop
 
 ```mermaid

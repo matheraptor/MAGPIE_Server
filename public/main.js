@@ -135,7 +135,7 @@ socket.on('metastate', (data) => {
 	// Update your HTML elements
 	const date = data.date;
 	const year = date.year;
-	const month = Object.keys(date.calendar.months)[date.month - 1];
+	const month = Object.keys(data.calendar.months)[date.month - 1];
 	const day = date.day.toString().padStart(2,0);
 	const hour = date.hour.toString().padStart(2,0);
 	const minute = date.minute.toString().padStart(2,0);

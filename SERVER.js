@@ -34,37 +34,32 @@ const {
 	MAGPIE_IO,
 	MAGPIE_RUNTIME,
 	MAGPIE_HIVE,
-	MAGPIE_METASTATE,
-	MAGPIE_PHYSICS
+	MAGPIE_METASTATE
 } = require("./core/system");
+const { MAGPIE_PHYSICS } = require("./core/physics");
 const { MAGPIE_COMPONENT } = require("./core/component");
 const { MAGPIE_ENTITY } = require("./core/entity");
-const MAGPIE_DATABASE = require("./core/database")
+const { MAGPIE_PLAYER } = require("./core/player");
+const MAGPIE_DATABASE = require("./core/database");
+MAGPIE_SERVER.registry = {
+	MAGPIE,
+	MAGPIE_SYSTEM,
+	MAGPIE_LOG,
+	MAGPIE_IO,
+	MAGPIE_RUNTIME,
+	MAGPIE_HIVE,
+	MAGPIE_METASTATE,
+	MAGPIE_PHYSICS,
+	MAGPIE_COMPONENT,
+	MAGPIE_ENTITY,
+	MAGPIE_PLAYER,
+	MAGPIE_DATABASE
+};
 MAGPIE_SERVER.meta = {}
 MAGPIE_SERVER.perf = {};
 MAGPIE_SERVER.perf.start = performance.now();
 MAGPIE_SERVER.perf.end = NaN;
 MAGPIE_SERVER.config = require("./core/config");
-// #endregion
-//------------------------------------------------------------------------
-/**
- * @name Key
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > Key
-//------------------------------------------------------------------------
-MAGPIE.KEY.SERVER = {};
-MAGPIE.KEY.SERVER.DOMAIN = MAGPIE_SERVER.config.domain;
-MAGPIE.KEY.SERVER.PORT = MAGPIE_SERVER.config.port;
-MAGPIE.KEY.SERVER.JWT_SECRET = MAGPIE_SERVER.config.jwtSecret;
-MAGPIE.KEY.SERVER.LOGIN_COOLDOWN = 15;
-MAGPIE.KEY.SERVER.LOGIN_MAX = 5;
-MAGPIE.KEY.SERVER.MESSAGE = {};
-MAGPIE.KEY.SERVER.MESSAGE.BOOT = "BOOT SEQUENCE";
-MAGPIE.KEY.SERVER.MESSAGE.BOOTED = "SERVER ONLINE listening on: ";
-MAGPIE.KEY.SERVER.MESSAGE.STATUS_403 = "Too many requests!";
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -165,12 +160,29 @@ MAGPIE_SYSTEM.log = function log(message, prefix, logToConsole)
 	r.displayPrompt();
 }
 MAGPIE_SERVER.SYS._error = MAGPIE_SYSTEM.error;
-MAGPIE_SYSTEM.error = function error(message)
+/**
+ * 
+ * @param {String} message 
+ * @param {Error} error 
+ */
+MAGPIE_SYSTEM.error = function error(message, error)
 {
-	MAGPIE_SERVER.SYS._error.call(this, message);
+	MAGPIE_SERVER.SYS._error.call(this, message, error);
 	r.displayPrompt();
 }
-MAGPIE_SERVER.SYS._runtime_refreshGuest = MAGPIE_RUNTIME.prototype.refreshGuest;
+MAGPIE_SERVER.SYS._runtime_guestRefresh = MAGPIE_RUNTIME.prototype.guestRefresh;
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Handlers
+//------------------------------------------------------------------------
+MAGPIE_SERVER.SYS._handlersPath = path.join(__dirname, "handlers");
+MAGPIE_SERVER.HANDLER = fs.readdirSync(MAGPIE_SERVER.SYS._handlersPath)
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -181,29 +193,224 @@ MAGPIE_SERVER.SYS._runtime_refreshGuest = MAGPIE_RUNTIME.prototype.refreshGuest;
 //------------------------------------------------------------------------
 // #region > Runtime
 //------------------------------------------------------------------------
-MAGPIE_RUNTIME.prototype.refreshGuest = async function refreshGuest(guest, layerID)
+/**
+ * 
+ * @param {*} guest 
+ * @param {Number} layerID 
+ * @returns 
+ */
+MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layerID)
 {
-	MAGPIE_SERVER.SYS._runtime_refreshGuest.call(this, guest, layerID);
+	MAGPIE_SERVER.SYS._runtime_guestRefresh.call(this, guest, layerID);
 	const system = r.context[guest];
 	if(!system || isNaN(layerID)) return
-	system.refresh(layerID);
+	const pass = system.refresh(layerID)
+	if(!pass) this.kick(guest, layerID);
+}
+MAGPIE_RUNTIME.prototype.loadMetastate = function loadMetastate()
+{
+	const ePrefix = "[RUNTIME].loadMetastate: ";
+	let state = null;
+	try
+	{
+		state = MAGPIE_DATABASE.loadMetastate();
+		if(!(state instanceof MAGPIE_METASTATE)) 
+			throw new Error(`${state} is invalid MAGPIE_METASTATE`)
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+		state = new MAGPIE_METASTATE()
+	}
+	finally
+	{
+		this.host("METASTATE", 0);
+		r.context["METASTATE"] = state;
+	}
+}
+/**
+ * 
+ * @returns 
+ */
+MAGPIE_RUNTIME.prototype.saveMetastate = function saveMetastate()
+{
+	const state = r.context.METASTATE;
+	if(!state) return
+	return MAGPIE_DATABASE.saveMetastate(state);
 }
 // #endregion
 //------------------------------------------------------------------------
 /**
  * @name Hive
  * @desc 
- * 
+ * @typedef {MAGPIE_ENTITY[]} hive_buffer
  */
 //------------------------------------------------------------------------
 // #region > Hive
 //------------------------------------------------------------------------
 /**
- * @typedef {MAGPIE_ENTITY[]} hive_buffer
+ * @typedef {import("./core/index").duration} duration 
+ * @param {Number} layerID
+ * @param {Number} switchID
+ * 
+ * @returns {Promise<Boolean>} 
  */
-MAGPIE_HIVE.prototype.refresh = function refresh()
+MAGPIE_HIVE.prototype.refresh = async function refresh(layerID, switchID)
+{
+	const layerStandard = 2;
+	const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
+	const layerName = K.name;
+	const dt = K.delta;
+	if(layerID < layerStandard)
+		this.tick_buffer(layerName, layerID, switchID, dt);
+	this.tick_remote(layerName, layerID, switchID, dt);
+}
+MAGPIE_HIVE.prototype.tick_buffer = async function tick_buffer(layerName, layerID, switchID, dt)
+{
+	const ePrefix = "[HIVE].tick_buffer: ";
+	for(const entity of this[layerName])
+	{
+		try
+		{
+			const pass = await entity.refresh(layerID, switchID, dt)
+			if(!pass) this.kick(entity.ID, layerID);
+		}
+		catch(e)
+		{
+			MAGPIE_SERVER.error(ePrefix + e.message, e)
+		}
+	}
+}
+MAGPIE_HIVE.prototype.tick_remote = async function tick_remote(layerName, layerID, switchID, dt)
+{
+	const ePrefix = "[HIVE].tick_remote: ";
+	for(const entityID of this[layerName])
+	{
+		try
+		{
+			const entity = await this.loadEntity(entityID);
+			const pass = await entity.refresh(layerID, switchID, dt);
+			if(!pass) this.kick(entityID, layerID);
+		}
+		catch(e)
+		{
+			MAGPIE_SERVER.error(ePrefix + e.message, e)
+		}
+	}
+}
+MAGPIE_HIVE.prototype.setup = function setup()
+{
+	const K = MAGPIE.KEY.RUNTIME.LAYER;
+	const layerBase = K.get(0).name;
+	const layerGame = K.get(1).name;
+	this[layerBase] = new Array(K.get(0).slots).fill(new MAGPIE_ENTITY());
+	this[layerGame] = new Array(K.get(1).slots).fill(new MAGPIE_ENTITY());
+}
+/**
+ * @typedef {import("./core/entity").entityID} entityID
+ * @param {entityID} entityID 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_HIVE.prototype.loadEntitySync = function loadEntitySync(entityID)
+{
+	return MAGPIE_DATABASE.loadEntitySync(entityID);
+}
+/**
+ * 
+ * @param {entityID} entityID 
+ * @returns {Promise<MAGPIE_ENTITY>}
+ */
+MAGPIE_HIVE.prototype.loadEntity = async function loadEntity(entityID)
+{
+	return MAGPIE_DATABASE.loadEntity(entityID)
+}
+/**
+ * @typedef {import("./core/database_worker").database_result} database_result
+ * @param {MAGPIE_ENTITY} entity 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_HIVE.prototype.saveEntity = async function saveEntity(entity)
+{
+	return MAGPIE_DATABASE.saveEntity(entity)
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @returns {database_result}
+ */
+MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
+{
+	return MAGPIE_DATABASE.saveEntitySync(entity);
+}
+/**
+ * 
+ * @param {entityID[]} entityIDarray
+ *  
+ */
+MAGPIE_HIVE.prototype.loadEntities = async function loadEntities(entityIDarray)
 {
 	//
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY[]} entityArray 
+ */
+MAGPIE_HIVE.prototype.saveEntities = async function saveEntities(entityArray)
+{
+	//
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Metastate
+//------------------------------------------------------------------------
+MAGPIE_METASTATE.prototype.TICK_base = async function TICK_base()
+{
+	//
+}
+MAGPIE_METASTATE.prototype.TICK_game = async function TICK_game()
+{
+	//
+}
+MAGPIE_METASTATE.prototype.TICK_standard = async function TICK_standard()
+{
+	//
+}
+MAGPIE_METASTATE.prototype.TICK_super = async function TICK_super()
+{
+	//
+}
+MAGPIE_METASTATE.prototype.TICK_mega = async function TICK_mega()
+{
+	//
+}
+MAGPIE_METASTATE.prototype.TICK_ultra = async function TICK_ultra()
+{
+	//
+}
+MAGPIE_METASTATE.prototype.save = function save()
+{
+	//
+}
+MAGPIE_METASTATE.prototype.load = function load()
+{
+	//
+}
+MAGPIE_METASTATE.prototype._socketEmit = function _socketEmit()
+{
+	const metastate = {
+		meta: this.meta,
+		date: this.date,
+		calendar: this.date.getCalendar(),
+		hive: this.hive,
+		contents: this.contents
+	}
+	io.emit("metastate", metastate);
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -375,7 +582,7 @@ MAGPIE_SERVER.UTILITY.logTime = function logTime()
 // #region > REPL
 //------------------------------------------------------------------------
 MAGPIE_SERVER.context = {};
-MAGPIE_SERVER.registry = require("./core/database");
+
 Object.keys(MAGPIE_SERVER.registry).forEach(k => {
 	MAGPIE_SERVER.context[k] = MAGPIE_SERVER.registry[k];
 })
@@ -406,6 +613,150 @@ const io = new Server(server, {
 	},
 	transports: ["websocket"],
 	allowUpgrades: false
+})
+app.use(express.static("./public"));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+MAGPIE_SERVER.public = {};
+MAGPIE_SERVER.public.loginLimiter = ratelimit.rateLimit({
+	windowMs: MAGPIE.KEY.SERVER.LOGIN_COOLDOWN * 60 * 1000,
+	max: MAGPIE.KEY.SERVER.LOGIN_MAX_ATTEMPTS,
+	handler: (req, res, next, options) => {
+		const http = MAGPIE.KEY.SERVER.HTTP.STATUS_429;
+		const resetTime = req.rateLimit.resetTime;
+		const remainingMs = resetTime - Date.now();
+		const minutes = Math.ceil(remainingMs / (60 * 1000));
+		res.status(http).json({
+			status: http,
+			error: MAGPIE.KEY.SERVER.LOGIN_MAX_ATTEMPTS,
+			message: `Please, wait ${minutes} minute(s) before trying again.`,
+			retryAfter: minutes
+		})
+	},
+	standardHeaders: true, //return rate limit info in the 'RateLimit-*' headers
+	legacyHeaders: false //disable the 'X-RateLimit-*' headers
+})
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Auth
+//------------------------------------------------------------------------
+MAGPIE_SERVER.AUTH = require("./core/auth")
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name Post
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Post
+//------------------------------------------------------------------------
+MAGPIE_SERVER.POST = {};
+app.post("/login", MAGPIE_SERVER.public.loginLimiter, async (req, res) => {
+	const ePrefix = "[APP POST].login: ";
+	const { email, pass } = req.body;
+	try
+	{
+		const badRequest = MAGPIE.KEY.SERVER.HTTP.STATUS_400;
+		const unauthorized = MAGPIE.KEY.SERVER.HTTP.STATUS_401;
+		const forbidden = MAGPIE.KEY.SERVER.HTTP.STATUS_403;
+		const serverError = MAGPIE.KEY.SERVER.HTTP.STATUS_500;
+		if(!email || !pass)
+			return res.status(badRequest).json({
+				error: ePrefix + "Missing credentials"
+			})
+		const player = await MAGPIE_DATABASE.loginPlayer(email, pass);
+		if(!player) return res.status(unauthorized).json({
+			error: ePrefix + "Invalid credentials"
+		})
+		if(player.isFrozen === 1)
+			return res.status(forbidden).json({
+				error: ePrefix + MAGPIE.KEY.SERVER.HTTP.STATUS_403.message
+			})
+		const token = MAGPIE_SERVER.AUTH.signToken(player.ID);
+		return res.status(successful).json( { token });
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+		return res.status(serverError).json({
+			error: ePrefix + "Internal Server Error"
+		})
+	}
+})
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Socket
+//------------------------------------------------------------------------
+MAGPIE_SERVER.SOCKET = {};
+MAGPIE_SERVER.SOCKET.auth_failed = function auth_failed(socketID, errorMessage)
+{
+	const err = new Error(errorMessage);
+	return MAGPIE_SERVER.error(`[AUTH FAILED] [SOCKET-${socketID}] `
+		+ `invalid: ${err.message}`, err);
+}
+MAGPIE_SERVER.SOCKET.auth_dev = function auth_dev(socketID)
+{
+	return MAGPIE_SERVER.log("[AUTH DEV] Dev_mode active: bypassing JWT for "
+		+ `[SOCKET-${socketID}]`
+	)
+}
+io.use((socket, next) => {
+	const token = socket.handshake.auth?.token;
+	const config = MAGPIE.config;
+	const isDev = config.devMode;
+	if(!token) 
+	{
+		socket.data.playerID = isDev ? "999" : "0";
+		return next();
+	}
+	try
+	{
+		const secret = config.jwtSecret || "dev_secret";
+		const payload = MAGPIE_SERVER.JWT.verify(token, secret);
+		socket.data.playerID = String(payload.playerID || payload.guestID || "0");
+		next();
+	}
+	catch(e)
+	{
+		socket.data.playerID = "0";
+		MAGPIE_SERVER.SOCKET.auth_failed(socket.id, e.message);
+		next();
+	}
+})
+io.on("connection", (socket) => {
+	const playerID = String(socket.data.playerID);
+	const ePrefix = `[SOCKET-${socket.id}] [PLAYER-${playerID}]: `;
+	socket.use(([event, ...args], next) => {
+		MAGPIE_SERVER.log(`${ePrefix} ${event} — ${JSON.stringify(args)}`, "console", false);
+		if(socket.data.isFrozen && event !== "chat message")
+		{
+			socket.emit("error_message", "You are frozen!");
+			return
+		}
+		next()
+	})
+	MAGPIE_SERVER.HANDLER.forEach(handler => handler(io, socket));
+	socket.on("disconnect", (reason) => {
+		if(playerID !== 0)
+			MAGPIE_SERVER.log(`${ePrefix} disconnected — ${reason}`, "console", false);
+		socket.watchID = null;
+	})
+	socket.on("error", (err) => {
+		socket.emit("error_message", err.message);
+	})
 })
 // #endregion
 //------------------------------------------------------------------------
@@ -479,6 +830,161 @@ MAGPIE_SERVER.BOOT.logBootTime = function logBootTime()
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Setup
+//------------------------------------------------------------------------
+/**
+ * 
+ */
+MAGPIE_DATABASE.setup = function setup()
+{
+	const ePrefix = "[DATABASE].setup: ";
+	const stamp = "INTEGER NOT NULL";
+	/** @type {Map<String, database_result[]>} */
+	const tables = new Map();
+	try
+	{
+		const logs = this.sync.createServerTable("MAGPIE_LOG", {
+			ID: "INTEGER PRIMARY KEY",
+			gravity: "INTEGER NOT NULL",
+			urgency: "INTEGER NOT NULL"
+		});
+		tables.set("logs", logs);
+		const entities = this.sync.createWorldTable("MAGPIE_ENTITY", {
+			ID: "INTEGER PRIMARY KEY",
+			type: "INTEGER NOT NULL",
+			updated: stamp,
+			saved: stamp,
+			data: "JSON NOT NULL"
+		});
+		tables.set("entities", entities);
+		const events = this.sync.createWorldTable("MAGPIE_EVENT", {
+			ID: "INTEGER PRIMARY KEY",
+			type: "INTEGER NOT NULL",
+			status: "INTEGER NOT NULL",
+			updated: stamp,
+			saved: stamp,
+			data: "JSON NOT NULL"
+		})
+		tables.set("events", events);
+		const keys = this.sync.createWorldTable("MAGPIE_KEY", {
+			ID: "INTEGER PRIMARY KEY",
+			type: "INTEGER NOT NULL",
+			data: "JSON NOT NULL"
+		});
+		tables.set("keys", keys);
+		const metastate = this.sync.createWorldTable("MAGPIE_METASTATE", {
+			key: "TEXT PRIMARY KEY",
+			data: "JSON NOT NULL"
+		});
+		tables.set("metastate", metastate);
+		const players = this.sync.createServerTable("MAGPIE_PLAYER", {
+			ID: "INTEGER PRIMARY KEY",
+			username: "TEXT NOT NULL",
+			email: "TEXT NOT NULL",
+			PASS: "TEXT NOT NULL",
+			isFrozen: stamp,
+			data: "JSON NOT NULL"
+		})
+		tables.set("players", players);
+		const results = Array.from(tables.entries());
+		if(results.every((r) => r[1])) return results
+			throw new Error(`unable to setup [${results.filter(r => !r[1])}]`);
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - PAD
+//========================================================================
+MAGPIE_SERVER.scratchpad = {};
+MAGPIE_SERVER.scratchpad.file = path.join(__dirname, "plugins", "scratchpad.js");
+MAGPIE_SERVER.scratchpad.load = async function load(fileName)
+{
+	const filePath = path.join(__dirname, "plugins", fileName);
+	const prefix = "[SCRATCHPAD].load: ";
+	try
+	{
+		const { content, startMarker, startIndex, endIndex } = MAGPIE_SERVER.scratchpad.read();
+		if(startIndex === -1 || endIndex === -1)
+			return console.log(prefix = "regions not found. Skipping execution");
+		const codeToRun = content
+			.substring(startIndex + startMarker.length, endIndex).trim();
+		if(!codeToRun) 
+		{
+			console.log(prefix + "no code found");
+			return r.displayPrompt() 
+		}
+		const sandbox = {
+			MAGPIE_SERVER,
+			api: MAGPIE_SERVER.api,
+			console,
+			require
+		};
+		vm.createContext(sandbox);
+		await new Promise((resolve) => setTimeout(() => {
+			try
+			{
+				eval(codeToRun);
+				console.log("ok");
+				resolve()
+			}
+			catch(e)
+			{
+				console.error(e);
+			}
+		}, 100));
+		MAGPIE_SYSTEM.PS.playSound(MAGPIE.KEY.WMEDIA.CHORD);
+		const newContent = content.substring(0, startIndex + startMarker.length)
+			+ "\n\n" + content.substring(endIndex);
+		fs.writeFileSync(filePath, newContent);
+		console.log(prefix + `[PUNCH-IN: ${filePath}] executed and cleared`);
+		r.displayPrompt();
+	}
+	catch(e)
+	{
+		console.error(prefix + "error: ", e);
+	}
+}
+MAGPIE_SERVER.scratchpad.read = function read()
+{
+	const filePath = path.join(__dirname, "plugins", "scratchpad.js");
+	const content = fs.readFileSync(filePath, "utf-8");
+	const startMarker = "// #region - Scratchpad";
+	const endMarker = "// #endregion";
+	const startIndex = content.indexOf(startMarker);
+	const endIndex = content.indexOf(endMarker);
+	return { content, startMarker, endMarker, startIndex, endIndex }
+}
+MAGPIE_SERVER.scratchpad.log = function log(input)
+{
+	const prefix = "[SCRATCHPAD].load: ";
+	const filePath = path.join(__dirname, "plugins", "scratchpad.js");
+	fs.appendFileSync(filePath, `\n\n${input}\n`);
+	console.log(prefix + `[PUNCH-OUT: ${filePath}] logged`);
+}
+/**
  * 
  * @desc back to {@link }
  *
@@ -495,10 +1001,7 @@ MAGPIE_SERVER.BOOT.logBootTime = function logBootTime()
 // #region - BOOT
 //========================================================================
 const REPL = require("repl");
-// const r = REPL.start({
-//     prompt: "MAGPIE_SERVER > ",
-//     terminal: true
-// });
+console.clear();
 const r = REPL.start("MAGPIE_SERVER > ")
 console.clear();
 MAGPIE_SERVER.CLI._createLoadBar();
@@ -520,9 +1023,9 @@ MAGPIE_SERVER.BOOT.connect()
 		// MAGPIE_DATABASE.sitrep();
 		MAGPIE_SERVER.RUNTIME.awake();
 		MAGPIE_SERVER.CLI._incrementLoadBar(5);
-		const layers = Array.from(MAGPIE.KEY.RUNTIME.LAYER.keys());
-		MAGPIE_SERVER.RUNTIME.host("MAGPIE_HIVE", layers);
+		MAGPIE_SERVER.RUNTIME.host("HIVE", 0);
 		MAGPIE_SERVER.CLI._incrementLoadBar(5);
+		MAGPIE_SERVER.RUNTIME.loadMetastate();
 		MAGPIE_SERVER.CLI._incrementLoadBar(10);
 		setTimeout(() => {
 			MAGPIE_SERVER.CLI._updateLoadBar(100);
