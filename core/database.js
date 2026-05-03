@@ -147,9 +147,7 @@ MAGPIE_DATABASE.saveEntitySync = function saveEntitySync(entity)
  * 	ID: Number,
  * 	type: Enumerator<Number>,
  * 	data: MAGPIE_ENTITY,
- * 	created: epoch_real,
  * 	updated: epoch_real,
- * 	saved: epoch_real
  * }} entity_payload
  * @param {MAGPIE_ENTITY} entity
  * @returns {entity_payload} 
@@ -161,16 +159,13 @@ MAGPIE_DATABASE.prepareEntity = function prepareEntity(entity)
 	{
 		if(!(entity instanceof MAGPIE_ENTITY))
 			throw new Error(`${entity} is invalid MAGPIE_ENTITY`)
-		const now = this.timestamp();
-		entity.saved = now;
 		const payload = {
 			ID: entity.ID,
 			type: entity.type,
 			data: entity,
-			created: entity.created,
-			updated: entity.updated,
-			saved: now
+			updated: entity.updated
 		}
+		return payload
 	}
 	catch(e)
 	{
@@ -259,9 +254,7 @@ MAGPIE_DATABASE.savePlayerSync = function savePlayerSync(player)
  *  username: username,
  * 	email: email,
  * 	PASS: encrypted_password,
- * 	created: epoch_real,
  * 	updated: epoch_real,
- * 	saved: epoch_real,
  * 	isFrozen: binary_bool
  * }} player_payload
  * @param {MAGPIE_PLAYER} player
@@ -281,9 +274,6 @@ MAGPIE_DATABASE.preparePlayer = function preparePlayer(player)
 			username: player.username,
 			email: player.email,
 			PASS: player.PASS,
-			created: player.created,
-			updated: player.updated,
-			saved: now,
 			isFrozen: player.isFrozen ? 1 : 0
 		}
 	}

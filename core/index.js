@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.20.5
+ * @version 0.20.6
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,11 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.20.6 2026 05 03
+ * - TWEAKED: MAGPIE_ENTITY restructured for efficiency
+ * - TWEAKED: reviver/replacer "@" swapped for "_firmware"
+ * - FIXED: DATABASE prepareEntity not working due to lacking a return
  * 
  * @version 0.20.5 2026 05 02
  * - ADDED: METASTATE clock back online
@@ -554,7 +559,7 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_429 = {
 // #region > Entity
 //------------------------------------------------------------------------
 MAGPIE.KEY.ENTITY = {};
-MAGPIE.KEY.ENTITY.TYPE = require("../data/entity_types");
+MAGPIE.KEY.ENTITY.TYPE = require("../data/entity_types")
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -570,6 +575,7 @@ MAGPIE.KEY.PHYSICS = {};
 /**
  * @typedef {Number} duration in s
  * @typedef {Number} distance in m
+ * @typedef {Number} volume in L
  * @typedef {Number} mass in kg
  * @typedef {Number} velocity in m/s
  * @typedef {Number} acceleration m/s²
@@ -597,7 +603,9 @@ MAGPIE.KEY.PHYSICS = {};
  * @typedef {Number} ratio variable * ratio<0 to 1>
  * @typedef {Number} coefficient variable * coefficient
  * @typedef {Number} percentage %
- * @typedef {Number} density atmospheric density = kg/m³ 
+ * @typedef {Number} density kg/L
+ * @typedef {Number} atmo_density atmospheric density = kg/m³ 
+ * @typedef {Number} epoch_real_s time in s since epoch J2000
  */
 MAGPIE.KEY.PHYSICS.meta = {};
 /**
@@ -755,9 +763,8 @@ MAGPIE.KEY.ORBIT = {};
  * raan: angle_rad, 
  * aop: angle_rad,
  * nu: angle_rad,
- * epoch: duration,
- * M0: angle_rad,
- * entityID: Number
+ * T0: duration,
+ * M0: angle_rad
  * }} orbit_data
  */
 MAGPIE.KEY.ORBIT.meta = {};
@@ -799,14 +806,51 @@ MAGPIE.KEY.ORBIT.ARRAY = MAGPIE.KEY.ORBIT.E_ID + 1;
  * component of {@link MAGPIE_ENTITY} 
  * sister of {@link MAGPIE.KEY.ORBIT}
  * @desc Indices for the {@link MAGPIE_ENTITY}.POVART array
+ * @property {vector3[0]} P_X
+ * @property {vector3[1]} P_Y
+ * @property {vector3[2]} P_Z
+ * @property {entityID} P_C
+ * @property {orbit_data[0]} P_O_A
+ * @property {orbit_data[1]} P_O_E
+ * @property {orbit_data[2]} P_O_I
+ * @property {orbit_data[3]} P_O_RAAN
+ * @property {orbit_data[4]} P_O_AOP
+ * @property {orbit_data[5]} P_O_NU
+ * @property {orbit_data[6]} P_O_T0
+ * @property {orbit_data[7]} P_O_M0
+ * @property {rotor[0]} O_YZ
+ * @property {rotor[1]} O_XZ
+ * @property {rotor[2]} O_XY
+ * @property {rotor[3]} O_W
+ * @property {vector3[0]} V_X
+ * @property {vector3[1]} V_Y
+ * @property {vector3[2]} V_Z
+ * @property {vector3[0]} A_X
+ * @property {vector3[1]} A_Y
+ * @property {vector3[2]} A_Z
+ * @property {bivector[0]} R_YZ
+ * @property {bivector[1]} R_XZ
+ * @property {bivector[2]} R_XY
+ * @property {bivector[0]} T_YZ
+ * @property {bivector[1]} T_XZ
+ * @property {bivector[2]} T_XY
+ * @property {entityID} E_ID
  * 
  */
-MAGPIE.KEY.PHYSICS.POVART = {};
+MAGPIE.KEY.POVART = {};
 /**
  * @typedef {Number} P_X position x
  * @typedef {Number} P_Y position y
  * @typedef {Number} P_Z position z
  * @typedef {Number} P_C parent celestial body ID
+ * @typedef {distance} P_O_A {@link MAGPIE.KEY.ORBIT.A} in m
+ * @typedef {ratio} P_O_E {@link MAGPIE.KEY.ORBIT.E} 0 to 1
+ * @typedef {angle_rad} P_O_I {@link MAGPIE.KEY.ORBIT.I} in rad
+ * @typedef {angle_rad} P_O_RAAN {@link MAGPIE.KEY.ORBIT.RAAN} in rad
+ * @typedef {angle_rad} P_O_AOP {@link MAGPIE.KEY.ORBIT.AOP} in rad
+ * @typedef {angle_rad} P_O_NU {@link MAGPIE.KEY.ORBIT.NU} in rad
+ * @typedef {epoch_real_s} P_O_T0 {@link MAGPIE.KEY.ORBIT.T0} in s
+ * @typedef {angle_rad} P_O_M0 {@link MAGPIE.KEY.ORBIT.M0} in rad
  * @typedef {Number} O_YZ orientation rotor YZ
  * @typedef {Number} O_XZ orientation rotor XZ
  * @typedef {Number} O_XY orientation rotor XY
@@ -824,61 +868,78 @@ MAGPIE.KEY.PHYSICS.POVART = {};
  * @typedef {Number} T_XZ torque bivector XZ
  * @typedef {Number} T_XY torque bivector XY
  * @typedef {Number} E_ID entity ID
+ * @typedef {Number[]} orbit [a,e,i,raan,aop,nu,T0,M0]
  */
-MAGPIE.KEY.PHYSICS.POVART.meta = {};
+MAGPIE.KEY.POVART.meta = {};
 /** @type {index} position x */
-MAGPIE.KEY.PHYSICS.POVART.P_X = 0;
+MAGPIE.KEY.POVART.P_X = 0;
 /** @type {index} position y */
-MAGPIE.KEY.PHYSICS.POVART.P_Y = MAGPIE.KEY.PHYSICS.POVART.P_X + 1;
+MAGPIE.KEY.POVART.P_Y = MAGPIE.KEY.POVART.P_X + 1;
 /** @type {index} position z */
-MAGPIE.KEY.PHYSICS.POVART.P_Z = MAGPIE.KEY.PHYSICS.POVART.P_Y + 1;
+MAGPIE.KEY.POVART.P_Z = MAGPIE.KEY.POVART.P_Y + 1;
 /** @type {index} parent celestial body ID */
-MAGPIE.KEY.PHYSICS.POVART.P_C = MAGPIE.KEY.PHYSICS.POVART.P_Z + 1;
+MAGPIE.KEY.POVART.P_C = MAGPIE.KEY.POVART.P_Z + 1;
+/** @type {index} @desc {@link MAGPIE.KEY.ORBIT.A} */
+MAGPIE.KEY.POVART.P_O_A = MAGPIE.KEY.POVART.P_C + 1;
+/** @type {index} @desc {@link MAGPIE.KEY.ORBIT.E} */
+MAGPIE.KEY.POVART.P_O_E = MAGPIE.KEY.POVART.P_O_A + 1;
+/** @type {index} @desc {@link MAGPIE.KEY.ORBIT.I} */
+MAGPIE.KEY.POVART.P_O_I = MAGPIE.KEY.POVART.P_O_E + 1;
+/** @type {index} @desc {@link MAGPIE.KEY.ORBIT.RAAN} */
+MAGPIE.KEY.POVART.P_O_RAAN = MAGPIE.KEY.POVART.P_O_I + 1;
+/** @type {index} @desc {@link MAGPIE.KEY.ORBIT.AOP} */
+MAGPIE.KEY.POVART.P_O_AOP = MAGPIE.KEY.POVART.P_O_RAAN + 1;
+/** @type {index} @desc {@link MAGPIE.KEY.ORBIT.NU} */
+MAGPIE.KEY.POVART.P_O_NU = MAGPIE.KEY.POVART.P_O_AOP + 1;
+/** @type {index} @desc {@link MAGPIE.KEY.ORBIT.T0} */
+MAGPIE.KEY.POVART.P_O_T0 = MAGPIE.KEY.POVART.P_O_NU + 1;
+/** @type {index} @desc {@link MAGPIE.KEY.ORBIT.M0} */
+MAGPIE.KEY.POVART.P_O_M0 = MAGPIE.KEY.POVART.P_O_T0 + 1;
 /** @type {index} orientation rotor YZ */
-MAGPIE.KEY.PHYSICS.POVART.O_YZ = MAGPIE.KEY.PHYSICS.POVART.P_C + 1;
+MAGPIE.KEY.POVART.O_YZ = MAGPIE.KEY.POVART.P_O_M0 + 1;
 /** @type {index} orientation rotor XZ */
-MAGPIE.KEY.PHYSICS.POVART.O_XZ = MAGPIE.KEY.PHYSICS.POVART.O_YZ + 1;
+MAGPIE.KEY.POVART.O_XZ = MAGPIE.KEY.POVART.O_YZ + 1;
 /** @type {index} orientation rotor XY */
-MAGPIE.KEY.PHYSICS.POVART.O_XY = MAGPIE.KEY.PHYSICS.POVART.O_XZ + 1;
+MAGPIE.KEY.POVART.O_XY = MAGPIE.KEY.POVART.O_XZ + 1;
 /** @type {index} orientation rotor scalar */
-MAGPIE.KEY.PHYSICS.POVART.O_W = MAGPIE.KEY.PHYSICS.POVART.O_XY + 1;
+MAGPIE.KEY.POVART.O_W = MAGPIE.KEY.POVART.O_XY + 1;
 /** @type {index} velocity x */
-MAGPIE.KEY.PHYSICS.POVART.V_X = MAGPIE.KEY.PHYSICS.POVART.O_W + 1;
+MAGPIE.KEY.POVART.V_X = MAGPIE.KEY.POVART.O_W + 1;
 /** @type {index} velocity y */
-MAGPIE.KEY.PHYSICS.POVART.V_Y = MAGPIE.KEY.PHYSICS.POVART.V_X + 1;
+MAGPIE.KEY.POVART.V_Y = MAGPIE.KEY.POVART.V_X + 1;
 /** @type {index} velocity z */
-MAGPIE.KEY.PHYSICS.POVART.V_Z = MAGPIE.KEY.PHYSICS.POVART.V_Y + 1;
+MAGPIE.KEY.POVART.V_Z = MAGPIE.KEY.POVART.V_Y + 1;
 /** @type {index} acceleration x */
-MAGPIE.KEY.PHYSICS.POVART.A_X = MAGPIE.KEY.PHYSICS.POVART.V_Z + 1;
+MAGPIE.KEY.POVART.A_X = MAGPIE.KEY.POVART.V_Z + 1;
 /** @type {index} acceleration y */
-MAGPIE.KEY.PHYSICS.POVART.A_Y = MAGPIE.KEY.PHYSICS.POVART.A_X + 1;
+MAGPIE.KEY.POVART.A_Y = MAGPIE.KEY.POVART.A_X + 1;
 /** @type {index} acceleration z */
-MAGPIE.KEY.PHYSICS.POVART.A_Z = MAGPIE.KEY.PHYSICS.POVART.A_Y + 1;
+MAGPIE.KEY.POVART.A_Z = MAGPIE.KEY.POVART.A_Y + 1;
 /** @type {index} rotation bivector yz */
-MAGPIE.KEY.PHYSICS.POVART.R_YZ = MAGPIE.KEY.PHYSICS.POVART.A_Z + 1;
+MAGPIE.KEY.POVART.R_YZ = MAGPIE.KEY.POVART.A_Z + 1;
 /** @type {index} rotation bivector xz */
-MAGPIE.KEY.PHYSICS.POVART.R_XZ = MAGPIE.KEY.PHYSICS.POVART.R_YZ + 1;
+MAGPIE.KEY.POVART.R_XZ = MAGPIE.KEY.POVART.R_YZ + 1;
 /** @type {index} rotation bivector xy */
-MAGPIE.KEY.PHYSICS.POVART.R_XY = MAGPIE.KEY.PHYSICS.POVART.R_XZ + 1;
+MAGPIE.KEY.POVART.R_XY = MAGPIE.KEY.POVART.R_XZ + 1;
 /** @type {index} torque bivector yz */
-MAGPIE.KEY.PHYSICS.POVART.T_YZ = MAGPIE.KEY.PHYSICS.POVART.R_XY + 1;
+MAGPIE.KEY.POVART.T_YZ = MAGPIE.KEY.POVART.R_XY + 1;
 /** @type {index} torque bivector xz */
-MAGPIE.KEY.PHYSICS.POVART.T_XZ = MAGPIE.KEY.PHYSICS.POVART.T_YZ + 1;
+MAGPIE.KEY.POVART.T_XZ = MAGPIE.KEY.POVART.T_YZ + 1;
 /** @type {index} torque bivector xy */
-MAGPIE.KEY.PHYSICS.POVART.T_XY = MAGPIE.KEY.PHYSICS.POVART.T_XZ + 1;
+MAGPIE.KEY.POVART.T_XY = MAGPIE.KEY.POVART.T_XZ + 1;
 /** @type {index} entity's ID */
-MAGPIE.KEY.PHYSICS.POVART.E_ID = MAGPIE.KEY.PHYSICS.POVART.T_XY + 1;
+MAGPIE.KEY.POVART.E_ID = MAGPIE.KEY.POVART.T_XY + 1;
 /** @type {Enumerator<Number>} */
-MAGPIE.KEY.PHYSICS.POVART.ARRAY = MAGPIE.KEY.PHYSICS.POVART.E_ID + 1;
+MAGPIE.KEY.POVART.ARRAY = MAGPIE.KEY.POVART.E_ID + 1;
 /** @type {vector3} entity's default 'forward' vector [x,y,z] */
-MAGPIE.KEY.PHYSICS.POVART.FWD = [0,1,0];
+MAGPIE.KEY.POVART.FWD = [0,1,0];
 /** @type {vector3} default 'up' vector [x,y,z] */
-MAGPIE.KEY.PHYSICS.POVART.UP = [0,0,1];
+MAGPIE.KEY.POVART.UP = [0,0,1];
 // #endregion
 //------------------------------------------------------------------------
 /**
- * @component of {@link MAGPIE_ENTITY}
- * @sister of {@link MAGPIE.KEY.PHYSICS.POVART}
+ * component of {@link MAGPIE_ENTITY}
+ * sister of {@link MAGPIE.KEY.PHYSICS.POVART}
  * 
  * 
  * 
@@ -901,6 +962,46 @@ MAGPIE.KEY.STATS = {};
  * @typedef {STAT} DEX dexterity aka MDF
  * @typedef {STAT} RT reaction time aka AGI
  * @typedef {STAT} EVO evolution aka LUK
+ * @typedef {{
+ * FIT: FIT,
+ * END: END,
+ * PWR: PWR,
+ * MASS: MASS,
+ * SEN: SEN,
+ * DEX: DEX,
+ * RT: RT,
+ * EVO: EVO,
+ * G_R: Number,
+ * G_I: Number,
+ * INERT_X: Number,
+ * INERT_Y: Number,
+ * INERT_Z: Number,
+ * TMAX_X: Number,
+ * TMAX_Y: Number,
+ * TMAX_Z: Number,
+ * FB: coefficient,
+ * CM: coefficient,
+ * MASSKG: mass,
+ * DENSITY: density,
+ * LENGTH: distance,
+ * HEIGHT: distance,
+ * WIDTH: distance,
+ * VOLUME: volume,
+ * FT: force,
+ * VMAX: velocity,
+ * AMAX: velocity,
+ * BMAX: velocity,
+ * GMAX: acceleration,
+ * CF: coefficient,
+ * CL: coefficient,
+ * CD: coefficient,
+ * COM_X: distance,
+ * COM_Y: distance,
+ * COM_Z: distance
+ * COL_X: distance,
+ * COL_Y: distance,
+ * COL_Z: distance
+ * }} key_stats
  */
 MAGPIE.KEY.STATS.meta = {};
 /** @type {index} Fitness aka totalDeckSize */
@@ -968,11 +1069,19 @@ MAGPIE.KEY.STATS.CL = MAGPIE.KEY.STATS.CF + 1;
 /** @type {index} Coefficient of drag*/
 MAGPIE.KEY.STATS.CD = MAGPIE.KEY.STATS.CL + 1;
 /** @type {index} Center of Mass*/
-MAGPIE.KEY.STATS.COM = MAGPIE.KEY.STATS.CD + 1;
+MAGPIE.KEY.STATS.COM_X = MAGPIE.KEY.STATS.CD + 1;
+/** @type {index} Center of Mass*/
+MAGPIE.KEY.STATS.COM_Y = MAGPIE.KEY.STATS.COM_X + 1;
+/** @type {index} Center of Mass*/
+MAGPIE.KEY.STATS.COM_Z = MAGPIE.KEY.STATS.COM_Y + 1;
 /** @type {index} Center of lift*/
-MAGPIE.KEY.STATS.COL = MAGPIE.KEY.STATS.COM + 1;
+MAGPIE.KEY.STATS.COL_X = MAGPIE.KEY.STATS.COM_Z + 1;
+/** @type {index} Center of lift*/
+MAGPIE.KEY.STATS.COL_Y = MAGPIE.KEY.STATS.COL_X + 1;
+/** @type {index} Center of lift*/
+MAGPIE.KEY.STATS.COL_Z = MAGPIE.KEY.STATS.COL_Y + 1;
 /** @type {Enumerator<Number>} */
-MAGPIE.KEY.STATS.ARRAY = MAGPIE.KEY.STATS.COL + 1;
+MAGPIE.KEY.STATS.ARRAY = MAGPIE.KEY.STATS.COL_Z + 1;
 /** @desc max stretch for {@link MAGPIE_ENTITY.growth} */
 //
 MAGPIE.KEY.STATS.TOLERANCE_BASE = 0.5;
@@ -1081,8 +1190,6 @@ MAGPIE.KEY.STATE.meta.schema = [
 		"onExpire"
 	]
 MAGPIE.KEY.STATE.TYPE = {};
-MAGPIE.KEY.STATE.TYPE = require("../data/states").TYPE;
-MAGPIE.KEY.STATE.INDEX = require("../data/states").INDEX;
 //#endregion
 //------------------------------------------------------------------------
 /**

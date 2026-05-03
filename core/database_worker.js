@@ -168,9 +168,9 @@ worker.replacer = function replacer(key, value)
 {
 	const type = Object.prototype.toString.call(value);
 	if(type === "[object Float64Array]")
-		return {"@": "Float64Array", data: Array.from(value)}
+		return {"_firmware": "Float64Array", data: Array.from(value)}
 	if(type === "[object Map]")
-		return {"@": "Map", data: Array.from(value.entries())}
+		return {"_firmware": "Map", data: Array.from(value.entries())}
 	return value
 }
 /**
@@ -182,7 +182,7 @@ worker.replacer = function replacer(key, value)
 worker.reviver = function reviver(key, value)
 {
 	if(value === null || typeof value !== "object") return value;
-	const typeTag = value["@"];
+	const typeTag = value["_firmware"];
 	if(!typeTag) return value;
 	if(typeTag === "Float64Array") return new Float64Array(value.data);
 	if(typeTag === "Map") return new Map(value.data);

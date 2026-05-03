@@ -1,4 +1,4 @@
-// const { MAGPIE, MAGPIE_STATE } = require("../SERVER");
+const { MAGPIE } = require("../core/index");
 /** 
  * @type {Enumerator<Number>} 
  * @typedef {{
@@ -65,7 +65,6 @@ const states = [
 			const ePrefix = "[SEEKING_TARGET].onUpdate: ";
 			try
 			{
-				const { MAGPIE } = require("../SERVER")
 				if(exp?.keys || exp?.targetPOVART) 
 					throw new Error(`${exp} is invalid MAGPIE_EXP`);
 				if(!exp.keys.find(key => key === MAGPIE.KEY.INDEX.TARGET))
@@ -108,7 +107,6 @@ const states = [
 		stack: 1,
 		onApply: () => {},
 		onUpdate: (exp, entity) => {
-			const { MAGPIE } = require("../SERVER");
 			if(!exp.keys.find(key => key === MAGPIE.KEY.INDEX.TARGET))
 				return console.log(`state302: skip`)
 			const purge = true;

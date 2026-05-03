@@ -83,7 +83,7 @@ function MAGPIE_CALENDAR(data)
  * second: Number,
  * millisecond: Number,
  * epoch: Number,
- * "@": "MAGPIE_DATE"
+ * _firmware: "MAGPIE_DATE"
  * }}
  * 
  * @property {number} calendar - description
@@ -684,7 +684,7 @@ MAGPIE_METASTATE.prototype.initialize = function initialize(data)
 	this.date = new MAGPIE_DATE(data?.date);
 	this.hive = new Map();
 	this.contents = {};
-	this["@"] = this.constructor.name;
+	this._firmware = this.constructor.name;
 	this.setup();
 }
 MAGPIE_METASTATE.prototype.setup = async function setup()
@@ -904,7 +904,7 @@ MAGPIE_DATE.prototype.initialize = function initialize(date, options)
 	this.millisecond = date?.millisecond || real.getUTCMilliseconds();
 	this.epoch = Number(date?.epoch) || this.getEpoch();
 	this._yearday = Number(this.yearday())
-	this["@"] = "MAGPIE_DATE";
+	this._firmware = "MAGPIE_DATE";
 }
 /**
  * 
@@ -1414,7 +1414,7 @@ MAGPIE_RUNTIME.__guestRefresh = MAGPIE_RUNTIME.prototype.guestRefresh;
 //------------------------------------------------------------------------
 /**
  * @name metastate
- * @desc 
+ * @desc {@link MAGPIE_SERVER.SYS._runtime_loadMetastate}
  * 
  */
 //------------------------------------------------------------------------
@@ -1424,6 +1424,7 @@ MAGPIE_RUNTIME.prototype.loadMetastate = function loadMetastate()
 {
 	//
 }
+MAGPIE_RUNTIME._loadMetastate = MAGPIE_RUNTIME.prototype.loadMetastate;
 // #endregion
 //------------------------------------------------------------------------
 /**

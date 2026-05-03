@@ -35,7 +35,8 @@ const {
 	MAGPIE_IO,
 	MAGPIE_HIVE,
 	MAGPIE_RUNTIME,
-	MAGPIE_METASTATE
+	MAGPIE_METASTATE,
+	MAGPIE_DATE
 } = SYSTEM;
 // const { MAGPIE_SYSTEM } = SYSTEM;
 // const { MAGPIE_RUNTIME } = SYSTEM;
@@ -64,6 +65,7 @@ MAGPIE_SERVER.perf = {};
 MAGPIE_SERVER.perf.start = performance.now();
 MAGPIE_SERVER.perf.end = NaN;
 MAGPIE_SERVER.config = require("./core/config");
+const STATE = require("./data/states");
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -126,6 +128,24 @@ const cliProgress = require("cli-progress");
  */
 //========================================================================
 // #endregion - IMPORT
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - KEY
+//========================================================================
+MAGPIE.KEY.STATE.TYPE = STATE.TYPE;
+MAGPIE.KEY.STATE.INDEX = STATE.INDEX;
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
 //========================================================================
 /**
  * @name MAGPIE_SERVER
@@ -212,6 +232,8 @@ MAGPIE_SERVER.HANDLER = fs.readdirSync(MAGPIE_SERVER.SYS._handlersPath)
  * @param {Number} layerID 
  * @param {Number} switchID
  * @returns 
+ * 
+ * @desc {@link }
  */
 MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layerID, switchID)
 {
@@ -221,6 +243,7 @@ MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layer
 	if(!pass) this.kick(guest, layerID);
 }
 MAGPIE_SERVER.SYS._runtime_guestRefresh = MAGPIE_RUNTIME.__guestRefresh;
+MAGPIE_SERVER.SYS._runtime_loadMetastate = MAGPIE_RUNTIME._loadMetastate;
 MAGPIE_RUNTIME.prototype.loadMetastate = function loadMetastate()
 {
 	const ePrefix = "[RUNTIME].loadMetastate: ";
@@ -230,6 +253,8 @@ MAGPIE_RUNTIME.prototype.loadMetastate = function loadMetastate()
 		state = MAGPIE_DATABASE.loadMetastate();
 		if(!(state instanceof MAGPIE_METASTATE)) 
 			throw new Error(`${state} is invalid MAGPIE_METASTATE`)
+		if(!(state.date instanceof MAGPIE_DATE))
+			state.date = new MAGPIE_DATE()
 	}
 	catch(e)
 	{
@@ -242,6 +267,7 @@ MAGPIE_RUNTIME.prototype.loadMetastate = function loadMetastate()
 		r.context["METASTATE"] = state;
 	}
 }
+
 /**
  * 
  * @returns 
@@ -937,52 +963,54 @@ MAGPIE_SERVER.BOOT.logBootTime = function logBootTime()
 MAGPIE_DATABASE.setup = function setup()
 {
 	const ePrefix = "[DATABASE].setup: ";
-	const stamp = "INTEGER NOT NULL";
+	const integer = "INTEGER NOT NULL";
+	const integerKey = "INTEGER PRIMARY KEY";
+	const blob = "JSON NOT NULL";
+	const text = "TEXT NOT NULL";
+	const textKey = "TEXT PRIMARY KEY";
 	/** @type {Map<String, database_result[]>} */
 	const tables = new Map();
 	try
 	{
 		const logs = this.sync.createServerTable("MAGPIE_LOG", {
-			ID: "INTEGER PRIMARY KEY",
-			gravity: "INTEGER NOT NULL",
-			urgency: "INTEGER NOT NULL"
+			ID: integerKey,
+			gravity: integer,
+			urgency: integer
 		});
 		tables.set("logs", logs);
 		const entities = this.sync.createWorldTable("MAGPIE_ENTITY", {
-			ID: "INTEGER PRIMARY KEY",
-			type: "INTEGER NOT NULL",
-			updated: stamp,
-			saved: stamp,
-			data: "JSON NOT NULL"
+			ID: integerKey,
+			type: integer,
+			updated: integer,
+			data: blob
 		});
 		tables.set("entities", entities);
 		const events = this.sync.createWorldTable("MAGPIE_EVENT", {
-			ID: "INTEGER PRIMARY KEY",
-			type: "INTEGER NOT NULL",
-			status: "INTEGER NOT NULL",
-			updated: stamp,
-			saved: stamp,
-			data: "JSON NOT NULL"
+			ID: integerKey,
+			type: integer,
+			status: integer,
+			updated: integer,
+			data: blob
 		})
 		tables.set("events", events);
 		const keys = this.sync.createWorldTable("MAGPIE_KEY", {
-			ID: "INTEGER PRIMARY KEY",
-			type: "INTEGER NOT NULL",
-			data: "JSON NOT NULL"
+			ID: integerKey,
+			type: integer,
+			data: blob
 		});
 		tables.set("keys", keys);
 		const metastate = this.sync.createWorldTable("MAGPIE_METASTATE", {
-			key: "TEXT PRIMARY KEY",
-			data: "JSON NOT NULL"
+			key: textKey,
+			data: blob
 		});
 		tables.set("metastate", metastate);
 		const players = this.sync.createServerTable("MAGPIE_PLAYER", {
-			ID: "INTEGER PRIMARY KEY",
-			username: "TEXT NOT NULL",
-			email: "TEXT NOT NULL",
-			PASS: "TEXT NOT NULL",
-			isFrozen: stamp,
-			data: "JSON NOT NULL"
+			ID: integerKey,
+			username: text,
+			email: text,
+			PASS: text,
+			isFrozen: integer,
+			data: blob
 		})
 		tables.set("players", players);
 		const results = Array.from(tables.entries());
@@ -1104,10 +1132,12 @@ MAGPIE_SERVER.RUNTIME = new MAGPIE_RUNTIME();
 MAGPIE_SERVER.DATABASE = MAGPIE_DATABASE;
 MAGPIE_SERVER.HIVE = new MAGPIE_HIVE();
 MAGPIE_SERVER.HIVE.setup();
+MAGPIE_SERVER.CLI._incrementLoadBar(5);
 r.context.SERVER = MAGPIE_SERVER;
 r.context.RUNTIME = MAGPIE_SERVER.RUNTIME;
 r.context.HIVE = MAGPIE_SERVER.HIVE;
 r.context.DATABASE = MAGPIE_SERVER.DATABASE;
+r.context.PHYSICS = MAGPIE_PHYSICS;
 MAGPIE_SERVER.CLI._updateLoadBar(20);
 r.context.io = io;
 MAGPIE_SERVER.BOOT.connect()
@@ -1124,7 +1154,7 @@ MAGPIE_SERVER.BOOT.connect()
 		MAGPIE_SERVER.CLI._updateLoadBar(100);
 		MAGPIE_SERVER.CLI._stop();
 		setTimeout(() => {
-			console.clear();
+			// console.clear();
 			MAGPIE_SERVER.BOOT.logBootTime();
 			r.displayPrompt();
 			}, 100);
