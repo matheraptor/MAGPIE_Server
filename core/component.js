@@ -6,6 +6,7 @@
 //========================================================================
 // #region - INDEX
 //========================================================================
+const { MAGPIE } = require("./index");
 function MAGPIE_COMPONENT(data)
 {
     this.initialize(data);
@@ -19,10 +20,23 @@ function MAGPIE_STATE(data)
  * @param {exp_data} data 
  * @returns {new MAGPIE_EXP}
  */
-function MAGPIE_EXP(data)
+function MAGPIE_EXP(data = {})
 {
     this.initialize(data)
 }
+/**
+ * 
+ * @param {{
+ * ID: Number,
+ * name: String,
+ * type: Enumerator<Number>,
+ * description,
+ * condition: (...args) => Boolean,
+ * onAction: Function,
+ * onPassive: Function
+ * }} data 
+ * @returns {new MAGPIE_EMOTE}
+ */
 function MAGPIE_EMOTE(data)
 {
     this.initialize(data)
@@ -87,14 +101,30 @@ MAGPIE_STATE.prototype.initialize = function initialize(data)
 /**
  * @name 
  * @desc 
+ * @param {exp_data} data
+ * @returns {new MAGPIE_EXP}
  * 
+ * @typedef {{
+ * subject: entityID,
+ * target: entityID,
+ * emoteID: emoteID,
+ * keys: keyID[]
+ * }} exp_data
+ * @typedef {import(".").keyID} keyID
+ * @typedef {Number} emoteID
+ * @typedef {import("./entity").entityID} entityID
  */
 //------------------------------------------------------------------------
 // #region > exp
 //------------------------------------------------------------------------
 MAGPIE_EXP.prototype.initialize = function initialize(data)
 {
-    //
+    this._firmware = "MAGPIE_EXP";
+    this.ID = Date.now();
+    this.subject = data?.subject || NaN;
+    this.target = data?.target || NaN;
+    this.emoteID = data?.emoteID || NaN;
+    this.keys = data?.keys || [];
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -106,7 +136,48 @@ MAGPIE_EXP.prototype.initialize = function initialize(data)
 //------------------------------------------------------------------------
 // #region > emote
 //------------------------------------------------------------------------
+MAGPIE_EMOTE.meta = {};
+MAGPIE_EMOTE.INDEX = new Map();
+MAGPIE_EMOTE.setup = function()
+{
+    const data = require("../data/emotes");
+    for(const emote_data of data)
+    {
+        MAGPIE_EMOTE.INDEX.set(emote_data.ID, new MAGPIE_EMOTE(emote_data))
+    }
+}
+/**
+ * 
+ * @param {{
+ * ID: Number,
+ * name: String,
+ * type: Enumerator<Number>,
+ * description,
+ * condition: (...args) => Boolean,
+ * onAction: Function,
+ * onPassive: Function
+ * }} data 
+ * @returns {new MAGPIE_EMOTE}
+ */
 MAGPIE_EMOTE.prototype.initialize = function initialize(data)
+{
+    this.ID = data.ID;
+    this.name = data.name;
+    this.type = data.type;
+    this.description = data.description;
+    this.condition = data.condition;
+    this.onAction = data.onAction;
+    this.onPassive = data.onPassive;
+}
+MAGPIE_EMOTE.prototype.condition = function condition(...args)
+{
+    return true
+}
+MAGPIE_EMOTE.prototype.onAction = function onAction(...args)
+{
+    // 
+}
+MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
 {
     //
 }

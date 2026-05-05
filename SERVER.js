@@ -259,7 +259,7 @@ MAGPIE_RUNTIME.prototype.loadMetastate = function loadMetastate()
 	catch(e)
 	{
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
-		state = new MAGPIE_METASTATE()
+		state = new MAGPIE_METASTATE();
 	}
 	finally
 	{
@@ -321,9 +321,10 @@ MAGPIE_HIVE.prototype.tick_buffer = async function tick_buffer(layerName, layerI
 		try
 		{
 			const slot = i;
+			/** @type {MAGPIE_ENTITY} */
 			const entity = this.getSlot(slot, layerID)
 			if(!entity) return
-			const pass = await entity.refresh(layerID, switchID, dt)
+			const pass = await entity.refresh(switchID, dt)
 			if(!pass) this.kick(entity.ID, layerID);
 		}
 		catch(e)
@@ -333,9 +334,10 @@ MAGPIE_HIVE.prototype.tick_buffer = async function tick_buffer(layerName, layerI
 	}
 }
 /**
- * 
+ * @desc {@link MAGPIE_HIVE.__getSlot}
  * @param {Number} slot 
  * @param {Number} layerID 
+ * @returns {MAGPIE_ENTITY}
  */
 MAGPIE_HIVE.prototype.getSlot = function getSlot(slot, layerID)
 {
@@ -397,21 +399,57 @@ MAGPIE_HIVE.prototype.kick = function kick(entityID)
 	const ePrefix = "[HIVE].kick: ";
 	try
 	{
-		MAGPIE_HIVE.__kick.call(this, entityID)
+		const layerRecord = MAGPIE_HIVE.__kick.call(this, entityID);
+		this[layerRecord.name][layerRecord.nextSlot] = new MAGPIE_ENTITY();
 	}
 	catch(e)
 	{
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 	}
 }
-MAGPIE_SERVER.SYS._hive_setup = MAGPIE_HIVE.__setup;
-MAGPIE_HIVE.prototype.setup = function setup2()
+MAGPIE_HIVE.prototype.setup = function setup()
 {
 	const K = MAGPIE.KEY.RUNTIME.LAYER;
 	const layerBase = K.get(0).name;
 	const layerGame = K.get(1).name;
+	const layerStandard = K.get(2).name;
+	const layerSuper = K.get(3).name;
+	const layerMega = K.get(4).name;
+	const layerUltra = K.get(5).name;
 	this[layerBase] = new Array(K.get(0).slots).fill(new MAGPIE_ENTITY());
 	this[layerGame] = new Array(K.get(1).slots).fill(new MAGPIE_ENTITY());
+	this._registry.set(0, {name: layerBase, 	nextSlot: 0});
+	this._registry.set(1, {name: layerGame, 	nextSlot: 0});
+	this._registry.set(2, {name: layerStandard, nextSlot: 0});
+	this._registry.set(3, {name: layerSuper, 	nextSlot: 0});
+	this._registry.set(4, {name: layerMega, 	nextSlot: 0});
+	this._registry.set(5, {name: layerUltra, 	nextSlot: 0});
+	return true
+}
+/**
+ * 
+ * 
+ */
+MAGPIE_HIVE.prototype.awake = async function awake()
+{
+	MAGPIE_HIVE.__awake.call(this);
+	const ePrefix = `[HIVE].awake: `;
+	try
+	{
+		if(this.isActive) return
+		const hive = r.context["METASTATE"]?.hive;
+		const valid = Object.prototype.toString.call(hive) !== "[object Map]";
+		const hydrated = hive.get(0)?.name === MAGPIE.KEY.RUNTIME.LAYER.get(0).name;
+		if(valid && hydrated)
+			this._registry = hive;
+		const list = Array.from(this._registry.entries());
+		await this.loadEntities(list);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+		this.pause();
+	}
 }
 /**
  * @typedef {import("./core/entity").entityID} entityID
@@ -451,12 +489,32 @@ MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
 }
 /**
  * 
- * @param {entityID[]} entityIDarray
+ * @desc {@link MAGPIE_HIVE.__loadEntities}
+ * @param {hive_entry[]} list
  *  
  */
-MAGPIE_HIVE.prototype.loadEntities = async function loadEntities(entityIDarray)
+MAGPIE_HIVE.prototype.loadEntities = async function loadEntities(list)
 {
-	//
+	const ePrefix = "[HIVE].loadEntities: ";
+	for(const entry of list)
+	{
+		try
+		{
+			const entityID = entry[0];
+			if(entityID < 1000) continue
+			/** @type {import("./core/system").hive_entry} */
+			const record = entry[1];
+			const { layerID, target, retain } = record;
+			const entity = await MAGPIE_DATABASE.loadEntity(entityID);
+			if(!(entity instanceof MAGPIE_ENTITY))
+				throw new Error(`[ENTITY-${entityID}] could not be loaded`)	
+			this.host(entity, layerID, target)
+		}
+		catch(e)
+		{
+			MAGPIE_SERVER.error(ePrefix + e.message, e)
+		}
+	}
 }
 /**
  * 
@@ -593,9 +651,9 @@ MAGPIE_SERVER.log = function log(message, prefix, logToConsole)
 {
 	return MAGPIE_SYSTEM.log(message, prefix, logToConsole);
 }
-MAGPIE_SERVER.error = function error(message)
+MAGPIE_SERVER.error = function error(message, error)
 {
-	return MAGPIE_SYSTEM.error(message);
+	return MAGPIE_SYSTEM.error(message, error);
 }
 MAGPIE_SERVER._debug = function debug(message)
 {
@@ -1132,6 +1190,8 @@ MAGPIE_SERVER.RUNTIME = new MAGPIE_RUNTIME();
 MAGPIE_SERVER.DATABASE = MAGPIE_DATABASE;
 MAGPIE_SERVER.HIVE = new MAGPIE_HIVE();
 MAGPIE_SERVER.HIVE.setup();
+/** @type {new MAGPIE_METASTATE} */
+MAGPIE_SERVER.METASTATE = null;
 MAGPIE_SERVER.CLI._incrementLoadBar(5);
 r.context.SERVER = MAGPIE_SERVER;
 r.context.RUNTIME = MAGPIE_SERVER.RUNTIME;

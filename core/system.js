@@ -661,7 +661,7 @@ MAGPIE_METASTATE.meta = {};
 /**
  * @name 
  * @desc 
- * 
+ * @returns {new MAGPIE_METASTATE}
  */
 //------------------------------------------------------------------------
 // #region > proto
@@ -1498,29 +1498,11 @@ MAGPIE_HIVE.prototype.initialize = function initialize()
 	 * */
 	this._registry = new Map();
 }
-MAGPIE_HIVE.prototype.awake = function awake()
-{
-	const ePrefix = `[HIVE].awake: `;
-	try
-	{
-		if(this.isActive) return
-		this.isActive = true;
-		this.setup();
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-		this.pause();
-	}
-}
-/**
- * @method
- */
-MAGPIE_HIVE.prototype.setup = function setup()
+MAGPIE_HIVE.prototype.awake = async function awake()
 {
 	//
 }
-MAGPIE_HIVE.__setup = MAGPIE_HIVE.prototype.setup;
+MAGPIE_HIVE.__awake = MAGPIE_HIVE.prototype.awake;
 MAGPIE_HIVE.prototype.pause = function pause()
 {
 	const ePrefix = `[HIVE].method: `;
@@ -1557,8 +1539,9 @@ MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
 }
 MAGPIE_HIVE.prototype.loadEntities = async function loadEntities(entityIDarray)
 {
-
+	//
 }
+MAGPIE_HIVE.__loadEntities = MAGPIE_HIVE.prototype.loadEntities;
 MAGPIE_HIVE.prototype.saveEntities = async function saveEntities(entityArray)
 {
 	//
@@ -1602,7 +1585,7 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 		const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
 		const layerName = K?.name;
 		const slot = this.nextSlot(layerID);
-		if(!slot)
+		if(isNaN(slot))
 			throw new Error(`[LAYER-${layerID}] is full`);
 		this[layerName][slot] = entity;
 		this._registry.set(entity.ID, {
@@ -1611,6 +1594,9 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 			target: targetLayerID, 
 			retain: true
 		});
+		const layerRecord = this._registry.get(layerID);
+		layerRecord.nextSlot = (slot + 1) <= K.slots ? slot + 1 : -1
+		this._registry.set(layerID, layerRecord)
 	}
 	catch(e)
 	{
@@ -1618,6 +1604,23 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 	}
 }
 MAGPIE_HIVE.__host = MAGPIE_HIVE.prototype.host;
+MAGPIE_HIVE.prototype.nextSlot = function nextSlot(layerID)
+{
+	// const K = MAGPIE.KEY.RUNTIME.LAYER;
+	// const layerName = K.get(layerID)?.name;
+	// this[layerName]
+	return this._registry.get(layerID).nextSlot;
+}
+/**
+ * 
+ * @param {entityID} entityID
+ * @returns {MAGPIE_ENTITY} 
+ */
+MAGPIE_HIVE.prototype.getSlot = function getSlot(entityID)
+{
+	//
+}
+MAGPIE_HIVE.__getSlot = MAGPIE_HIVE.prototype.getSlot;
 MAGPIE_HIVE.prototype.kick = function kick(entityID)
 {
 	const entry = this._registry.get(entityID);
@@ -1630,12 +1633,11 @@ MAGPIE_HIVE.prototype.kick = function kick(entityID)
 	const slots = K.slots;
 	if(!this[layerName][index])
 		throw new Error(`[ENTITY-${entityID}] not at ${layerName}[${index}]`);
-	const last = this[layerName][slots - 1]
-	this[layerName][index] = last;
-	const lastEntry = this._registry.get(last.ID);
 	this._registry.delete(entityID);
-	lastEntry.slot = index;
-	this._registry.set(last.ID, lastEntry)
+	const layerRecord = this._registry.get(layerID);
+	layerRecord.nextSlot = index;
+	this._registry.set(layerID, layerRecord);
+	return layerRecord
 }
 MAGPIE_HIVE.__kick = MAGPIE_HIVE.prototype.kick;
 // #endregion

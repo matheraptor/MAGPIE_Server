@@ -29,7 +29,7 @@ const {
 	MAGPIE_EMOTE, 
 	MAGPIE_EXP 
 } = require("./component");
-const { en } = require("zod/locales");
+const { MAGPIE_PHYSICS } = require("./physics");
 /**
  * 
  * @desc back to {@link }
@@ -677,6 +677,66 @@ MAGPIE_ENTITY.prototype._M_importSTATS = function importMateriaSTATS(STATS)
 }
 // #endregion
 //------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - REFRESH
+//========================================================================
+/**
+ * @desc 
+ * @param {Number} switchID 
+ * @param {import("./index").duration} dt in s
+ * @returns {Promise<Boolean>}
+ */
+MAGPIE_ENTITY.prototype.refresh = async function refresh(switchID, dt)
+{
+	const ePrefix = `[ENTITY-${this.ID}].refresh: `;
+	try
+	{
+		if(isNaN(switchID))
+			throw new Error(`${switchID} is invalid switchID`);
+		if(isNaN(dt))
+			throw new Error(`${dt} is invalid dT`);
+		const state = this.processStates(switchID, dt);
+		const inputExp = this.processExp(switchID, dt, state);
+		const influence = this.processAgency(switchID, dt);
+		const output = this.updatePhysics(switchID, dt);
+		this._socketEmit(output);
+		return true
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return false
+	}
+}
+MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt)
+{
+	const ePrefix = `[ENTITY-${this.ID}].processExp: `;
+	if(this.exps.length < 1) return
+	try
+	{
+		const exp = this.exps.shift()
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`${exp} is invalid EXP`);
+		const emote = MAGPIE_EMOTE.INDEX.get(exp.emoteID);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
 /**
  * 
  * @desc back to {@link }

@@ -286,9 +286,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 20, 5],
+			version: [0, 20, 6],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260502"
+			firmwareDate: "20260503"
 		};
 	}
 }
@@ -1119,31 +1119,6 @@ MAGPIE.KEY.TRAIT.ARRAY = 0;
 // #endregion
 //------------------------------------------------------------------------
 /**
- * @name Sensors
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > sensors
-//------------------------------------------------------------------------
-MAGPIE.KEY.SENSOR = {};
-MAGPIE.KEY.SENSOR.ARRAY = 0;
-// #endregion
-//------------------------------------------------------------------------
-/**
- * @name Emitters
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > emitters
-//------------------------------------------------------------------------
-MAGPIE.KEY.EMITTER = {};
-MAGPIE.KEY.EMITTER.ARRAY = 0;
-// #endregion
-//------------------------------------------------------------------------
-
-/**
  * 
  * 
  */
@@ -1191,6 +1166,22 @@ MAGPIE.KEY.STATE.meta.schema = [
 	]
 MAGPIE.KEY.STATE.TYPE = {};
 //#endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Emote
+//------------------------------------------------------------------------
+MAGPIE.KEY.EMOTE = {};
+MAGPIE.KEY.EMOTE.meta = {};
+MAGPIE.KEY.EMOTE.TYPE = {};
+MAGPIE.KEY.EMOTE.TYPE.DEFAULT = 0;
+MAGPIE.KEY.EMOTE.TYPE.FSM = MAGPIE.KEY.EMOTE.TYPE.DEFAULT + 1;
+MAGPIE.KEY.EMOTE.TYPE.ARRAY = MAGPIE.KEY.EMOTE.TYPE.FSM + 1;
+// #endregion
 //------------------------------------------------------------------------
 /**
  * @name switches
