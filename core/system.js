@@ -10,6 +10,7 @@ const { MAGPIE } = require("./index");
 const fs = require("fs");
 const path = require("path");
 const { performance } = require("node:perf_hooks");
+const { exec } = require("child_process");
 function MAGPIE_SYSTEM()
 {
     this.initialize();
@@ -798,6 +799,8 @@ MAGPIE_METASTATE.prototype.syncDate = function syncDate()
 	date.minute = now.getUTCMinutes();
 	date.second = now.getUTCSeconds();
 	date.weekDay = now.getUTCDay();
+	date._yearday = NaN;
+	date._yearday = date.yearday();
 	return date.printDate();
 }
 MAGPIE_METASTATE.prototype._socketEmit = function _socketEmit()
@@ -1438,7 +1441,7 @@ MAGPIE_RUNTIME._loadMetastate = MAGPIE_RUNTIME.prototype.loadMetastate;
 /**
  * @name HIVE
  * @desc 
- * 
+ * @typedef {import("./entity").MAGPIE_ENTITY} MAGPIE_ENTITY
  */
 //========================================================================
 // #region - HIVE
@@ -1487,6 +1490,8 @@ MAGPIE_HIVE.prototype.initialize = function initialize()
 	this[layerMega.name] = new Float64Array(layerMega.slots).fill(0);
 	/** @type {hive_layer} default size: 100,000 */
 	this[layerUltra.name] = new Float64Array(layerUltra.slots).fill(0);
+	this._expBuffer = [];
+	this._keyBuffer = [];
 	/** 
 	 * @type {hive_registry}
 	 * @desc Map<entityID, hive_entry: {
@@ -1537,7 +1542,12 @@ MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
 {
 	//
 }
-MAGPIE_HIVE.prototype.loadEntities = async function loadEntities(entityIDarray)
+/**
+ * 
+ * @param {entityID[]} entityIDarray 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_HIVE.prototype.loadEntities = function loadEntities(entityIDarray)
 {
 	//
 }
@@ -1577,6 +1587,12 @@ MAGPIE_HIVE.__refresh = MAGPIE_HIVE.prototype.refresh;
 //------------------------------------------------------------------------
 // #region > Host
 //------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {Number} layerID 
+ * @param {Number} targetLayerID 
+ */
 MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 {
 	const ePrefix = "[HIVE].host: ";
@@ -1587,7 +1603,7 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 		const slot = this.nextSlot(layerID);
 		if(isNaN(slot))
 			throw new Error(`[LAYER-${layerID}] is full`);
-		this[layerName][slot] = entity;
+		this[layerName][slot] = layerID < 2 ? entity : entity.ID;
 		this._registry.set(entity.ID, {
 			layerID: layerID,
 			slot: slot,  
@@ -1596,7 +1612,10 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 		});
 		const layerRecord = this._registry.get(layerID);
 		layerRecord.nextSlot = (slot + 1) <= K.slots ? slot + 1 : -1
-		this._registry.set(layerID, layerRecord)
+		this._registry.set(layerID, layerRecord);
+		const message = `[HIVE].hosting [ENTITY-${entity.ID}] on `
+			+ `[${layerName}][${slot}] with target [LAYER-${targetLayerID}]`
+		MAGPIE_SYSTEM.log(message)
 	}
 	catch(e)
 	{
@@ -1623,21 +1642,7 @@ MAGPIE_HIVE.prototype.getSlot = function getSlot(entityID)
 MAGPIE_HIVE.__getSlot = MAGPIE_HIVE.prototype.getSlot;
 MAGPIE_HIVE.prototype.kick = function kick(entityID)
 {
-	const entry = this._registry.get(entityID);
-	const layerID = entry?.layerID
-	const index = entry?.index;
-	const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
-	if(!K)
-		throw new Error(`[LAYER-${layerID}], for [ENTITY-${entityID}], is invalid layer`)
-	const layerName = K.name;
-	const slots = K.slots;
-	if(!this[layerName][index])
-		throw new Error(`[ENTITY-${entityID}] not at ${layerName}[${index}]`);
-	this._registry.delete(entityID);
-	const layerRecord = this._registry.get(layerID);
-	layerRecord.nextSlot = index;
-	this._registry.set(layerID, layerRecord);
-	return layerRecord
+	//
 }
 MAGPIE_HIVE.__kick = MAGPIE_HIVE.prototype.kick;
 // #endregion

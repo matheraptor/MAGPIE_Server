@@ -22,6 +22,32 @@ class MAGPIE_DATABASE
 	}
 }
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Utility
+//------------------------------------------------------------------------
+/**
+ * @typedef {import("../SERVER.js").epoch_real} epoch_real
+ * @returns {epoch_real}
+ */
+MAGPIE_DATABASE.timestamp = function timestamp()
+{
+	return Date.now()
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
  * @name WORKER
  * @desc 
  * 
@@ -34,6 +60,7 @@ MAGPIE_DATABASE.sync = require("./database_worker");
 const { Worker } = require("worker_threads");
 const { MAGPIE_PLAYER } = require("./player.js");
 const { pl } = require("zod/locales");
+const { MAGPIE_EXP, MAGPIE_KEY } = require("./component.js");
 MAGPIE_DATABASE.worker = new Worker("./core/database_worker.js");
 MAGPIE_DATABASE.call = function call(method, ...args)
 {
@@ -140,6 +167,26 @@ MAGPIE_DATABASE.saveEntitySync = function saveEntitySync(entity)
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY[]} entityArray
+ * @returns {Promise<Boolean>} 
+ */
+MAGPIE_DATABASE.transactionSaveEntities = async function saveEntities(entityArray)
+{
+	const ePrefix = "[DATABASE].saveEntities: ";
+	try
+	{
+		const payloads = entityArray.map(entity => this.prepareEntity(entity));
+		const result = await this.call("saveEntities", [payloads])
+		return !!result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return false
 	}
 }
 /**
@@ -304,7 +351,7 @@ MAGPIE_DATABASE.loadEntity = async function loadEntity(entityID)
 	{
 		const entity = await this.call("loadWorldRow", ["MAGPIE_ENTITY", {ID: entityID}]);
 		if(!(entity instanceof MAGPIE_ENTITY))
-			throw new Error(`${entityID} not found`)
+			throw new Error(`[ENTITY-${entityID}] not found`)
 		return entity
 	}
 	catch(e)
@@ -324,7 +371,7 @@ MAGPIE_DATABASE.loadEntitySync = function loadEntitySync(entityID)
 	{
 		const entity = this.sync.loadWorldRow("MAGPIE_ENTITY", {ID: entityID});
 		if(!(entity instanceof MAGPIE_ENTITY))
-			throw new Error(`${entityID} not found`)
+			throw new Error(`[ENTITY-${entityID}] not found`)
 		return entity
 	}
 	catch(e)
@@ -344,7 +391,7 @@ MAGPIE_DATABASE.loadMetastate = function loadMetastate()
 	{
 		const metastate = this.sync.loadWorldRow("MAGPIE_METASTATE", {});
 		if(!(metastate instanceof MAGPIE_METASTATE))
-			throw new Error(`${metastate} is invalid MAGPIE_METASTATE`);
+			throw new Error(`no metastate in database`);
 		return metastate
 	}
 	catch(e)
@@ -364,7 +411,7 @@ MAGPIE_DATABASE.loadPlayer = async function loadPlayer(playerID)
 	{
 		const player = await this.call("loadServerRow", ["MAGPIE_PLAYER", {ID: playerID}]);
 		if(!(player instanceof MAGPIE_PLAYER))
-			throw new Error(`${playerID} not found`);
+			throw new Error(`[PLAYER-${playerID}] not found`);
 		return player
 	}
 	catch(e)
@@ -384,7 +431,7 @@ MAGPIE_DATABASE.loadPlayerSync = function loadPlayer(playerID)
 	{
 		const player = this.sync.loadServerRow("MAGPIE_PLAYER", {ID: playerID});
 		if(!(player instanceof MAGPIE_PLAYER))
-			throw new Error(`${playerID} not found`);
+			throw new Error(`[PLAYER-${playerID}] not found`);
 		return player
 	}
 	catch(e)
@@ -416,6 +463,252 @@ MAGPIE_DATABASE.isValidEmail = function isValidEmail(email)
 	const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   	return regex.test(email);
 }
+/**
+ * 
+ * @param {Number} expID 
+ * @returns {Promise<MAGPIE_EXP>}
+ */
+MAGPIE_DATABASE.loadExp = async function loadExp(expID)
+{
+	const ePrefix = "[DATABASE].loadExp: ";
+	try
+	{
+		const exp = await this.call("loadWorldRow", ["MAGPIE_EXP", {ID: expID}])
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`[EXP-${expID}] is not in database`);
+		return exp
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} expID 
+ * @returns {MAGPIE_EXP}
+ */
+MAGPIE_DATABASE.loadExpSync = function loadExpSync(expID)
+{
+	const ePrefix = "[DATABASE].loadExp: ";
+	try
+	{
+		const exp = this.sync.loadWorldRow("MAGPIE_EXP", {ID: expID})
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`[EXP-${expID}] is not in database`);
+		return exp
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} keyID 
+ * @returns {Promise<MAGPIE_KEY>} 
+ */
+MAGPIE_DATABASE.loadKey = async function loadKey(keyID)
+{
+	const ePrefix = "[DATABASE].loadKey: ";
+	try
+	{
+		const key = await this.call("loadWorldRow", ["MAGPIE_KEY", {ID: keyID}]);
+		if(!(key instanceof MAGPIE_KEY))
+			throw new Error(`[KEY-${keyID}] not in database`);
+		return key
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} keyID
+ * @returns {MAGPIE_KEY} 
+ */
+MAGPIE_DATABASE.loadKeySync = function loadKeySync(keyID)
+{
+	const ePrefix = "[DATABASE].loadKeySync: ";
+	try
+	{
+		const key = this.sync.loadWorldRow("MAGPIE_KEY", {ID: keyID});
+		if(!(key instanceof MAGPIE_KEY))
+			throw new Error(`[KEY-${keyID}] not in database`);
+		return key
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Query
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {entityID} parentID 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_DATABASE.loadChildrenSync = function loadChildrenSync(parentID)
+{
+	const ePrefix = "[DATABASE].loadChildren: ";
+	try
+	{
+		const result = this.sync.getWorldRelatedRows(
+			parentID, 
+			"parentID", 
+			"childID", 
+			"entity_children", 
+			"MAGPIE_ENTITY"
+		)
+		if(!result) 
+			throw new Error(`unable to find children for [ENTITY-${parentID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {entityID} parentID 
+ * @returns {Promise<MAGPIE_ENTITY[]>}
+ */
+MAGPIE_DATABASE.loadChildren = async function loadChildren(parentID)
+{
+	const ePrefix = "[DATABASE].loadChildren: ";
+	try
+	{
+		const result = await this.call("getWorldRelatedRows", [
+			parentID, 
+			"parentID", 
+			"childID", 
+			"entity_children", 
+			"MAGPIE_ENTITY"
+		])
+		if(!result) 
+			throw new Error(`unable to find children for [ENTITY-${parentID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {entityID} compoundID 
+ * @returns {Promise<MAGPIE_ENTITY[]>}
+ */
+MAGPIE_DATABASE.loadComponents = async function loadComponents(compoundID)
+{
+	const ePrefix = "[DATABASE].loadComponents: ";
+	try
+	{
+		const result = await this.call("getWorldRelatedRows", [
+			compoundID, 
+			"compoundID", 
+			"componentID", 
+			"entity_components", 
+			"MAGPIE_ENTITY"
+		])
+		if(!result) 
+			throw new Error(`unable to find components for [ENTITY-${compoundID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {entityID} hostID 
+ * @returns {Promise<MAGPIE_ENTITY[]>}
+ */
+MAGPIE_DATABASE.loadEquips = async function loadEquips(hostID)
+{
+	const ePrefix = "[DATABASE].loadEquips: ";
+	try
+	{
+		const result = await this.call("getWorldRelatedRows", [
+			hostID, 
+			"hostID", 
+			"equipID", 
+			"entity_equips", 
+			"MAGPIE_ENTITY"
+		])
+		if(!result) 
+			throw new Error(`unable to find equips for [ENTITY-${hostID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {entityID} compoundID 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_DATABASE.loadComponentsSync = function loadComponentsSync(compoundID)
+{
+	const ePrefix = "[DATABASE].loadComponents: ";
+	try
+	{
+		const result = this.sync.getWorldRelatedRows(
+			compoundID, 
+			"compoundID", 
+			"componentID", 
+			"entity_components", 
+			"MAGPIE_ENTITY"
+		)
+		if(!result) 
+			throw new Error(`unable to find components for [ENTITY-${compoundID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {entityID} hostID 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_DATABASE.loadEquipsSync = function loadEquipsSync(hostID)
+{
+	const ePrefix = "[DATABASE].loadEquips: ";
+	try
+	{
+		const result = this.sync.getWorldRelatedRows(
+			hostID, 
+			"hostID", 
+			"equipID", 
+			"entity_equips", 
+			"MAGPIE_ENTITY"
+		)
+		if(!result) 
+			throw new Error(`unable to find equips for [ENTITY-${hostID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -426,25 +719,6 @@ MAGPIE_DATABASE.isValidEmail = function isValidEmail(email)
 //========================================================================
 // #endregion - 
 //========================================================================
-/**
- * @name 
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > Utility
-//------------------------------------------------------------------------
-/**
- * @typedef {import("../SERVER.js").epoch_real} epoch_real
- * @returns {epoch_real}
- */
-MAGPIE_DATABASE.timestamp = function timestamp()
-{
-	return Date.now()
-}
-// #endregion
-//------------------------------------------------------------------------
-
 module.exports = MAGPIE_DATABASE;
 /**
  * 
@@ -452,5 +726,5 @@ module.exports = MAGPIE_DATABASE;
  *
  */
 //========================================================================
-// #endregion - 
+// END OF FILE
 //========================================================================

@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.20.6
+ * @version 0.20.9
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,22 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.20.9 2026 05 08
+ * - ADDED: database multi-entity save transaction
+ * - FIXED: HIVE kick typo
+ * - FIXED: HIVE hosting methods not setup for hybrid direct/remote hosting
+ * - FIXED: Entity.setup of dummy slots for layer 0/1 causing errors
+ * - FIXED: Entity hive getters invalid methods
+ * - FIXED: Entity refresh bugs
+ * 
+ * @version 0.20.8 2026 05 06
+ * - ADDED: database_worker.js relations support 
+ * - ADDED: MAGPIE_EMOTE database fetch methods 
+ * 
+ * @version 0.20.7 2026 05 05
+ * - ADDED: MAGPIE_EXP, and EXP_KEYS tables to setup
+ * - ADDED: relational tables support for database_worker.createTable
  * 
  * @version 0.20.6 2026 05 03
  * - TWEAKED: MAGPIE_ENTITY restructured for efficiency
@@ -286,9 +302,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 20, 6],
+			version: [0, 20, 9],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260503"
+			firmwareDate: "20260508"
 		};
 	}
 }
@@ -616,7 +632,7 @@ MAGPIE.KEY.PHYSICS.K = [0,0,1];
 /**
  * @desc gravitational constant.
  * @desc Multiplied by celestial body's mass to find 'mu' (μ) 
- * @desc {@link MAGPIE.KEY.PHYSICS.ORBIT.MU}
+ * @desc {@link MAGPIE.KEY.ORBIT.MU}
  * @type {mass}
  */
 MAGPIE.KEY.PHYSICS.G = 6.67430e-11;
@@ -744,6 +760,8 @@ MAGPIE.KEY.PHYSICS.FORCES.FD = MAGPIE.KEY.PHYSICS.FORCES.FF + 1;
 MAGPIE.KEY.PHYSICS.FORCES.FL = MAGPIE.KEY.PHYSICS.FORCES.FD + 1;
 /** @type {index} angle of attack */
 MAGPIE.KEY.PHYSICS.FORCES.AOA = MAGPIE.KEY.PHYSICS.FORCES.FL + 1;
+/** @type {Enumerator<Number>} amount of forces */
+MAGPIE.KEY.PHYSICS.FORCES.ARRAY = MAGPIE.KEY.PHYSICS.FORCES.AOA + 1;
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1005,7 +1023,7 @@ MAGPIE.KEY.STATS = {};
  */
 MAGPIE.KEY.STATS.meta = {};
 /** @type {index} Fitness aka totalDeckSize */
-MAGPIE.KEY.STATS.FIT = 0;
+MAGPIE.KEY.STATS.FIT = MAGPIE.KEY.POVART.E_ID + 1;
 /** @type {index} Endurance aka LVL_STA */
 MAGPIE.KEY.STATS.END = MAGPIE.KEY.STATS.FIT + 1;
 /** @type {index} Power aka ATK */
@@ -1020,8 +1038,10 @@ MAGPIE.KEY.STATS.DEX = MAGPIE.KEY.STATS.SEN + 1;
 MAGPIE.KEY.STATS.RT = MAGPIE.KEY.STATS.DEX + 1;
 /** @type {index} Evolution aka LUK */
 MAGPIE.KEY.STATS.EVO = MAGPIE.KEY.STATS.RT + 1;
+/** @type {index} @desc Growth Level */
+MAGPIE.KEY.STATS.G_LVL = MAGPIE.KEY.STATS.EVO + 1;
 /** @type {index} @desc Growth Rate (curve steepness) */
-MAGPIE.KEY.STATS.G_R = MAGPIE.KEY.STATS.EVO + 1;
+MAGPIE.KEY.STATS.G_R = MAGPIE.KEY.STATS.G_LVL + 1;
 /** @type {index} @desc Growth Inflection point ("puberty") */
 MAGPIE.KEY.STATS.G_I = MAGPIE.KEY.STATS.G_R + 1;
 /** @type {index} inertia x */
@@ -1081,7 +1101,15 @@ MAGPIE.KEY.STATS.COL_Y = MAGPIE.KEY.STATS.COL_X + 1;
 /** @type {index} Center of lift*/
 MAGPIE.KEY.STATS.COL_Z = MAGPIE.KEY.STATS.COL_Y + 1;
 /** @type {Enumerator<Number>} */
-MAGPIE.KEY.STATS.ARRAY = MAGPIE.KEY.STATS.COL_Z + 1;
+MAGPIE.KEY.STATS.MOTHER = MAGPIE.KEY.STATS.COL_Z + 1;
+/** @type {Enumerator<Number>} */
+MAGPIE.KEY.STATS.FATHER = MAGPIE.KEY.STATS.MOTHER + 1;
+/** @type {Enumerator<Number>} */
+MAGPIE.KEY.STATS.COMPOUND = MAGPIE.KEY.STATS.FATHER + 1;
+/** @type {Enumerator<Number>} */
+MAGPIE.KEY.STATS.HOST = MAGPIE.KEY.STATS.COMPOUND + 1;
+/** @type {Enumerator<Number>} */
+MAGPIE.KEY.STATS.ARRAY = MAGPIE.KEY.STATS.HOST + 1;
 /** @desc max stretch for {@link MAGPIE_ENTITY.growth} */
 //
 MAGPIE.KEY.STATS.TOLERANCE_BASE = 0.5;
@@ -1089,6 +1117,68 @@ MAGPIE.KEY.STATS.AGILITY_MOD_MIN = 0.5;
 MAGPIE.KEY.STATS.AGILITY_MOD_MAX = 100;
 MAGPIE.KEY.STATS.STRETCH = 2;
 //#endregion
+//------------------------------------------------------------------------
+/**
+ * @namespace MAGPIE_CELESTIAL.traits
+ * @component of {@link MAGPIE_CELESTIAL}
+ * @sister of {@link MAGPIE_ORBIT}
+ * @desc methods:
+ * - {@link MAGPIE_PHYSICS.celestial}
+ */
+//------------------------------------------------------------------------
+//#region > Celestial
+//------------------------------------------------------------------------
+MAGPIE.KEY.CELESTIAL = {};
+/** @type {index} */
+MAGPIE.KEY.CELESTIAL.MASS = MAGPIE.KEY.STATS.MASSKG;
+/**@type {index} */
+MAGPIE.KEY.CELESTIAL.CMF = MAGPIE.KEY.STATS.MASS;
+/** @type {index} axial tilt */
+MAGPIE.KEY.CELESTIAL.AXIAL = MAGPIE.KEY.STATS.COM_X;
+/** @type {index} rotation period */
+MAGPIE.KEY.CELESTIAL.ROTATION = MAGPIE.KEY.STATS.COM_Y;
+/** @type {index} */
+MAGPIE.KEY.CELESTIAL.ALBEDO = MAGPIE.KEY.STATS.RT;
+/** @type {index} greenhouse effect */
+MAGPIE.KEY.CELESTIAL.GREENHOUSE = MAGPIE.KEY.STATS.CM;
+/** @type {index} */
+MAGPIE.KEY.CELESTIAL.AGE = MAGPIE.KEY.STATS.G_R;
+/** @type {index} radius */
+MAGPIE.KEY.CELESTIAL.R = MAGPIE.KEY.STATS.COM_Z;
+/** @type {index} gravity */
+MAGPIE.KEY.CELESTIAL.G = MAGPIE.KEY.STATS.GMAX;
+/** @type {index} escape velocity */
+MAGPIE.KEY.CELESTIAL.ESCAPE = MAGPIE.KEY.STATS.VMAX;
+/** @type {index} surface temperature */
+MAGPIE.KEY.CELESTIAL.SURF_TEMP = MAGPIE.KEY.STATS.PWR;
+/** @type {index} surface atmospheric pressure */
+MAGPIE.KEY.CELESTIAL.ATM = MAGPIE.KEY.STATS.VOLUME;
+/** @type {index} surface atmospheric density */
+MAGPIE.KEY.CELESTIAL.ATD = MAGPIE.KEY.STATS.DENSITY;
+/** @type {index} atmospheric composition */
+MAGPIE.KEY.CELESTIAL.COMP = MAGPIE.KEY.STATS.FIT;
+//#endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Fitness
+//------------------------------------------------------------------------
+MAGPIE.KEY.FITNESS = {};
+MAGPIE.KEY.FITNESS.meta = {};
+MAGPIE.KEY.FITNESS.E_ID = 0;
+MAGPIE.KEY.FITNESS.DECKSIZE = MAGPIE.KEY.FITNESS.E_ID + 1;
+MAGPIE.KEY.FITNESS.TRAITS = MAGPIE.KEY.DECKSIZE + 1;
+MAGPIE.KEY.FITNESS.STATES = 2;
+MAGPIE.KEY.FITNESS.EQUIPS = 3;
+MAGPIE.KEY.FITNESS.WASTE = 4;
+MAGPIE.KEY.FITNESS.INJURY = 5;
+MAGPIE.KEY.FITNESS.STAMINA = 6;
+MAGPIE.KEY.FITNESS.ZONES = MAGPIE.KEY.FITNESS.INJURY;
+// #endregion
 //------------------------------------------------------------------------
 /**
  * 
@@ -1212,6 +1302,18 @@ MAGPIE.KEY.SWITCHES.LEAP_YEAR = MAGPIE.KEY.SWITCHES.LEAP_MONTH + 1;
 // #endregion
 //------------------------------------------------------------------------
 // #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * 
+ */
+//------------------------------------------------------------------------
+//#region > WMedia
+//------------------------------------------------------------------------
+MAGPIE.KEY.WMEDIA = {};
+MAGPIE.KEY.WMEDIA.DEFAULT_PATH = 'C:\\Windows\\Media\\'; 
+MAGPIE.KEY.WMEDIA.CHORD = `${MAGPIE.KEY.WMEDIA.DEFAULT_PATH}chord.wav`;
+//#endregion
 //------------------------------------------------------------------------
 /**
  * 

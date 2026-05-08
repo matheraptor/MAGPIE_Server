@@ -7,13 +7,14 @@
 // #region - INDEX
 //========================================================================
 const { MAGPIE } = require("./index");
+const { MAGPIE_SYSTEM } = require("./system");
 function MAGPIE_COMPONENT(data)
 {
-    this.initialize(data);
+	this.initialize(data);
 }
 function MAGPIE_STATE(data)
 {
-    this.initialize(data)
+	this.initialize(data)
 }
 /**
  * 
@@ -22,7 +23,7 @@ function MAGPIE_STATE(data)
  */
 function MAGPIE_EXP(data = {})
 {
-    this.initialize(data)
+	this.initialize(data)
 }
 /**
  * 
@@ -39,19 +40,19 @@ function MAGPIE_EXP(data = {})
  */
 function MAGPIE_EMOTE(data)
 {
-    this.initialize(data)
+	this.initialize(data)
 }
 function MAGPIE_CONTEXT(data)
 {
-    this.initialize(data)
+	this.initialize(data)
 }
 function MAGPIE_TICKET(data)
 {
-    this.initialize(data);
+	this.initialize(data);
 }
 function MAGPIE_KEY(data)
 {
-    this.initialize(data)
+	this.initialize(data)
 }
 /**
  * 
@@ -80,21 +81,75 @@ MAGPIE_COMPONENT.meta = {};
 //------------------------------------------------------------------------
 MAGPIE_COMPONENT.prototype.initialize = function initialize(data)
 {
-    //
+	//
 }
 // #endregion
 //------------------------------------------------------------------------
 /**
  * @name 
  * @desc 
- * 
+ * @typedef {Number} stateID
  */
 //------------------------------------------------------------------------
 // #region > state
 //------------------------------------------------------------------------
+MAGPIE_STATE.meta = {};
+/** @type {Map<stateID, MAGPIE_STATE>} */
+MAGPIE_STATE.INDEX = new Map();
+MAGPIE_STATE.setup = function setup()
+{
+	const data = require("../data/states").states;
+	for(const state_data of data)
+	{
+		MAGPIE_STATE.INDEX.set(state_data.ID, new MAGPIE_STATE(state_data))
+	}
+}
+/**
+ * 
+ * @param {import("../data/states").state_data} data 
+ * @returns {new MAGPIE_STATE}
+ */
 MAGPIE_STATE.prototype.initialize = function initialize(data)
 {
-    //
+	this.ID = data.ID;
+	this.type = data.type;
+	this.name = data.name;
+	this.description = data.description;
+	this.stack = data.stack;
+	this.onUpdate = data.onUpdate;
+	this.onApply = data.onApply;
+	this.onRemove = data.onRemove;
+	this.onExpire = data.onExpire;
+}
+/**
+ * 
+ * @param {stateID} stateID 
+ */
+MAGPIE_STATE.validate = function validate(stateID)
+{
+	if(!stateID || isNaN(stateID))
+		throw new Error(`${stateID} is invalid stateID`)
+	const state = MAGPIE_STATE.INDEX.get(stateID);
+	if(!state)
+		throw new Error(`${stateID} is invalid state`);
+	return true
+}
+MAGPIE_STATE.validateChange = function validateChange(state)
+{
+	const ePrefix = "[STATE].validateChange: ";
+	try
+	{
+		if(!state || state?.length !== 2)
+			throw new Error(`${state} is invalid state parameters`)
+		const [stateID, index] = state;
+		const valid = MAGPIE_STATE.validate(stateID)
+		if(valid)
+			return state
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -119,12 +174,13 @@ MAGPIE_STATE.prototype.initialize = function initialize(data)
 //------------------------------------------------------------------------
 MAGPIE_EXP.prototype.initialize = function initialize(data)
 {
-    this._firmware = "MAGPIE_EXP";
-    this.ID = Date.now();
-    this.subject = data?.subject || NaN;
-    this.target = data?.target || NaN;
-    this.emoteID = data?.emoteID || NaN;
-    this.keys = data?.keys || [];
+	this._firmware = "MAGPIE_EXP";
+	this.ID = Date.now();
+	this.subjectID = data?.subject || NaN;
+	this.targetID = data?.target || NaN;
+	this.emoteID = data?.emoteID || NaN;
+	this.value = data?.value || NaN;
+	this.keys = data?.keys || [NaN];
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -140,11 +196,11 @@ MAGPIE_EMOTE.meta = {};
 MAGPIE_EMOTE.INDEX = new Map();
 MAGPIE_EMOTE.setup = function()
 {
-    const data = require("../data/emotes");
-    for(const emote_data of data)
-    {
-        MAGPIE_EMOTE.INDEX.set(emote_data.ID, new MAGPIE_EMOTE(emote_data))
-    }
+	const data = require("../data/emotes");
+	for(const emote_data of data)
+	{
+		MAGPIE_EMOTE.INDEX.set(emote_data.ID, new MAGPIE_EMOTE(emote_data))
+	}
 }
 /**
  * 
@@ -154,32 +210,38 @@ MAGPIE_EMOTE.setup = function()
  * type: Enumerator<Number>,
  * description,
  * condition: (...args) => Boolean,
- * onAction: Function,
+ * onAction: (...args) => {
+ * exp: MAGPIE_EXP,
+ * addState: [Number, Number],
+ * removeState: [Number, Number],
+ * switchState: [Number, Number, Number, Number],
+ * value: Number
+ * },
  * onPassive: Function
  * }} data 
  * @returns {new MAGPIE_EMOTE}
  */
 MAGPIE_EMOTE.prototype.initialize = function initialize(data)
 {
-    this.ID = data.ID;
-    this.name = data.name;
-    this.type = data.type;
-    this.description = data.description;
-    this.condition = data.condition;
-    this.onAction = data.onAction;
-    this.onPassive = data.onPassive;
+	this.ID = data.ID;
+	this.name = data.name;
+	this.type = data.type;
+	this.description = data.description;
+	this.condition = data.condition;
+	this.onAction = data.onAction;
+	this.onPassive = data.onPassive;
 }
 MAGPIE_EMOTE.prototype.condition = function condition(...args)
 {
-    return true
+	return true
 }
 MAGPIE_EMOTE.prototype.onAction = function onAction(...args)
 {
-    // 
+	// 
 }
 MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
 {
-    //
+	//
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -193,7 +255,7 @@ MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
 //------------------------------------------------------------------------
 MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 {
-    //
+	//
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -207,7 +269,7 @@ MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 //------------------------------------------------------------------------
 MAGPIE_TICKET.prototype.initialize = function initialize(data)
 {
-    //
+	//
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -221,7 +283,7 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
 //------------------------------------------------------------------------
 MAGPIE_KEY.prototype.initialize = function initialize(data)
 {
-    //
+	//
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -234,13 +296,13 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
 // #endregion - 
 //========================================================================
 module.exports = { 
-    MAGPIE_COMPONENT,
-    MAGPIE_STATE,
-    MAGPIE_EMOTE,
-    MAGPIE_EXP,
-    MAGPIE_KEY,
-    MAGPIE_CONTEXT,
-    MAGPIE_TICKET
+	MAGPIE_COMPONENT,
+	MAGPIE_STATE,
+	MAGPIE_EMOTE,
+	MAGPIE_EXP,
+	MAGPIE_KEY,
+	MAGPIE_CONTEXT,
+	MAGPIE_TICKET
 }
 /**
  * 

@@ -347,18 +347,23 @@ worker.setRow = function setRow(tableName, values, columns, db)
  * @param {Object} schema 
  * @param {Database} db
  * @returns {database_result} 
+ * 
+ * @version 0.20.7
+ * - ADDED: "PRIMARY KEY" check to add " WITHOUT ROWID" as per 
+ * [sqlite3_architecture](../../\HASTRAL\03_MEMORY\wiki\topics\operations\memory\sqlite3_architecture.md)
  */
 worker.createTable = function createTable(tableName, schema, db)
 {
 	try
 	{
+		const noRowID = schema["PRIMARY KEY"] ? " WITHOUT ROWID" : "";
 		const columnDefinitions = Object.entries(schema)
 			.map(([name, type]) => {
-				return `${name} ${type}`;
+				return `${name.includes("fk") ? "" : name} ${type}`;
 			})
 		const query = `CREATE TABLE IF NOT EXISTS ${tableName} (
 			${columnDefinitions.join(", ")}
-		)`;
+		)${noRowID}`;
 		const result = db.prepare(query).run();
 		if(!result)
 			throw new Error(`${result} is invalid result`)
@@ -399,10 +404,11 @@ worker.makeTransaction = function makeTransaction(db, callback)
  * @param {Array[]} rows 
  * @param {String[]} columns 
  * @param {Database} db 
+ * @returns {import("better-sqlite3").Transaction}
  */
 worker.setRowTransaction = function setRowTransaction(tableName, rows, columns, db)
 {
-	this.makeTransaction(db, () => {
+	return this.makeTransaction(db, () => {
 		const columnNames = columns.join(", ");
 		const placeholders = columns.map(() => "?").join(", ");
 		const sql = `INSER OR REPLACE INTO ${tableName} (${columnNames})`
@@ -414,6 +420,31 @@ worker.setRowTransaction = function setRowTransaction(tableName, rows, columns, 
 			statement.run(...values);
 		}
 	})
+}
+worker.saveEntities = function saveEntities(payloads) 
+{
+	return this.makeTransaction(this.world, () => {
+		for(const payload of payloads)
+		{
+			const { values, columns } = this.rowSetter(payload);
+			this.setRow("MAGPIE_ENTITY", values, columns, this.world)
+		}
+		return true
+	})
+}
+/**
+ * 
+ * @param {String} tableName 
+ * @param {Array[]} rows 
+ * @param {String[]} columns 
+ */
+worker.setWorldRowTransaction = function setWorldRowTransaction(tableName, rows, columns)
+{
+	return this.setRowTransaction(tableName, rows, columns, this.world)
+}
+worker.setServerRowTransaction = function setServerRowTransaction(tableName, rows, columns)
+{
+	return this.setRowTransaction(tableName, rows, columns, this.server)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -525,7 +556,7 @@ worker.saveServerRow = function saveServerRow(tableName, payload)
  * 
  * @param {String} tableName 
  * @param {statement_criteria} criteria 
- * @returns {database_payload}
+ * @returns {Object}
  */
 worker.loadWorldRow = function loadWorldRow(tableName, criteria)
 {
@@ -535,7 +566,7 @@ worker.loadWorldRow = function loadWorldRow(tableName, criteria)
  * 
  * @param {String} tableName 
  * @param {statement_criteria} criteria 
- * @returns {database_payload}
+ * @returns {Object}
  */
 worker.loadServerRow = function loadServerRow(tableName, criteria)
 {
@@ -580,6 +611,24 @@ worker.createWorldTable = function createWorldTable(tableName, schema)
 worker.createServerTable = function createServerTable(tableName, schema)
 {
 	return this.createTable(tableName, schema, this.server)
+}
+/**
+ * 
+ * @param {Number} primaryKeyValue
+ * @param {String} primaryKeyName 
+ * @param {String} foreignKeyName
+ * @param {String} relationTable 
+ * @param {String} targetTable 
+ * 
+ * @returns {database_payload}
+ */
+worker.getWorldRelatedRows = function getWorldRelatedRows(primaryKeyValue, primaryKeyName, foreignKeyName, relationTable, targetTable)
+{
+	const sql = `SELECT target.* FROM ${targetTable} target
+		JOIN ${relationTable} rel ON target.ID = rel.${foreignKeyName}
+		WHERE rel.${primaryKeyName} = ?`
+	const results = worker.world.prepare(sql).all(primaryKeyValue);
+	return this.resultsLoader(results)
 }
 /**
  * 

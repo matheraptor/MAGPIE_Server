@@ -33,29 +33,23 @@ data.push(
 		/**
 		 * 
 		 * @param {import("../SERVER.js").exp_payload} exp 
-		 * @param {import("./entity_types.js").entity_data} params 
+		 * @param {import("../core/entity.js").STATS} STATS 
 		 * @returns {import("../SERVER.js").exp_output} results
 		 */
-		onAction: function seekTarget(exp, params) 
+		onAction: function seekTarget(exp, STATS) 
 		{
 			const ePrefix = `[EMOTE-302].seekTarget: `;
-			try
-			{
-				const results = {};
-				results.states = {
-					add: [INDEX.SEEKING_TARGET]
-				}
-				results.exp = exp;
-				results.exp.emoteID = 302;
-				results.exp.keys.push(MAGPIE.KEY.INDEX.TARGET)
-				results.persist = {};
-				results.persist.condition = () => {return true};
-				return results
-			}
-			catch(e)
-			{
-				return new Error(ePrefix + e.message);
-			}
+			const results = {};
+			const index = exp.value;
+			results.addState = [INDEX.SEEKING_TARGET, index];
+			results.removeState = null;
+			results.switchState = null;
+			results.exp = exp;
+			results.exp.emoteID = null;
+			results.exp.keys.push(MAGPIE.KEY.INDEX.TARGET)
+			results.persist = {};
+			results.persist.condition = () => {return true};
+			return results
 		},
 		onPassive: function()
 		{

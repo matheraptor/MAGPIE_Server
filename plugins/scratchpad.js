@@ -22,6 +22,9 @@ const {
 
 // #endregion
 //========================================================================
+r.context.diego = r.context.DATABASE.loadEntitySync(1773811141134)
+r.context.diego.exps.pop()
+r.context.diego.refresh(0,0.1)
 r.context.diego = r.context.SERVER.HIVE._reg_entityByIndex(1);
 r.context.Earth = r.context.SERVER.HIVE._reg_entityByIndex(0);
 r.context.C = MAGPIE_SERVER.HIVE._reg_entityByIndex();
@@ -52,6 +55,8 @@ PAR[Kp.TMAX_X] = 0.01;
 PAR[Kp.TMAX_Y] = 0.01;
 PAR[Kp.TMAX_Z] = 0;
 r.context.diego.PARAMS = PAR;
+
+
 /**
  const { P0, V0 } = r.context.diego.decomp_POVART();
  * @desc everything below here stays forever

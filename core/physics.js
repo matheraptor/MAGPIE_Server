@@ -6,6 +6,7 @@
 //========================================================================
 // #region - INDEX
 //========================================================================
+const { he } = require("zod/locales");
 const { MAGPIE } = require("./index");
 const { MAGPIE_SYSTEM } = require("./system");
 function MAGPIE_PHYSICS()
@@ -22,22 +23,66 @@ function MAGPIE_PHYSICS()
 //========================================================================
 /**
  * @desc {@link MAGPIE_SYSTEM} of {@link MAGPIE}
+ * @typedef {import("./entity").MAGPIE_ENTITY} MAGPIE_ENTITY
+ * @typedef {import("./index").orbit} orbit [a,e,i,raan,aop,nu,T0,M0]
+ * @typedef {import("./index").duration} duration in s
+ * @typedef {import("./index").distance} distance in m
+ * @typedef {Number} volume in L
+ * @typedef {Number} mass in kg
+ * @typedef {Number} velocity in m/s
+ * @typedef {Number} acceleration m/s²
+ * @typedef {Number} index
+ * @typedef {[x<Number>, y<Number>, z<Number>]} vector3 3D vector [x,y,z]
+ * @typedef {[yz<Number>, xz<Number>, xy<Number>]} bivector 3D bivector [yz, xz, xy]
+ * @typedef {[yz<Number>, xz<Number>, xy<Number>, w<Number>]} rotor
+ * @typedef {Number} theta (θ) angular displacement in rad
+ * @typedef {Number} omega (ω) angular velocity in rad/s
+ * @typedef {Number} alpha (α) angular acceleration in rad/s²
+ * @typedef {Number} torque (𝜏) in N*m
+ * @typedef {Number} MoI moment of inertia (I) in kg*m²
+ * @typedef {Number} electric_current in Ampere (A)
+ * @typedef {Number} temperature in Kelvin (K)
+ * @typedef {Number} substance Mole (mol)
+ * @typedef {Number} luminosity Candela (cd)
+ * @typedef {Number} force in Newton (N) = kg * m/s²
+ * @typedef {Number} energy in Joule (J) = N * m / kg * m²/s²
+ * @typedef {Number} power in Watt (W) = J/s / kg * m²/s³
+ * @typedef {Number} pressure in Pascal (Pa) = N/m² or kg/(m*s²)
+ * @typedef {Number} frequency in Hertz (Hz) = 1/s
+ * @typedef {Number} voltage in Volt (V) = kg * m²/(s³ * A)
+ * @typedef {Number} angle_rad in radians (rad) 0 to PI
+ * @typedef {Number} angle_deg in degrees (°) 0 to 360
+ * @typedef {Number} ratio variable * ratio<0 to 1>
+ * @typedef {Number} coefficient variable * coefficient
+ * @typedef {Number} percentage %
+ * @typedef {Number} density kg/L
+ * @typedef {Number} atmo_density atmospheric density = kg/m³ 
+ * @typedef {Number} epoch_real_s time in s since epoch J2000
  * 
+ * @typedef {import("./entity").entity_stats} entity_stats
  * 
  */
 //========================================================================
 //#region - PHYSICS
 //========================================================================
+MAGPIE_PHYSICS.meta = {}
 MAGPIE_PHYSICS.prototype.constructor = MAGPIE_PHYSICS;
+/**
+ * @desc back to {@link MAGPIE_PHYSICS.meta}
+ * 
+ */
+//========================================================================
+//#endregion --- Physics
+//========================================================================
 /**
  * @typedef {[Number, Number, Number]} coords [lat, lon, ASL]
  * @desc {@link MAGPIE_PHYSICS.aero}
  * 
  * 
  */
-//------------------------------------------------------------------------
-//#region > Geodetic
-//------------------------------------------------------------------------
+//========================================================================
+//#region - GEODETIC
+//========================================================================
 MAGPIE_PHYSICS.geodetic = {};
 /**
  * 
@@ -116,16 +161,15 @@ MAGPIE_PHYSICS.geodeticToCartesian = function geodeticToCartesian(lat, lon, R)
 }
 /**
  * @sister of {@link MAGPIE_PHYSICS.geodeticToCartesian}
- * @param {Number} x 
- * @param {Number} y 
- * @param {Number} z 
+ * @param {vector3} P0  
  * @param {Number} R radius of the celestial body in meters
  * @returns {coords} [lat°, lon°, ASL(m)]
  */
-MAGPIE_PHYSICS.cartesianToGeodetic = function cartesianToGeodetic(x, y, z, R)
+MAGPIE_PHYSICS.cartesianToGeodetic = function cartesianToGeodetic(P0, R)
 {
-	if(!x || !y || !z) return
+	if(!this.isValidVector(P0)) return
 	if(!R) R = MAGPIE.KEY.PHYSICS.EARTH.R;
+	const [x,y,z] = P0;
 	const totR = Math.sqrt(x**2 + y**2 + z**2);
 	const lat = Math.asin(z / totR) * (180 / Math.PI);
 	const lon = Math.atan2(y, x) * (180 / Math.PI);
@@ -133,8 +177,16 @@ MAGPIE_PHYSICS.cartesianToGeodetic = function cartesianToGeodetic(x, y, z, R)
 	return [lat, lon, ASL]
 }
 
-
-MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(C, C1, POVART0, inertia)
+/**
+ * 
+ * @param {MAGPIE_ENTITY} C celestial body
+ * @param {distance} r celestial radius
+ * @param {coords} C0 
+ * @param {POVART} POVART0 
+ * @param {MoI} inertia 
+ * @returns {{clamped: Boolean, Pg: vector3, Vg: vector3, Ag: vector3, Rg: bivector}}
+ */
+MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(C, r, C0, POVART0, inertia)
 {
 	const ePrefix = `[PHYSICS].clampToGround: `;
 	try
@@ -143,7 +195,7 @@ MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(C, C1, POVART0
 		const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0);
 		const up = this.normalizeVector(P0);
 		//compare against P0
-		const [lat,lon,ASL] = C1;
+		const [lat,lon,ASL] = C0;
 		//if AGL < 0, return V1 clamped to ground
 		if(ASL < 0.05)
 		{
@@ -163,7 +215,7 @@ MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(C, C1, POVART0
 				const Vvec = this.scaleVector(up, Vv);
 				Vg = this.subVectors(V0, Vvec);
 			}
-			const Pg = this.scaleVector(up, C.radius());
+			const Pg = this.scaleVector(up, r);
 			// const Pg = this.geodeticToCartesian(lat, lon, C.radius() + 0.1);
 			// const { Fd } = this.currentAeroForces()
 			return { clamped: true, Pg, Vg, Ag, Rg }
@@ -200,8 +252,8 @@ MAGPIE_PHYSICS._forces_calculate2BodyGravityVector = function _forces_calculate2
 	}
 }
 /**
- * 
- * @param {MAGPIE_CELESTIAL} P_C 
+ * @todo calculateForces
+ * @param {MAGPIE_ENTITY} P_C 
  * @param {coords} C1 
  * @param {Number} Cf 
  * @param {Number} Cl 
@@ -209,20 +261,30 @@ MAGPIE_PHYSICS._forces_calculate2BodyGravityVector = function _forces_calculate2
  * @param {Number} CoM 
  * @param {Number} CoL 
  * @param {angle} AoA 
+ * @param {vector3} At
  * @returns {{ Fg: acceleration, Ff: force, Fd: force, Fl: force }}
  */
-MAGPIE_PHYSICS._geod_calculateForces = function _geod_calculateForces(P_C, C1, Cf, Cl, Cd, CoM, CoL, AoA)
+MAGPIE_PHYSICS._geod_calculateForces = function _geod_calculateForces(P_C, C1, Cf, Cl, Cd, CoM, CoL, AoA, At)
 {
 	const ePrefix = `[PHYSICS].geodForces: `;
-	let forces = { Fg: NaN, Ff: NaN, Fd: NaN, Fl: NaN };
+	const K = MAGPIE.KEY.PHYSICS.FORCES;
+	const offset = K.ARRAY;
+	let forces = new Float64Array(K.ARRAY * 2)
 	try
 	{
-		if(!MAGPIE_ENTITY.isValidCelestial(P_C))
-			throw new Error(`${P_C} is invalid celestial`)
-		forces.Fg = P_C.gravity();
-		forces.Ff = P_C._geod_frictionAtCoords(C1, Cf);
-		forces.Fl = P_C._geod_liftAtCoords(C1, Cl, AoA, CoM, CoL);
-		forces.Fd = P_C._geod_dragAtCoords(C1, Cd, forces.Fl, AoA);
+		forces[K.FG] = P_C.STATS[MAGPIE.KEY.CELESTIAL.G]
+		// const { Ff, eFf } = this._geod_frictionAtCoords(C, C1, Cf);
+		// forces[K.FF] = Ff;
+		// forces[K.FF + offset] = eFf;
+		// const { Fl, eFl } = this._geod_liftAtCoords(C1, Cl, AoA, CoM, CoL);
+		// forces[K.FL] = Fl;
+		// forces[K.FL + offset] = eFl;
+		// const { Fd, eFd } = this._geod_dragAtCoords(C1, Cd, Fl, AoA);
+		// forces[K.FD] = Fd;
+		// forces[K.FD + offset] = eFd;
+		// const A0 = At;
+		// At = this.scaleVector(A0, -eFd);
+		forces[K.FG + offset] = this.mag(At);
 	}
 	catch(e)
 	{
@@ -233,719 +295,439 @@ MAGPIE_PHYSICS._geod_calculateForces = function _geod_calculateForces(P_C, C1, C
 		return forces
 	}
 }
+/**
+ * @param {{
+ * C: MAGPIE_ENTITY,
+ * C0: coords,
+ * C1: coords,
+ * CB: vector3
+ * }} data
+ * @returns {{Ac: vector3, Tc: bivector}}
+ * @todo checkCollisions
+ */
+MAGPIE_PHYSICS._geod_checkCollisions = function _geod_checkCollisions(data)
+{
+	//
+}
+/**
+ * 
+ * back to {@link MAGPIE_PHYSICS.geodetic}
+ */
+//========================================================================
 //#endregion --- Geodetic
-//------------------------------------------------------------------------
+//========================================================================
 /**
- * 
- * 
- */
-//------------------------------------------------------------------------
-//#region > Celestial
-//------------------------------------------------------------------------
-/**
- * 
- * @param {mass} mass 
- * @param {Number} CMF 
- * @returns 
- */
-MAGPIE_PHYSICS.celestialDensity = function celestialDensity(mass, CMF)
-{
-	const C10 = mass;
-	const C11 = CMF;
-	const exp1 = 5.51 * C10**(0.189 / (1.07 - 0.21 * (C11 / 100))**3);
-	const exp2 = 3.5 + 4.37 * (C11 / 100);
-	if(C10 > 0.6 || exp1 > exp2) return exp1;
-	return exp2
-}
-//#endregion
-//------------------------------------------------------------------------
-/**
- * @section of {@link MAGPIE_PHYSICS}
- * @child of {@link MAGPIE_PHYSICS.geodetic}
- * @reference {@link MAGPIE.KEY.PHYSICS.AERO} {@link MAGPIE.KEY.STATS.meta}
+ * @name target
+ * @desc section of {@link MAGPIE_PHYSICS.meta}
  * 
  */
-//------------------------------------------------------------------------
-//#region > Aero
-//------------------------------------------------------------------------
-MAGPIE_PHYSICS.aero = {};
+//========================================================================
+//#region - TARGET
+//========================================================================
+MAGPIE_PHYSICS.target = {};
 /**
  * 
- * @param {MAGPIE_ENTITY} celestial body 
- * @param {Array<Number>} coords lat°, lon°, ASL (m)
- * @param {Array<Number>} POVART1 latest worldstate of the entity
- * @param {Number} Cf Coefficient of Friction (μ)
- * @param {Number} Cl Coefficient of Lift
- * @param {Number} Cd Coefficient of Drag
- * @param {Number} CoM Center of Mass
- * @param {Number} CoL Center of Lift
- * @returns {{Fg: acceleration, Fd: force, Ff: force, Fl: force, AoA: angle}} 
- * 
+ * @param {vector3} P0 current position (P₀)
+ * @param {vector3} P1 target position (P₁)
+ * @param {Number} cruiseSpeed Vspeed (m/s)
+ * @returns {vector3} target velocity (V₁)
  */
-MAGPIE_PHYSICS.currentAeroForces = function currentAeroForces(celestial, coords, POVART1, Cf, Cl, Cd, CoM, CoL)
+MAGPIE_PHYSICS.targetVelocity = function targetVelocity(P0, P1, cruiseSpeed = 1)
 {
-	const { ASL } = coords;
-	const { P0 } = this.getPosition(POVART1);
-	const Fg = this._celestial_LocalG(celestial, P0);
-	const Fd = this._aero_calculateFd(C, coords, Cl, Cd, CoM, CoL, AoA);
-	const Fl = this._aero_calculateFl(C, coords, Cl, Cd, CoM, CoL, AoA);
-	const AoA = this._aero_calculateAoA(POVART1);
-	return { Fg, Fd, Fl, AoA }
-}
-/**
- * @todo local Gravity
- * @param {MAGPIE_CELESTIAL} celestial
- * @param {vector3} P0
- */
-MAGPIE_PHYSICS._celestial_LocalG = function _celestial_LocalG(celestial, P0)
-{
-	const mass = celestial.traits[MAGPIE.KEY.CELESTIAL.MASS];
-	const G = this._forces_calculate2BodyGravityVector(P0, mass);
-	return this.mag(G);
-}
-/**
- * @todo Ff friction force
- * @param {MAGPIE_CELESTIAL} C  
- * @param {coords} coords lat, lon, ASL 
- * @param {Number} Cf entity's coefficient of friction
- * @param {vector3} V0 entity's Velocity vector
- * @returns {force} Friction force (N)
- */
-MAGPIE_PHYSICS._geod_calculateFf = function _geod_calculateFf(C, coords, Cf, V0)
-{
-	return 0.1
-}
-/**
- * @todo Fd drag
- * @param {MAGPIE_CELESTIAL} C
- * @param {coords} coords 
- * @param {Number} Cl 
- * @param {Number} Cd 
- * @param {Number} CoM 
- * @param {Number} CoL  
- * @param {angle} AoA
- * @returns {force} (Fd) drag force in Newtons (N)
- */
-MAGPIE_PHYSICS._aero_calculateFd = function _aero_calculateFd(C, coords, Cl, Cd, CoM, CoL, AoA)
-{
-	return 0.1
-}
-/**
- * @todo Fl lift
- * @param {MAGPIE_CELESTIAL} C
- * @param {coords} coords 
- * @param {Number} Cl 
- * @param {Number} Cd 
- * @param {Number} CoM 
- * @param {Number} CoL
- * @param {angle} AoA  
- * @returns {force} (Fl) lift force in Newtons (N)
- */
-MAGPIE_PHYSICS._aero_calculateFl = function _aero_calculateFl(C, coords, Cl, Cd, CoM, CoL, AoA)
-{
-	return 0.1
-}
-/**
- * @todo AoA
- * @param {Number[]} POVART0 current POVART
- * @param {Number[]} fwd default forward vector {@link MAGPIE.KEY.POVART.FWD}
- * @returns {Number} angle of attack in radians
- */
-MAGPIE_PHYSICS._aero_calculateAoArad = function _aero_calculateAoArad(POVART0, fwd)
-{
-	const message = `[PHYSICS].calculateAoArad: `
+	const ePrefix = `[MAGPIE_PHYSICS].targetVelocity: `;
 	try
 	{
-		const V0 = this.getVelocity(POVART0);
-		const speed = this.mag(V0);
-		if(isNaN(V0) || speed < 0.1) return NaN;
-		//
-		const O0 = this.getOrientation(POVART0);
-		if(!fwd || fwd.some(n => !n))
-			fwd = MAGPIE.KEY.POVART.FWD;
-		const fwd_world = this.rotorApply(O0, fwd);
-		const V_dir = this.normalizeVector(V0);
-		//
-		const dot = this.dotProduct(fwd_world, V_dir);
-		const angle = Math.acos(this._U_clampRange(dot, -1, 1));
-		if(isNaN(angle)) throw new Error(`(${angle}) is invalid`)
-		//
-		// determine sign: project velocity onto local "up" axis
-		//assuming [0,0,1] is local up (Z-axis in many coordinate systems)
-		const up = this.rotorApply(O0, MAGPIE.KEY.POVART.UP);
-		const AoA = this.dotProduct(V_dir, up) < 0 ? angle : -angle;
-		return AoA;
+		const diff = this.subVectors(P1, P0);
+		const dir = this.normalizeVector(diff);
+		return this.scaleVector(dir, cruiseSpeed);
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-	}
-};
-//#endregion --- Aero
-//------------------------------------------------------------------------
-/**
- * 
- * 
- */
-//------------------------------------------------------------------------
-//#region > Utility
-//------------------------------------------------------------------------
-MAGPIE_PHYSICS.Utility = {};
-/**
- * 
- * @param {entity_stats} params 
- * @returns {Boolean}
- */
-MAGPIE_PHYSICS.isValidParams = function isValidParams(params)
-{
-	const ePrefix = "[PHYSICS].isValidParams: ";
-	try
-	{
-		if(!params)
-			throw new Error(`${params} is invalid params`);
-		if(params.length < MAGPIE.KEY.STATS.ARRAY)
-			throw new Error(`${params} is invalid STATS format`);
-		if(params.some(n => isNaN(n)))
-			throw new Error(`${params} has invalid numbers`);
-		return true
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} number 
- * @param {Number} min 
- * @param {Number} max 
- * @returns {Number} clamped
- */
-MAGPIE_PHYSICS._U_clampRange = function clampRange(number, min, max)
-{
-	return MAGPIE_SYSTEM.Math.clampRange(number, min, max);
-}
-/**
- * 
- * @param {Number} knots 
- * @returns {velocity} Vspeed in m/s
- */
-MAGPIE_PHYSICS._U_knotsToMPS = function _U_knotsToMPS(knots)
-{
-	return Number(((knots * MAGPIE.KEY.PHYSICS.NM) / 3600).toFixed(5))
-}
-/**
- * 
- * @param {velocity} MPS 
- * @returns {Number} kts
- */
-MAGPIE_PHYSICS._U_MPStoKnots = function _U_MPStoKnots(MPS)
-{
-	return Number(((MPS / MAGPIE.KEY.PHYSICS.NM) * 3600).toFixed(5))
-}
-MAGPIE_PHYSICS._aero_calculateAoA = function _aero_calculateAoA(POVART0, fwd)
-{
-	const rad = this._aero_calculateAoArad(POVART0, fwd);
-	return this._U_rad_to_deg(rad);
-}
-MAGPIE_PHYSICS._U_rad_to_deg = function _U_rad_to_deg(radians)
-{
-	return MAGPIE_SYSTEM.Math.convertRadToDeg(radians)
-}
-MAGPIE_PHYSICS._U_deg_to_rad = function _U_deg_to_rad(degrees)
-{
-	return MAGPIE_SYSTEM.Math.convertDegToRad(degrees)
-}
-MAGPIE_PHYSICS._aero_calculateCf = function()
-{
-	//@todo calculate Cf
-};
-MAGPIE_PHYSICS._aero_calculateCl = function()
-{
-	//@todo calculate Cl
-};
-MAGPIE_PHYSICS._aero_calculateCd = function()
-{
-	//@todo calculate Cd
-};
-MAGPIE_PHYSICS._aero_calculateCoM = function()
-{
-	//@todo calculate CoM
-};
-MAGPIE_PHYSICS._aero_calculateCoL = function()
-{
-	//@todo calculate CoL
-};
-/**
- * @desc {@link MAGPIE.KEY.STATS.meta}
- * @param {entity_stats} stats 
- * @returns {vector3} inertia tensor [Ix, Iy, Iz]
- */
-MAGPIE_PHYSICS._calculateInertiaTensor = function calculateInertia(stats)
-{
-	const ePrefix = "[PHYSICS].calculateInertia: ";
-	try
-	{
-		if(!this.isValidParams(stats))
-			throw new Error(`${stats} is invalid STATS`);
-		const K = MAGPIE.KEY.STATS;
-		const L = stats[K.LENGTH];
-		const H = stats[K.HEIGHT];
-		const W = stats[K.WIDTH];
-		const m = stats[K.MASSKG];
-		const factor = (1 / 12) * m;
-		const I = [
-			factor * (H**2 + W**2), //x-axis(Roll)
-			factor * (L**2 + H**2), //y-axis (Pitch)
-			factor * (L**2 + W**2) //z-axis (Yaw)
-		];
-		if(!this.isValidVector(I))
-			throw new Error(`${I} is invalid I vector`);
-		return I
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-} 
-/**
- * 
- * @param {entity_stats} stats
- * @returns {alpha} (α) in rad/s^2 
- */
-MAGPIE_PHYSICS._calculateAgilityAlpha = function calculateAgilityAlpha(stats)
-{
-	const ePrefix = "[PHYSICS].calculateAgilityAlpha: ";
-	try
-	{
-		if(!this.isValidParams(stats))
-			throw new Error(`${stats} is invalid STATS`);
-		const K = MAGPIE.KEY.STATS;
-		const L = stats[K.LENGTH];
-		const H = stats[K.HEIGHT];
-		const W = stats[K.WIDTH];
-		const GMAX = stats[K.GMAX];
-		// 1. find the distance from center to further corner (pythagoras)
-		// this is true radius 'r' of the entity
-		const r = Math.sqrt((L/2)**2 + (H/2)**2 + (W/2)**2);
-		// 2. alpha = max_linear_acceleration / radius
-		// this ensures no point on the ship exceeds GMAX
-		const a = GMAX / r;
-		if(isNaN(a))
-			throw new Error(`${a} is invalid alpha`)
-		return a
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {STAT} dex Dexterity parameter (DEX₁)
- * @param {spin} a initial agility alpha (a₀) in rad/s
- * @returns {coefficient} final agility alpha (a₁)
- */
-MAGPIE_PHYSICS._get_agilityModifier = function agilityModifier(dex, a)
-{
-	const MOD = MAGPIE.KEY.STATS.AGILITY_MOD_MIN;
-	const MAX = MAGPIE.KEY.STATS.AGILITY_MOD_MAX;
-	const multiplier = MOD + (dex / MAX);
-	return a * multiplier
-}
-//#endregion
-//------------------------------------------------------------------------
-/**
- * 
- * 
- */
-//------------------------------------------------------------------------
-//#region > Vectors 
-//------------------------------------------------------------------------
-MAGPIE_PHYSICS.vectors = {};
-/**
- * @desc {@link MAGPIE_ENTITY.exp}
- * @param {vector3} vector 
- * @returns {Boolean}
- * 
- * 
- */
-MAGPIE_PHYSICS.isValidVector = function isValidVector(vector)
-{
-	if(vector && vector.length === 3 && vector.every(n => !isNaN(n)))
-		return true
-}
-/**
- * 
- * @param {Number} x 
- * @param {Number} y 
- * @param {Number} z 
- * @returns {Number} magnitude
- * 
- * @version 0.17.18
- * - FIXED: used .vector_mag(vector) instead of .mag(vector) as a wrapper;
- * 		.vector_mag only accepts (x, y, z) 
- */
-MAGPIE_PHYSICS.vector_mag = function vector_mag(x = 0, y = 0, z = 0)
-{
-	return Math.sqrt(x**2 + y**2 + z**2) 
-}
-/**
- * 
- * @param {vector3} vector [x,y,z] 
- * @returns {Number} magnitude of vector 
- */
-MAGPIE_PHYSICS.mag = function mag(vector)
-{
-	const message = `[PHYSICS].mag: `
-	try
-	{
-		if(vector.some(n => isNaN(n))) throw new Error(`(${vector}) is invalid`);
-		const x = vector[0];
-		const y = vector[1];
-		const z = vector[2];
-		return this.vector_mag(x, y, z);
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
 		return [NaN, NaN, NaN]
 	}
 }
 /**
  * 
- * @param {Number} x1 
- * @param {Number} y1 
- * @param {Number} z1 
- * @param {Number} x2 
- * @param {Number} y2 
- * @param {Number} z2 
- * @returns {Number} the dot product of vectors A and B
- */
-MAGPIE_PHYSICS.vector_dot = function vector_dot(x1, y1, z1, x2, y2, z2)
-{
-	return (x1 * x2) + (y1 * y2) + (z1 * z2)
-}
-/**
- * 
- * @param {vector3} vectorA 
- * @param {vector3} vectorB 
- * @returns {Number} the dot product of vectors A and B
- * 
- * @version 0.17.17
- * - FIXED: "this.dot" not a function; must be "this.vector_dot"
- */
-MAGPIE_PHYSICS.dotProduct = function dotProduct(vectorA, vectorB)
-{
-	const message = `[PHYSICS].dotProduct: `
-	try
-	{
-		if(!this.isValidVector(vectorA))
-			throw new Error(`(${vectorA}) is invalid vector`);
-		if(!this.isValidVector(vectorB))
-			throw new Error(`(${vectorB}) is invalid vector`);
-		const A = vectorA;
-		const B = vectorB;
-		return this.vector_dot(A[0], A[1], A[2], B[0], B[1], B[2])
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-		return [NaN, NaN, NaN]
-	}
-}
-/**
- * 
- * @param {vector3} vector 
- * @param {Number} scalar 
+ * @param {second} dt 
+ * @param {vector3} At 
+ * @param {acceleration} Amax 
  * @returns {vector3}
  */
-MAGPIE_PHYSICS.vector_addScalar = function vector_addScalar(vector, scalar)
+MAGPIE_PHYSICS._POVART_applyTargetA = function _POVART_applyTargetA(dt, At, Amax)
 {
-	const { x, y, z } = vector;
-	return [x + scalar, y + scalar, z + scalar]
-}
-/**
- * 
- * @param {Number} x 
- * @param {Number} y 
- * @param {Number} z 
- * @param {Number} s 
- * @returns {vector3} vector[x,y,z] multiplied by scalar
- */
-MAGPIE_PHYSICS.vector_multiplyScalar = function vector_multiplyScalar(x, y, z, s)
-{
-	return [x * s, y * s, z * s]
-}
-/**
- * 
- * @param {vector3} vector 
- * @param {Number} scalar 
- * @returns {vector3} vector[x,y,z] multiplied by scalar
- */
-MAGPIE_PHYSICS.scaleVector = function scaleVector(vector, scalar)
-{
-	const message = `[PHYSICS].scaleVector: `
+	const ePrefix = `[PHYSICS].applyTargetA: `;
 	try
 	{
-		if(!this.isValidVector(vector))
-			throw new Error(`(${vector}) is invalid vector`);
-		if(isNaN(scalar))
-			throw new Error(`(${scalar}) is invalid scalar`);
-		const v = vector;
-		const s = scalar;
-		return this.vector_multiplyScalar(v[0], v[1], v[2], s)
+		const dA = this.scaleVector(this.vector_clamp_mag(At, Amax), dt);
+		if(!this.isValidVector(dA))
+			throw new Error(`${dA} is invalid vector dA`);
+		return dA
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-		return [NaN, NaN, NaN]
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
 	}
 }
 /**
  * 
- * @param {Number} x 
- * @param {Number} y
- * @param {Number} z
- * @param {Number} s - scalar
- * @returns {Array} vector[x,y,z] divided by scalar
+ * @param {Number} dt ms 
+ * @param {rotor} O0  
+ * @param {bivector} Tt 
+ * @param {[x<Number>, y<Number>, z<Number>]} Tmax
+ * @param {[x<Number>, y<Number>, z<Number>]} inertia 
+ * @returns {bivector} dT
  */
-MAGPIE_PHYSICS.divideScalar = function divideScalar(x, y, z, s)
+MAGPIE_PHYSICS._POVART_applyTargetT = function _POVART_applyTargetT(dt, O0, Tt, Tmax, inertia)
 {
-	return [x / s, y / s, z / s]
-}
-/**
- * 
- * @param {Number} x1 
- * @param {Number} y1 
- * @param {Number} z1 
- * @param {Number} x2 
- * @param {Number} y2 
- * @param {Number} z2 
- * @returns {vector3} cross vector[x,y,z]
- */
-MAGPIE_PHYSICS.vector_cross = function vector_cross(x1, y1, z1, x2, y2, z2)
-{
-	const x3 = (y1 * z2) - (z1 * y2);
-	const y3 = (z1 * x2) - (x1 * z2);
-	const z3 = (x1 * y2) - (y1 * x2);
-	return [x3, y3, z3]
-}
-/**
- * 
- * @param {vector3} vectorA 
- * @param {vector3} vectorB 
- * @returns {vector3} cross vector [x,y,z]
- */
-MAGPIE_PHYSICS.crossProduct = function crossProduct(vectorA, vectorB)
-{
-	const message = `[PHYSICS].crossProduct: `
+	const ePrefix = `[PHYSICS].applyTargetT: `;
 	try
 	{
-		if(vectorA.some(n => isNaN(n)))
-			throw new Error(`(${vectorA}) is invalid vector`);
-		if(vectorB.some(n => isNaN(n)))
-			throw new Error(`(${vectorB}) is invalid vector`);
-		const A = vectorA;
-		const B = vectorB;
-		return this.vector_cross(A[0], A[1], A[2], B[0], B[1], B[2])
+		const Oinv = this.rotorReverse(O0);
+		const Tlocal = this.rotorApply(Oinv, Tt);
+		const netCapX = Math.max(0, Tmax[0] - inertia[0]) || 1;
+		const netCapY = Math.max(0, Tmax[1] - inertia[1]) || 1;
+		const netCapZ = Math.max(0, Tmax[2] - inertia[2]) || 1;
+		const TclampX = this._U_clampRange(Tlocal[0], -netCapX, netCapX);
+		const TclampY = this._U_clampRange(Tlocal[1], -netCapY, netCapY);
+		const TclampZ = this._U_clampRange(Tlocal[2], -netCapZ, netCapZ);
+		const Tclamped = this.rotorApply(O0, [TclampX, TclampY, TclampZ]);
+		const dT = this.scaleVector(Tclamped, dt);
+		if(!this.isValidVector(dT))
+			throw new Error(`${dT} is invalid vector dT`);
+		return dT
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-		return [NaN, NaN, NaN]
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
 	}
 }
 /**
  * 
- * @param {Number} x1 
- * @param {Number} y1 
- * @param {Number} z1 
- * @param {Number} x2 
- * @param {Number} y2 
- * @param {Number} z2 
- * @returns {vector3} vector[x,y,z]
+ * back to {@link MAGPIE_PHYSICS.target}
  */
-MAGPIE_PHYSICS.vector_add = function vector_add(x1, y1, z1, x2, y2, z2)
-{
-	return [x1 + x2, y1 + y2, z1 + z2]
-}
+//========================================================================
+//#endregion
+//========================================================================
 /**
  * 
- * @param {Number} x1 
- * @param {Number} y1 
- * @param {Number} z1 
- * @param {Number} x2 
- * @param {Number} y2 
- * @param {Number} z2 
- * @returns {vector3} vector[x,y,z]
+ * 
  */
-MAGPIE_PHYSICS.vector_sub = function vector_sub(x1, y1, z1, x2, y2, z2)
-{
-	return [x1 - x2, y1 - y2, z1 - z2]
-}
+//========================================================================
+//#region - APPLY
+//========================================================================
+MAGPIE_PHYSICS.apply = {}
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > target
+//------------------------------------------------------------------------
+
 /**
  * 
- * @param {vector3} vectorA 
- * @param {vector3} vectorB 
- * @returns {vector3} vector [x,y,z]
+ * @param {POVART} POVART0 
+ * @param {vector3} dA delta acceleration vector
+ * @param {bivector} dT delta torque bivector
+ * @param {Number} dt delta time in seconds
+ * @returns {POVART} POVART₁
  */
-MAGPIE_PHYSICS.addVectors = function addVectors(vectorA, vectorB)
+MAGPIE_PHYSICS.applyDeltaAT = function applyDeltaAT(POVART0, dA, dT, dt)
 {
-	const message = `[PHYSICS].addVectors: `
+	const message = `[PHYSICS].applyDeltaAT: `
 	try
 	{
-		if(!this.isValidVector(vectorA))
-			throw new Error(`(${vectorA}) is invalid vector`);
-		if(!this.isValidVector(vectorB))
-			throw new Error(`(${vectorB}) is invalid vector`);
-		const A = vectorA;
-		const B = vectorB;
-		return this.vector_add(A[0], A[1], A[2], B[0], B[1], B[2]);
+		const POVART1 = MAGPIE_PHYSICS.applyAcceleration(POVART0, dA, dt);
+		return MAGPIE_PHYSICS.applyTorque(POVART1, dT, dt);
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-		return [NaN, NaN, NaN]
+		MAGPIE_SYSTEM.error(message + e.message, e)
+		return POVART0;
 	}
+}
+MAGPIE_PHYSICS._POVART_getTargetAT = function(POVART0, A1, T1, dt)
+{
+	if(isNaN(dt)) throw new Error(`(${dt}) is invalid dt`);
+		if(!dt) return defaults;
+		if(!MAGPIE_PHYSICS.isValidVector(A1)) A1 = [0,0,0];
+		if(!MAGPIE_PHYSICS.isValidVector(T1)) T1 = [0,0,0];
+		//
+		const P_C = this.celestialSync();
+		if(!MAGPIE_ENTITY.isValidCelestial(P_C)) 
+			throw new Error(`(${P_C}) is invalid celestial`);
+		const r = P_C.radius();
+		let POVART_A = MAGPIE_PHYSICS.setAcceleration(this.POVART, A1);
+		let POVART_AT = MAGPIE_PHYSICS.setTorque(POVART_A, T1);
+		//
+		const R0 = MAGPIE_PHYSICS.getRotation(POVART_AT);
+		const dR = MAGPIE_PHYSICS.scaleVector(T1, dt);
+		const R1 = MAGPIE_PHYSICS.addVectors(R0, dR);
+		//
+		const O0 = MAGPIE_PHYSICS.getOrientation(POVART_AT);
+		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
+		const cO = MAGPIE_PHYSICS.rotorCompose(dO, O0);
+		const O1 = MAGPIE_PHYSICS.rotorNormalize(cO);
+		//
+		const V0 = MAGPIE_PHYSICS.getVelocity(POVART_AT);
+		const dV = MAGPIE_PHYSICS.scaleVector(A1, dt);
+		const V1 = MAGPIE_PHYSICS.addVectors(V0, dV);
+		const dP = MAGPIE_PHYSICS.scaleVector(V1, dt);
+		const P0 = this._POVART_getPosition();
+		const P1 = MAGPIE_PHYSICS.addVectors(P0, dP);
 }
 /**
  * 
- * @param {vector3} vectorA 
- * @param {vector3} vectorB 
- * @returns {vector3} vector [x,y,z]
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {duration} dt 
+ * @param {vector3} At 
+ * @param {bivector} Tt
+ * @param {rotor} O0
+ * @returns {{At: vector3, Tt: bivector}} 
  */
-MAGPIE_PHYSICS.subVectors = function subVectors(vectorA, vectorB)
+MAGPIE_PHYSICS._POVART_applyTargetAT = function applyTargetAT(entity, dt, At, Tt, O0)
 {
-	const message = `[PHYSICS].subVectors: `
+	const ePrefix = "[PHYSICS].applyTargetAT: ";
 	try
 	{
-		if(!this.isValidVector(vectorA))
-			throw new Error(`(${vectorA}) is invalid vector`);
-		if(!this.isValidVector(vectorB))
-			throw new Error(`(${vectorB}) is invalid vector`);
-		const A = vectorA;
-		const B = vectorB;
-		return this.vector_sub(A[0], A[1], A[2], B[0], B[1], B[2]);
+		const K = MAGPIE.KEY.STATS;
+		const PAR = entity.STATS;
+		const Amax = PAR[K.AMAX];
+		const inertia = [PAR[K.INERT_X], PAR[K.INERT_Y], PAR[K.INERT_Z]];
+		const Tmax = [PAR[K.TMAX_X], PAR[K.TMAX_Y], PAR[K.TMAX_Z]];
+		const At2 = this._POVART_applyTargetA(dt, At, Amax);
+		const Tt2 = this._POVART_applyTargetT(dt, O0, Tt, Tmax, inertia);
+		if(At2)
+			At = At2;
+		if(Tt2)
+			Tt = Tt2;
+		return { At: At, Tt: Tt }
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-		return [NaN, NaN, NaN]
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > emotes
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region move
+//------------------------------------------------------------------------
+
 /**
  * 
- * @param {Number} x 
- * @param {Number} y 
- * @param {Number} z 
- * @returns {vector3} normalized vector [x,y,z]
+ * @param {vector3} P0 current position (P₀)
+ * @param {vector3} P1 target position (P₁)
+ * @param {vector3} V0 current velocity vector (V₀)
+ * @param {Number} Vmax max speed
+ * @param {Number} Amax max acceleratio
+ * @param {Number} Bmax max braking
+ * @param {Number} toler tolerance (m)
+ * @returns {vector3} A₁
  */
-MAGPIE_PHYSICS.vector_normalize = function vector_normalize(x, y, z)
+MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, Bmax, toler = 0.5)
 {
-	const mag = this.vector_mag(x, y, z);
-	if(mag > 1e-12)
-	{
-		const invMag = 1 / mag;
-		x *= invMag;
-		y *= invMag;
-		z *= invMag;
-	}
-	else
-	{
-		x = 0;
-		y = 0;
-		z = 0;
-	}
-	return [x, y, z]
-}
-/**
- * 
- * @param {vector3} vector 
- * @returns {vector3} normalized vector [x,y,z]
- */
-MAGPIE_PHYSICS.normalizeVector = function normalizeVector(vector)
-{
-	const message = `[PHYSICS].normalizeVector: `
+	const ePrefix = `[PHYSICS].moveLinear: `;
 	try
 	{
-		if(!this.isValidVector(vector))
-			throw new Error(`(${vector}) is invalid`);
-		const v = vector;
-		return this.vector_normalize(v[0], v[1], v[2]);
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-		return [NaN, NaN, NaN]
-	}
-}
-/**
- * 
- * @param {Number} x 
- * @param {Number} y 
- * @param {Number} z 
- * @param {Number} angle radians
- * @returns {vector3} rotated vector [x,y,z]
- */
-MAGPIE_PHYSICS.vector_rotate = function vector_rotate(x, y, z, angle)
-{
-	const cos = Math.cos(angle);
-	const sin = Math.sin(angle);
-	const x2 = x;
-	const y2 = y * cos - z * sin;
-	const z2 = z * sin + z * cos;
-	return [x2, y2, z2]
-}
-/**
- * 
- * @param {vector3} vector 
- * @param {Number} angleRad angle in radians
- * @returns {vector3} rotated vector [x,y,z]
- */
-MAGPIE_PHYSICS.rotateVector = function rotateVector(vector, angleRad)
-{
-	const message = `[PHYSICS].rotateVector: `
-	try
-	{
-		if(!this.isValidVector(vector))
-			throw new Error(`(${vector}) is invalid vector`);
-		if(!this.isValidAngle(angleRad))
-			throw new Error(`(${angleRad}) is invalid angle`);
-		const v = vector;
-		return this.vector_rotate(v[0], v[1], v[2], angleRad);
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-		return [NaN, NaN, NaN]
-	}
-}
-MAGPIE_PHYSICS.isValidAngle = function isValidAngle(angleRad)
-{
-	if(isNaN(angleRad) || angleRad > Math.PI || angleRad < 0)
-		return true
-	else return false
-}
-/**
- * 
- * @param {vector3} vector 
- * @param {Number} maxMag 
- * @returns {vector3} vector with clamped magnitude 
- */
-MAGPIE_PHYSICS.vector_clamp_mag = function vector_clamp_mag(vector, maxMag)
-{
-	const ePrefix = `[PHYSICS].VectorClampMag: `;
-	try
-	{
-		if(!this.isValidVector(vector)) throw new Error(`${vector} is invalid vector`);
-		const m = this.mag(vector);
-		if(m > maxMag)
+		const D0 = this.distanceTo(P0, P1);
+		const S0 = this.mag(V0);
+		// 1. arrival check
+		if(D0 <= toler)
 		{
-			const factor = maxMag / m;
-			return this.scaleVector(vector, factor);
+			const finalBrake = this.getBrakingA(P0, P1, V0, 0);
+			return this.vector_clamp_mag(finalBrake, Bmax);
 		}
-		return vector
+		// 2. Braking start check
+		const Bdist = (S0 ** 2) / (2 * Bmax);
+		if(D0 <= Bdist + toler)
+		{
+			const brakeA = this.getBrakingA(P0, P1, V0, toler);
+			return this.vector_clamp_mag(brakeA, Bmax);
+		}
+		// 3. transit / acceleration phase
+		const Vcruise = this.targetVelocity(P0, P1, Vmax);
+		const dV = this.subVectors(Vcruise, V0);
+		//clamp to maximum power
+		return this.vector_clamp_mag(dV, Amax);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region seek
+//------------------------------------------------------------------------
+
+/**
+ * 
+ * @param {POVART} POVART0 
+ * @param {vector3} P1 
+ * @param {entity_stats} params 
+ * @param {{
+ * 	tolerance: coefficient,
+ * 	intensity: ratio,
+ * 	fwd: vector3,
+ * 	agility: STAT,
+ * 	pR: ratio
+ * }} options 
+ */
+MAGPIE_PHYSICS._seekTarget = function _seekTarget(POVART0, P1, params, options)
+{
+	const ePrefix = "[PHYSICS].seekTarget: ";
+	try
+	{
+		if(!this.isValidPOVART(POVART0))
+			throw new Error(`${POVART0} is invalid subjectPOVART`)
+		if(!this.isValidVector(P1))
+			throw new Error(`${P1} is invalid P₁`)
+		if(!this.isValidParams(params))
+			throw new Error(`${params} is invalid params`);
+		const options_default = {
+			tolerance: 0,
+			intensity: 1,
+			fwd: MAGPIE.KEY.POVART.FWD,
+			agility: 1,
+			pR: 1
+		};
+		const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0);
+		if(!options) options = options_default;
+		const optKeys = Object.keys(options_default);
+		if(Object.keys(options) < optKeys)
+			optKeys.forEach(key => options[key] = options_default[key])
+		const a = this._calculateAgilityAlpha(params);
+		const a1 = this._get_agilityModifier(options.agility, a);
+		const Tmax = this._getTmax(params, a1);
+		const Ot = this._getO1toP1(P0, P1, options?.fwd);
+		const dR = this._getDeltaR(O0, Ot);
+		const Tt = this._getTt(dR, R0, Tmax, options?.pR);
+		const { At, arrived, proximity, braking } = this._getAt(P0, V0, P1, params, options?.tolerance);
+		const pR = Number(options?.pR) || this._getATpR(Ot);
+		if(!this.isValidVector(At))
+			throw new Error(`${At} is invalid Aₜ`);
+		if(!this.isValidVector(Tt))
+			throw new Error(`${Tt} is invalid Tₜ`);
+		return { 
+			At: this.scaleVector(At, pR), 
+			Tt: this.scaleVector(Tt, (1 - pR)),
+			arrived, proximity, braking
+		}
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region smartSeek
+//------------------------------------------------------------------------
+
+/**
+ * 
+ * @param {POVART} POVART0 
+ * @param {entity_stats} params 
+ * @param {vector3} P1 
+ * @param {{
+ * 	tolerance: coefficient,
+ * 	intensity: ratio,
+ * 	fwd: vector3,
+ * 	agility: PARAM,
+ * 	pR: ratio
+ * }} options 
+ * @returns {{At: vector3, Tt: bivector}}
+ */
+MAGPIE_PHYSICS._smartSeek = function smartSeek(POVART0, params, P1, options)
+{
+	let { At, Tt } = MAGPIE_PHYSICS._seekTarget(POVART0, P1, params, options);
+	const targetDir = MAGPIE_PHYSICS.subVectors(P1, P0);
+	const fwd = options?.fwd || MAGPIE.KEY.POVART.FWD;
+	const alignment = MAGPIE_PHYSICS._getAlignment(fwd, targetDir);
+	if(alignment) At = MAGPIE_PHYSICS.scaleVector(At, alignment);
+	return { At, Tt }
+}
+// #endregion
+//------------------------------------------------------------------------
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > helpers
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {rotor} dO 
+ * @param {angle} threshold angle where we start prioritizing motion (~15°)
+ * @returns {ratio} 0.0 (pure torque) to 1.0 (pure acceleration) 
+ */
+MAGPIE_PHYSICS._getATpR = function getATpR(dO, threshold = 0.26)
+{
+	// 1. get absolute angle of error in radians
+	const Ae = this._rotor_angle(dO);
+	// 2. map the error to a ratio
+	// if error is 0, pR is 1.0. If error is >= threshold, pR is 0.0
+	const ratio = 1.0 - (Ae / threshold);
+	if(isNaN(ratio)) throw new Error(`${ratio} is invalid pR`);
+	// 3. clamp 0-1
+	return this._U_clampRange(ratio, 0, 1); 
+}
+/**
+ * 
+ * @param {vector3} fwd forward vector 
+ * @param {vector3} Dt target direction (Dₜ)
+ * @returns {ratio} alignment ratio (Dₐ)
+ */
+MAGPIE_PHYSICS._getAlignment = function getAlignmentPower(fwd, Dt)
+{
+	const ePrefix = "[PHYSICS].getAlignment: ";
+	try
+	{
+		// 1. ensure vectors are normalized
+		if(!fwd) fwd = MAGPIE.KEY.POVART.FWD;
+		if(!this.isValidVector(Dt))
+			throw new Error(`${Dt} is invalid Dₜ`);
+		const f = this.normalizeVector(fwd);
+		const t = this.normalizeVector(Dt);
+		// 2. calculate dot product
+		const dot = MAGPIE_PHYSICS.dotProduct(f, t);
+		// 3. clamp to 0.0 - 1.0 (we don't want negative thrust)
+		const Da = Math.max(0, dot);
+		if(!this.isValidVector(Da))
+			throw new Error(`${Da} is invalid Dₐ`);
 	}
 	catch(e)
 	{
@@ -953,19 +735,469 @@ MAGPIE_PHYSICS.vector_clamp_mag = function vector_clamp_mag(vector, maxMag)
 	}
 }
 /**
- * @desc back to {@link MAGPIE_PHYSICS.vectors}
+ * 
+ * @param {vector3} P0
+ * @param {vector3} V0
+ * @param {vector3} P1
+ * @param {entity_stats} params 
+ * @param {distance} toler 
+ * @returns {vector3} Aₜ (target acceleration)
+ */
+MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, toler)
+{
+	const ePrefix = "[PHYSICS].getAt: ";
+	try
+	{
+		if(!this.isValidVector(P0))
+			throw new Error(`${P0} is invalid P₀`);
+		if(!this.isValidVector(P1))
+			throw new Error(`${P1} is invalid P₁`);
+		const D0 = this.distanceTo(P0, P1);
+		if(!this.isValidVector(V0))
+			throw new Error(`${V0} is invalid V₀`);
+		if(!this.isValidParams(params))
+			throw new Error(`${params} is invalid PARAMS`);
+		const { Vmax, Amax, Bmax } = params;
+		const S0 = this.mag(V0);
+		// 1. calculate braking distance
+		const Bdist = (S0**2) / (2 * Bmax);
+		if(D0 <= Bdist + toler) 
+		{
+			//we're already there. Nullify V0
+			if(D0 <= toler)
+			{
+				const scalar = this.scaleVector(V0, -1);
+				const At = this.vector_clamp_mag(scalar, Bmax);
+				const arrived = S0 < 1e-9 ? true : false;
+				return { At, arrived, proximity: true, braking: true }
+			}
+			// we need to slow down to stop at target
+			const Abrake = this.getBrakingA(P0, P1, V0, 0);
+			const At = this.vector_clamp_mag(Abrake, Bmax);
+			return { At, arrived: false, proximity: false, braking: true }
+		}
+		else
+		{
+			// we are in transit: accelerate toward Vmax
+			const Vt = this.targetVelocity(P0, P1, Vmax);
+			const dV = this.subVectors(Vt, V0);
+			const At = this.vector_clamp_mag(dV, Amax);
+			return { At, arrived: false, proximity: false, braking: false }
+		}
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {vector3} P0 
+ * @param {vector3} P1 
+ * @param {vector3} fwd
+ * @returns {rotor} O₁ target orientation 
+ */
+MAGPIE_PHYSICS._getO1toP1 = function _getO1toP1(P0, P1, fwd)
+{
+	const ePrefix = "[PHYSICS].getO1toP1: ";
+	try
+	{
+		if(!fwd) fwd = MAGPIE.KEY.POVART.FWD;
+		if(!this.isValidVector(P0))
+			throw new Error(`${P0} is invalid P₀`);
+		if(!this.isValidVector(P1))
+			throw new Error(`${P1} is invalid P₁`);
+		// 1. get relative distance vector
+		const dx = P1[0] - P0[0];
+		const dy = P1[1] - P0[1];
+		const dz = P1[2] - P0[2];
+		// 2. normalize to get the direction vector
+		const dist = Math.sqrt(dx**2 + dy**2 + dz**2);
+		if(dist < 0.0001) return new Float64Array([0,0,0,1]); //already there
+		const dir = [dx / dist, dy / dist, dz / dist];
+		// 3. generate the rotor that aligns forward with dir
+		// this uses your existing rotorFromVectors logic
+		const O1 = this.rotorFromVectors(fwd, dir)
+		if(!this.isValidRotor(O1))
+			throw new Error(`${O1} is invalid O₁`);
+		return O1
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * @desc calculates the maximum torque magnitude (Tₘₐₓ) based on
+ * entity_stats {@link MAGPIE.KEY.STATS.meta}
+ * @param {entity_stats} stats 
+ * @param {Number} a (alpha) desired angular acceleration (rad/s^2)
+ * @returns {Number} Tₘₐₓ magnitude scalar
+ */
+MAGPIE_PHYSICS._getTmax = function _getTmax(stats, a)
+{
+	const ePrefix = "[PHYSICS].getTmax: ";
+	try
+	{
+		// 1. calculate the inertia tensor
+		const I = this._calculateInertiaTensor(stats);
+		// 2. use maximum inertia component as baseline
+		// ensures the entity has enough 'muscle' to rotate
+		const Imax = Math.max(I[0], I[1], I[2]);
+		//3. T = I * alpha
+		const Tmax = Imax * a
+		if(isNaN(Tmax))
+			throw new Error(`${Tmax} is invalid Tₘₐₓ`);
+		return Tmax
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {rotor} dR ΔR
+ * @param {vector3} R0 R₀
+ * @param {Number} Tmax Tₘₐₓ
+ * @param {Number} pR priority Ratio
+ * @returns {vector3} Tₜ target torque 
+ */
+MAGPIE_PHYSICS._getTt = function _getTt(dR, R0, Tmax, pR = 1)
+{
+	const ePrefix = "[PHYSICS].getTt: ";
+	try
+	{
+		if(!this.isValidRotor(dR))
+			throw new Error(`${dR} is invalid ΔR`);
+		if(!this.isValidVector(R0))
+			throw new Error(`${R0} is invalid R₀`);
+		if(isNaN(Tmax))
+			throw new Error(`${Tmax} is invalid Tₘₐₓ`);
+		if(isNaN(pR))
+			throw new Error(`${pR} is invalid priority Ratio`)
+		// 1. convert the rotor delta into a raw "desired change" vector
+		//this represents the direction and magnitude of the turn needed
+		const desiredR = [dR[0], dR[1], dR[2]];
+		// 2. account for inertia/current momentum
+		// we subtract current angular velocity (R0) so we don't overshoot
+		// it's like 'braking' as we approach the target orientation
+		let Tt = [
+			desiredR[0] - R0[0],
+			desiredR[1] - R0[1],
+			desiredR[2] - R0[2]
+		];
+		// 3. apply the priority weight (pR)
+		// this happens BEFORE clamping so the 'intent' is scaled first.
+		Tt = Tt.map(axis => axis * pR);
+		// 4. final clamp to physical limits
+		const mag = this.mag(Tt);
+		if(mag > Tmax) 
+		{
+			const scalar = Tmax / mag;
+			Tt = Tt.map(axis => axis * scalar)
+		}
+		if(!this.isValidVector(Tt))
+			throw new Error(`${Tt} is invalid Tₜ`)
+		return Tt
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {rotor} O0 O₀
+ * @param {rotor} O1 O₁
+ * @returns {rotor} ΔR
+ */
+MAGPIE_PHYSICS._getDeltaR = function _getDeltaR(O0, O1)
+{
+	const ePrefix = "[PHYSICS].getDeltaR: ";
+	try
+	{
+		// 1. Get the conjugate of O0 (the 'inverse' orientation)
+		const O0_inv = this._rotor_conjugate(O0);
+		// 2. multiply target by inverse to get difference
+		const deltaR = this._rotor_multiply(O1, O0_inv);
+		return deltaR
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {vector3} P0 current position (P₀)
+ * @param {vector3} P1 target position (P₁)
+ * @returns {Number} distance (m)
+ */
+MAGPIE_PHYSICS.distanceTo = function distanceTo(P0, P1)
+{
+	const ePrefix = `[PHYSICS].distanceTo: `;
+	try
+	{
+		const diff = this.subVectors(P1, P0);
+		return this.mag(diff);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+		return NaN
+	}
+}
+/**
+ * 
+ * @param {vector3} P0 current position (P₀)
+ * @param {vector3} P1 target position (P₁)
+ * @param {vector3} V0 current velocity (V₀)
+ * @param {Number} stopDistance distance (m)
+ * @returns {vector3} Braking acceleration (Ab)
+ */
+MAGPIE_PHYSICS.getBrakingA = function getBrakingA(P0, P1, V0, stopDistance = 0)
+{
+	const ePrefix = `[PHYSICS].getBrakingA: `;
+	let Abrake = [0,0,0];
+	try
+	{
+		const currentDist = this.distanceTo(P0, P1);
+		if(isNaN(currentDist))
+			throw new Error(`${currentDist} is invalid current distance`);
+		const brakingDist = currentDist - stopDistance;
+		if(isNaN(brakingDist))
+			throw new Error(`${brakingDist} is invalid braking distance`);
+		const currentSpeed = this.mag(V0);
+		// if you are already inside the safe zone, kill acceleration
+		if(brakingDist <= 0 || currentSpeed < 0.001) return Abrake;
+		// calculate required deceleration magnitude: A = V^2 / (2D)
+		const decelMag = (currentSpeed ** 2) / (2 * brakingDist);
+		const travelDir = this.normalizeVector(V0);
+		// apply acceleration exactly opposite to the current direction of travel
+		Abrake = this.scaleVector(travelDir, -decelMag);
+		if(!this.isValidVector(Abrake)) throw new Error(`${Abrake} is invalid Ab`)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e); 
+		Abrake = [0,0,0];
+	}
+	finally
+	{
+		return Abrake
+	}
+}
+/**
+ * 
+ * @param {[Number, Number, Number]} vector 
+ * @returns {Boolean}
+ */
+MAGPIE_PHYSICS.isVectorZero = function isVectorZero(vector)
+{
+	const ePrefix = `[PHYSICS].isVectorZero: `;
+	try
+	{
+		if(!this.isValidVector(vector))
+			throw new Error(`${vector} is invalid`)
+		if(vector.some(n => n > 0))
+			return false
+		return true
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+		return true
+	}
+}
+/**
+ * 
+ * @param {POVART} POVART0
+ * @param {Number} dt 
+ * @param {vector3} dA 
+ * @param {bivector} dT 
+ * @returns {{P1: vector3, O1: rotor, V1: vector3}}
+ */
+MAGPIE_PHYSICS._POVART_POV1fromDeltaAT = function _POVART_POV1fromDeltaAT(POVART0, dt, dA, dT)
+{
+	const ePrefix = `[PHYSICS].POV1: `;
+	try
+	{
+		if(!this.isValidVector(dA))
+			throw new Error(`${dA} is invalid vector dA`);
+		if(!this.isValidVector(dT))
+			throw new Error(`${dT} is invalid bivector dT`);
+		const { P0, O0, V0, A0, R0, T0 } = MAGPIE_PHYSICS.decomp_POVART(POVART0);
+		const T1 = MAGPIE_PHYSICS.addVectors(T0, dT);
+		const dR = MAGPIE_PHYSICS.scaleVector(T1, dT);
+		const R1 = MAGPIE_PHYSICS.addVectors(R0, dR);
+		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
+		const cO = MAGPIE_PHYSICS.rotorCompose(dO, O0);
+		const O1 = MAGPIE_PHYSICS.rotorNormalize(cO);
+		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
+		const dV = MAGPIE_PHYSICS.scaleVector(A1, dt);
+		const V1 = MAGPIE_PHYSICS.addVectors(V0, dV);
+		const dP = MAGPIE_PHYSICS.scaleVector(V1, dt);
+		const P1 = MAGPIE_PHYSICS.addVectors(P0, dP);
+		return { P1, O1, V1, A1, R1, T1 }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+	}
+}
+/**
+ * 
+ * @param {POVART} POVART0 
+ * @param {POVART} POVART1 
+ * @returns {{Da: distance, Dg: distance}} Da: absolute distance, Dg: geodetic distance
+ */
+MAGPIE_PHYSICS._POVART_distanceTravelled = function _POVART_distanceTravelled(POVART0, POVART1)
+{
+	const ePrefix = `[PHYSICS].distanceTravelled: `;
+	try
+	{
+		const P0 = this.getPosition(POVART0);
+		const P1 = this.getPosition(POVART1);
+		const P_C = this.getCelestialID(POVART0);
+		const celestial = MAGPIE_HIVE.getEntity(P_C);
+		if(!celestial) throw new Error(`unable to fetch celestial body`);
+		const r = celestial.radius();
+		const Da = this.distanceTo(P0, P1);
+		const Dg = this._geod_distanceTo(P0, P1, r);
+		return { Da, Dg }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+	}
+}
+/**
+ * 
+ * @param {vector3} P0 
+ * @param {vector3} P1 
+ * @param {distance} r 
+ * @returns {distance} 
+ */
+MAGPIE_PHYSICS._geod_distanceTo = function _geod_distanceTo(P0, P1, r)
+{
+	const ePrefix = `[PHYSICS].geodDistanceTo: `;
+	try
+	{
+		if(!this.isValidVector(P0))
+			throw new Error(`${P0} is invalid vector P₀`);
+		if(!this.isValidVector(P1)) 
+			throw new Error(`${P1} is invalid vector P₁`);
+		if(!r || isNaN(r))
+			throw new Error(`${r} is invalid radius`);
+		const u0 = MAGPIE_PHYSICS.normalizeVector(P0);
+		const u1 = MAGPIE_PHYSICS.normalizeVector(P1);
+		const angle = Math.acos(MAGPIE_PHYSICS.dotProduct(u0, u1));
+		return Number(r * angle)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
  * 
  */
 //------------------------------------------------------------------------
-//#endregion
+// #region > forces
 //------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {MAGPIE_ENTITY} celestial 
+ * @param {vector3} P0 
+ * @param {duration} dt 
+ */
+MAGPIE_PHYSICS._apply_gravity = function _apply_gravity(entity, celestial, P0, dt)
+{
+	const ePrefix = "[PHYSICS].applyGravity: ";
+	try
+	{
+		const K = MAGPIE.KEY.STATS;
+		const Cmass = celestial.STATS[K.MASSKG];
+		const G = this._forces_calculate2BodyGravityVector(P0, Cmass);
+		const dA = this.scaleVector(G, dt);
+		if(!this.isValidVector(dA))
+			throw new Error(`${dA} is invalid dA`)
+		return dA
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * @todo ApplyForces to At/Tt
+ * @param {{
+ * dt: duration,
+ * r: distance,
+ * P0: vector3,
+ * V0: vector3,
+ * At: vector3,
+ * C0: coords,
+ * CB: vector3,
+ * STATS: Float64Array
+ * }} data
+ * @returns {{Af: vector3, Tf: bivector, forces: Float64Array}}
+ */
+MAGPIE_PHYSICS._apply_forces = function _apply_forces(data)
+{
+	const ePrefix = "[PHYSICS].applyForces: ";
+	try
+	{
+		// const { r, P0, V0, At, dt, STATS } = data;
+		// const K = MAGPIE.KEY.STATS;
+		// const S = data.STATS;
+		// const Cf = S[K.CF];
+		// const Cl = S[K.CL];
+		// const Cd = S[K.CD];
+		// const CoM = [S[K.COM_X], S[K.COM_Y], S[K.COM_Z]];
+		// const CoL = [S[K.COL_X], S[K.COL_Y], S[K.COL_Z]];
+		// const dV = this.scaleVector(At, dt);
+		// const V1 = this.addVectors(V0, dV);
+		// const dP = this.scaleVector(V1, dt);
+		// const P1 = this.addVectors(P0, dP);
+		// const C1 = this.cartesianToGeodetic(P1, r);
+		// data.C1 = C1;
+		// const { Ac, Tc } = this._geod_checkCollisions(data)
+		// const fwd = MAGPIE.KEY.POVART.FWD;
+		// const AoA = this._aero_calculateAoArad(O0, V1, fwd);
+		// const forces = this._geod_calculateForces(C, C1, Cf, Cl, Cd, CoM, CoL, AoA, At)
+		const forces = new Float64Array(8).fill(NaN);
+		const Af = [0,0,0];
+		const Tf = [0,0,0];
+		return { Af, Tf, forces }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * back to {@link MAGPIE_PHYSICS.}
+ */
+//========================================================================
+//#endregion
+//========================================================================
 /**
  * @typedef {Float64Array<Number>} POVART
  * 
  */
-//------------------------------------------------------------------------
-//#region > POVART
-//------------------------------------------------------------------------
+//========================================================================
+//#region - POVART
+//========================================================================
 MAGPIE_PHYSICS.POVART = {};
 /**
  * @name 
@@ -975,7 +1207,6 @@ MAGPIE_PHYSICS.POVART = {};
 //------------------------------------------------------------------------
 // #region > validate
 //------------------------------------------------------------------------
-
 /**
  * 
  * @param {POVART} POVART 
@@ -1606,6 +1837,7 @@ MAGPIE_PHYSICS.applyAcceleration = function applyAcceleration(POVART0, dA, dt)
  * @returns {{
  * P0: vector3, 
  * P_C: Number, 
+ * orbit: orbit
  * O0: rotor,
  * V0: vector3,
  * A0: vector3,
@@ -1751,6 +1983,15 @@ MAGPIE_PHYSICS._POVART_initfromP0 = function _POVART_initfromP0(P0, P_C, E_ID)
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > helpers
+//------------------------------------------------------------------------
+
+/**
  * @desc 
  * @param {POVART} POVART0 POVART₀
  * @param {distance} L length (L) in m
@@ -1779,18 +2020,438 @@ MAGPIE_PHYSICS._POVART_proximity = function POVARTproximity(POVART0, L, Tr)
 		return L * 0.5
 	}
 }
-//#endregion
+// #endregion
 //------------------------------------------------------------------------
+/**
+ * 
+ * back to {@link MAGPIE_PHYSICS.POVART}
+ */
+//========================================================================
+//#endregion
+//========================================================================
+/**
+ * 
+ * @typedef {[Number, Number, Number]} vector3 [x,y,z]
+ * @typedef {[Number, Number, Number]} bivector [yz,xz,xy]
+ */
+//========================================================================
+//#region - VECTORS 
+//========================================================================
+MAGPIE_PHYSICS.vectors = {};
+/**
+ * @desc {@link MAGPIE_ENTITY.exp}
+ * @param {vector3} vector 
+ * @returns {Boolean}
+ * 
+ * 
+ */
+MAGPIE_PHYSICS.isValidVector = function isValidVector(vector)
+{
+	if(vector && vector.length === 3 && vector.every(n => !isNaN(n)))
+		return true
+}
+/**
+ * 
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} z 
+ * @returns {Number} magnitude
+ * 
+ * @version 0.17.18
+ * - FIXED: used .vector_mag(vector) instead of .mag(vector) as a wrapper;
+ * 		.vector_mag only accepts (x, y, z) 
+ */
+MAGPIE_PHYSICS.vector_mag = function vector_mag(x = 0, y = 0, z = 0)
+{
+	return Math.sqrt(x**2 + y**2 + z**2) 
+}
+/**
+ * 
+ * @param {vector3} vector [x,y,z] 
+ * @returns {Number} magnitude of vector 
+ */
+MAGPIE_PHYSICS.mag = function mag(vector)
+{
+	const message = `[PHYSICS].mag: `
+	try
+	{
+		if(vector.some(n => isNaN(n))) throw new Error(`(${vector}) is invalid`);
+		const x = vector[0];
+		const y = vector[1];
+		const z = vector[2];
+		return this.vector_mag(x, y, z);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+/**
+ * 
+ * @param {Number} x1 
+ * @param {Number} y1 
+ * @param {Number} z1 
+ * @param {Number} x2 
+ * @param {Number} y2 
+ * @param {Number} z2 
+ * @returns {Number} the dot product of vectors A and B
+ */
+MAGPIE_PHYSICS.vector_dot = function vector_dot(x1, y1, z1, x2, y2, z2)
+{
+	return (x1 * x2) + (y1 * y2) + (z1 * z2)
+}
+/**
+ * 
+ * @param {vector3} vectorA 
+ * @param {vector3} vectorB 
+ * @returns {Number} the dot product of vectors A and B
+ * 
+ * @version 0.17.17
+ * - FIXED: "this.dot" not a function; must be "this.vector_dot"
+ */
+MAGPIE_PHYSICS.dotProduct = function dotProduct(vectorA, vectorB)
+{
+	const message = `[PHYSICS].dotProduct: `
+	try
+	{
+		if(!this.isValidVector(vectorA))
+			throw new Error(`(${vectorA}) is invalid vector`);
+		if(!this.isValidVector(vectorB))
+			throw new Error(`(${vectorB}) is invalid vector`);
+		const A = vectorA;
+		const B = vectorB;
+		return this.vector_dot(A[0], A[1], A[2], B[0], B[1], B[2])
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+/**
+ * 
+ * @param {vector3} vector 
+ * @param {Number} scalar 
+ * @returns {vector3}
+ */
+MAGPIE_PHYSICS.vector_addScalar = function vector_addScalar(vector, scalar)
+{
+	const { x, y, z } = vector;
+	return [x + scalar, y + scalar, z + scalar]
+}
+/**
+ * 
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} z 
+ * @param {Number} s 
+ * @returns {vector3} vector[x,y,z] multiplied by scalar
+ */
+MAGPIE_PHYSICS.vector_multiplyScalar = function vector_multiplyScalar(x, y, z, s)
+{
+	return [x * s, y * s, z * s]
+}
+/**
+ * 
+ * @param {vector3} vector 
+ * @param {Number} scalar 
+ * @returns {vector3} vector[x,y,z] multiplied by scalar
+ */
+MAGPIE_PHYSICS.scaleVector = function scaleVector(vector, scalar)
+{
+	const message = `[PHYSICS].scaleVector: `
+	try
+	{
+		if(!this.isValidVector(vector))
+			throw new Error(`(${vector}) is invalid vector`);
+		if(isNaN(scalar))
+			throw new Error(`(${scalar}) is invalid scalar`);
+		const v = vector;
+		const s = scalar;
+		return this.vector_multiplyScalar(v[0], v[1], v[2], s)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+/**
+ * 
+ * @param {Number} x 
+ * @param {Number} y
+ * @param {Number} z
+ * @param {Number} s - scalar
+ * @returns {Array} vector[x,y,z] divided by scalar
+ */
+MAGPIE_PHYSICS.divideScalar = function divideScalar(x, y, z, s)
+{
+	return [x / s, y / s, z / s]
+}
+/**
+ * 
+ * @param {Number} x1 
+ * @param {Number} y1 
+ * @param {Number} z1 
+ * @param {Number} x2 
+ * @param {Number} y2 
+ * @param {Number} z2 
+ * @returns {vector3} cross vector[x,y,z]
+ */
+MAGPIE_PHYSICS.vector_cross = function vector_cross(x1, y1, z1, x2, y2, z2)
+{
+	const x3 = (y1 * z2) - (z1 * y2);
+	const y3 = (z1 * x2) - (x1 * z2);
+	const z3 = (x1 * y2) - (y1 * x2);
+	return [x3, y3, z3]
+}
+/**
+ * 
+ * @param {vector3} vectorA 
+ * @param {vector3} vectorB 
+ * @returns {vector3} cross vector [x,y,z]
+ */
+MAGPIE_PHYSICS.crossProduct = function crossProduct(vectorA, vectorB)
+{
+	const message = `[PHYSICS].crossProduct: `
+	try
+	{
+		if(vectorA.some(n => isNaN(n)))
+			throw new Error(`(${vectorA}) is invalid vector`);
+		if(vectorB.some(n => isNaN(n)))
+			throw new Error(`(${vectorB}) is invalid vector`);
+		const A = vectorA;
+		const B = vectorB;
+		return this.vector_cross(A[0], A[1], A[2], B[0], B[1], B[2])
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+/**
+ * 
+ * @param {Number} x1 
+ * @param {Number} y1 
+ * @param {Number} z1 
+ * @param {Number} x2 
+ * @param {Number} y2 
+ * @param {Number} z2 
+ * @returns {vector3} vector[x,y,z]
+ */
+MAGPIE_PHYSICS.vector_add = function vector_add(x1, y1, z1, x2, y2, z2)
+{
+	return [x1 + x2, y1 + y2, z1 + z2]
+}
+/**
+ * 
+ * @param {Number} x1 
+ * @param {Number} y1 
+ * @param {Number} z1 
+ * @param {Number} x2 
+ * @param {Number} y2 
+ * @param {Number} z2 
+ * @returns {vector3} vector[x,y,z]
+ */
+MAGPIE_PHYSICS.vector_sub = function vector_sub(x1, y1, z1, x2, y2, z2)
+{
+	return [x1 - x2, y1 - y2, z1 - z2]
+}
+/**
+ * 
+ * @param {vector3} vectorA 
+ * @param {vector3} vectorB 
+ * @returns {vector3} vector [x,y,z]
+ */
+MAGPIE_PHYSICS.addVectors = function addVectors(vectorA, vectorB)
+{
+	const message = `[PHYSICS].addVectors: `
+	try
+	{
+		if(!this.isValidVector(vectorA))
+			throw new Error(`(${vectorA}) is invalid vector`);
+		if(!this.isValidVector(vectorB))
+			throw new Error(`(${vectorB}) is invalid vector`);
+		const A = vectorA;
+		const B = vectorB;
+		return this.vector_add(A[0], A[1], A[2], B[0], B[1], B[2]);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+/**
+ * 
+ * @param {vector3} vectorA 
+ * @param {vector3} vectorB 
+ * @returns {vector3} vector [x,y,z]
+ */
+MAGPIE_PHYSICS.subVectors = function subVectors(vectorA, vectorB)
+{
+	const message = `[PHYSICS].subVectors: `
+	try
+	{
+		if(!this.isValidVector(vectorA))
+			throw new Error(`(${vectorA}) is invalid vector`);
+		if(!this.isValidVector(vectorB))
+			throw new Error(`(${vectorB}) is invalid vector`);
+		const A = vectorA;
+		const B = vectorB;
+		return this.vector_sub(A[0], A[1], A[2], B[0], B[1], B[2]);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+/**
+ * 
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} z 
+ * @returns {vector3} normalized vector [x,y,z]
+ */
+MAGPIE_PHYSICS.vector_normalize = function vector_normalize(x, y, z)
+{
+	const mag = this.vector_mag(x, y, z);
+	if(mag > 1e-12)
+	{
+		const invMag = 1 / mag;
+		x *= invMag;
+		y *= invMag;
+		z *= invMag;
+	}
+	else
+	{
+		x = 0;
+		y = 0;
+		z = 0;
+	}
+	return [x, y, z]
+}
+/**
+ * 
+ * @param {vector3} vector 
+ * @returns {vector3} normalized vector [x,y,z]
+ */
+MAGPIE_PHYSICS.normalizeVector = function normalizeVector(vector)
+{
+	const message = `[PHYSICS].normalizeVector: `
+	try
+	{
+		if(!this.isValidVector(vector))
+			throw new Error(`(${vector}) is invalid`);
+		const v = vector;
+		return this.vector_normalize(v[0], v[1], v[2]);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+/**
+ * 
+ * @param {Number} x 
+ * @param {Number} y 
+ * @param {Number} z 
+ * @param {Number} angle radians
+ * @returns {vector3} rotated vector [x,y,z]
+ */
+MAGPIE_PHYSICS.vector_rotate = function vector_rotate(x, y, z, angle)
+{
+	const cos = Math.cos(angle);
+	const sin = Math.sin(angle);
+	const x2 = x;
+	const y2 = y * cos - z * sin;
+	const z2 = z * sin + z * cos;
+	return [x2, y2, z2]
+}
+/**
+ * 
+ * @param {vector3} vector 
+ * @param {Number} angleRad angle in radians
+ * @returns {vector3} rotated vector [x,y,z]
+ */
+MAGPIE_PHYSICS.rotateVector = function rotateVector(vector, angleRad)
+{
+	const message = `[PHYSICS].rotateVector: `
+	try
+	{
+		if(!this.isValidVector(vector))
+			throw new Error(`(${vector}) is invalid vector`);
+		if(!this.isValidAngle(angleRad))
+			throw new Error(`(${angleRad}) is invalid angle`);
+		const v = vector;
+		return this.vector_rotate(v[0], v[1], v[2], angleRad);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+		return [NaN, NaN, NaN]
+	}
+}
+MAGPIE_PHYSICS.isValidAngle = function isValidAngle(angleRad)
+{
+	if(isNaN(angleRad) || angleRad > Math.PI || angleRad < 0)
+		return true
+	else return false
+}
+/**
+ * 
+ * @param {vector3} vector 
+ * @param {Number} maxMag 
+ * @returns {vector3} vector with clamped magnitude 
+ */
+MAGPIE_PHYSICS.vector_clamp_mag = function vector_clamp_mag(vector, maxMag)
+{
+	const ePrefix = `[PHYSICS].VectorClampMag: `;
+	try
+	{
+		if(!this.isValidVector(vector)) throw new Error(`${vector} is invalid vector`);
+		const m = this.mag(vector);
+		if(m > maxMag)
+		{
+			const factor = maxMag / m;
+			return this.scaleVector(vector, factor);
+		}
+		return vector
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * @desc back to {@link MAGPIE_PHYSICS.vectors}
+ * 
+ */
+//========================================================================
+//#endregion
+//========================================================================
 /**
  * 
  * @typedef {[yz<Number>, xz<Number>, xy<Number>, scalar<Number>]} rotor 
  * [yz,xz,xy,scalar] 
  * 
  */
-//------------------------------------------------------------------------
-//#region > rotor
-//------------------------------------------------------------------------
+//========================================================================
+//#region - ROTOR
+//========================================================================
 MAGPIE_PHYSICS.rotor = {};
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > validate
+//------------------------------------------------------------------------
 /**
  * 
  * @param {rotor} rotor 
@@ -1805,12 +2466,14 @@ MAGPIE_PHYSICS.isValidRotor = function isValidRotor(rotor)
 	const mag = this.rotorMagnitude(rotor);
 	return Math.abs(mag - 1) < 1e-9;
 }
+// #endregion
+//------------------------------------------------------------------------
 /**
  * @desc Math: Reverse of a rotor = negate the bivector part, 
  * keep the scalar. This is R~ used in the sandwich product, 
  * and equivalent to the quaternion conjugate.
- * @param {Array} R rotor[yz,xz,xy,w]
- * @returns {Array} rotor[yz,xz,xy,w]
+ * @param {rotor} R rotor[yz,xz,xy,w]
+ * @returns {rotor} rotor[yz,xz,xy,w]
  * @desc Sanity check: 
  * rotorReverse([0, 0, 0, 1]) → [0, 0, 0, 1] (identity unchanged)
  */
@@ -2113,700 +2776,461 @@ MAGPIE_PHYSICS.applyTorque = function applyTorque(POVART0, dT, dt)
 		return POVART0
 	}
 }
+/**
+ * 
+ * back to {@link MAGPIE_PHYSICS.rotor}
+ */
+//========================================================================
 //#endregion
-//------------------------------------------------------------------------
+//========================================================================
 /**
  * 
- * 
- */
-//------------------------------------------------------------------------
-//#region > Apply
-//------------------------------------------------------------------------
-/**
- * 
- * @param {POVART} POVART0 
- * @param {vector3} dA delta acceleration vector
- * @param {bivector} dT delta torque bivector
- * @param {Number} dt delta time in seconds
- * @returns {POVART} POVART₁
- */
-MAGPIE_PHYSICS.applyDeltaAT = function applyDeltaAT(POVART0, dA, dT, dt)
-{
-	const message = `[PHYSICS].applyDeltaAT: `
-	try
-	{
-		const POVART1 = MAGPIE_PHYSICS.applyAcceleration(POVART0, dA, dt);
-		return MAGPIE_PHYSICS.applyTorque(POVART1, dT, dt);
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(message + e.message, e)
-		return POVART0;
-	}
-}
-MAGPIE_PHYSICS._POVART_getTargetAT = function(POVART0, A1, T1, dt)
-{
-	if(isNaN(dt)) throw new Error(`(${dt}) is invalid dt`);
-		if(!dt) return defaults;
-		if(!MAGPIE_PHYSICS.isValidVector(A1)) A1 = [0,0,0];
-		if(!MAGPIE_PHYSICS.isValidVector(T1)) T1 = [0,0,0];
-		//
-		const P_C = this.celestialSync();
-		if(!MAGPIE_ENTITY.isValidCelestial(P_C)) 
-			throw new Error(`(${P_C}) is invalid celestial`);
-		const r = P_C.radius();
-		let POVART_A = MAGPIE_PHYSICS.setAcceleration(this.POVART, A1);
-		let POVART_AT = MAGPIE_PHYSICS.setTorque(POVART_A, T1);
-		//
-		const R0 = MAGPIE_PHYSICS.getRotation(POVART_AT);
-		const dR = MAGPIE_PHYSICS.scaleVector(T1, dt);
-		const R1 = MAGPIE_PHYSICS.addVectors(R0, dR);
-		//
-		const O0 = MAGPIE_PHYSICS.getOrientation(POVART_AT);
-		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
-		const cO = MAGPIE_PHYSICS.rotorCompose(dO, O0);
-		const O1 = MAGPIE_PHYSICS.rotorNormalize(cO);
-		//
-		const V0 = MAGPIE_PHYSICS.getVelocity(POVART_AT);
-		const dV = MAGPIE_PHYSICS.scaleVector(A1, dt);
-		const V1 = MAGPIE_PHYSICS.addVectors(V0, dV);
-		const dP = MAGPIE_PHYSICS.scaleVector(V1, dt);
-		const P0 = this._POVART_getPosition();
-		const P1 = MAGPIE_PHYSICS.addVectors(P0, dP);
-}
-/**
- * 
- * @param {vector3} P0 current position (P₀)
- * @param {vector3} P1 target position (P₁)
- * @param {vector3} V0 current velocity vector (V₀)
- * @param {Number} Vmax max speed
- * @param {Number} Amax max acceleratio
- * @param {Number} Bmax max braking
- * @param {Number} toler tolerance (m)
- * @returns {vector3} A₁
- */
-MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, Bmax, toler = 0.5)
-{
-	const ePrefix = `[PHYSICS].moveLinear: `;
-	try
-	{
-		const D0 = this.distanceTo(P0, P1);
-		const S0 = this.mag(V0);
-		// 1. arrival check
-		if(D0 <= toler)
-		{
-			const finalBrake = this.getBrakingA(P0, P1, V0, 0);
-			return this.vector_clamp_mag(finalBrake, Bmax);
-		}
-		// 2. Braking start check
-		const Bdist = (S0 ** 2) / (2 * Bmax);
-		if(D0 <= Bdist + toler)
-		{
-			const brakeA = this.getBrakingA(P0, P1, V0, toler);
-			return this.vector_clamp_mag(brakeA, Bmax);
-		}
-		// 3. transit / acceleration phase
-		const Vcruise = this.targetVelocity(P0, P1, Vmax);
-		const dV = this.subVectors(Vcruise, V0);
-		//clamp to maximum power
-		return this.vector_clamp_mag(dV, Amax);
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-		return [NaN, NaN, NaN]
-	}
-}
-/**
- * 
- * @param {POVART} POVART0 
- * @param {vector3} P1 
- * @param {entity_stats} params 
- * @param {{
- * 	tolerance: coefficient,
- * 	intensity: ratio,
- * 	fwd: vector3,
- * 	agility: STAT,
- * 	pR: ratio
- * }} options 
- */
-MAGPIE_PHYSICS._seekTarget = function _seekTarget(POVART0, P1, params, options)
-{
-	const ePrefix = "[PHYSICS].seekTarget: ";
-	try
-	{
-		if(!this.isValidPOVART(POVART0))
-			throw new Error(`${POVART0} is invalid subjectPOVART`)
-		if(!this.isValidVector(P1))
-			throw new Error(`${P1} is invalid P₁`)
-		if(!this.isValidParams(params))
-			throw new Error(`${params} is invalid params`);
-		const options_default = {
-			tolerance: 0,
-			intensity: 1,
-			fwd: MAGPIE.KEY.POVART.FWD,
-			agility: 1,
-			pR: 1
-		};
-		const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0);
-		if(!options) options = options_default;
-		const optKeys = Object.keys(options_default);
-		if(Object.keys(options) < optKeys)
-			optKeys.forEach(key => options[key] = options_default[key])
-		const a = this._calculateAgilityAlpha(params);
-		const a1 = this._get_agilityModifier(options.agility, a);
-		const Tmax = this._getTmax(params, a1);
-		const Ot = this._getO1toP1(P0, P1, options?.fwd);
-		const dR = this._getDeltaR(O0, Ot);
-		const Tt = this._getTt(dR, R0, Tmax, options?.pR);
-		const { At, arrived, proximity, braking } = this._getAt(P0, V0, P1, params, options?.tolerance);
-		const pR = Number(options?.pR) || this._getATpR(Ot);
-		if(!this.isValidVector(At))
-			throw new Error(`${At} is invalid Aₜ`);
-		if(!this.isValidVector(Tt))
-			throw new Error(`${Tt} is invalid Tₜ`);
-		return { 
-			At: this.scaleVector(At, pR), 
-			Tt: this.scaleVector(Tt, (1 - pR)),
-			arrived, proximity, braking
-		}
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {rotor} dO 
- * @param {angle} threshold angle where we start prioritizing motion (~15°)
- * @returns {ratio} 0.0 (pure torque) to 1.0 (pure acceleration) 
- */
-MAGPIE_PHYSICS._getATpR = function getATpR(dO, threshold = 0.26)
-{
-	// 1. get absolute angle of error in radians
-	const Ae = this._rotor_angle(dO);
-	// 2. map the error to a ratio
-	// if error is 0, pR is 1.0. If error is >= threshold, pR is 0.0
-	const ratio = 1.0 - (Ae / threshold);
-	if(isNaN(ratio)) throw new Error(`${ratio} is invalid pR`);
-	// 3. clamp 0-1
-	return this._U_clampRange(ratio, 0, 1); 
-}
-/**
- * 
- * @param {POVART} POVART0 
- * @param {entity_stats} params 
- * @param {vector3} P1 
- * @param {{
- * 	tolerance: coefficient,
- * 	intensity: ratio,
- * 	fwd: vector3,
- * 	agility: PARAM,
- * 	pR: ratio
- * }} options 
- * @returns {{At: vector3, Tt: bivector}}
- */
-MAGPIE_PHYSICS._smartSeek = function smartSeek(POVART0, params, P1, options)
-{
-	let { At, Tt } = MAGPIE_PHYSICS._seekTarget(POVART0, P1, params, options);
-	const targetDir = MAGPIE_PHYSICS.subVectors(P1, P0);
-	const fwd = options?.fwd || MAGPIE.KEY.POVART.FWD;
-	const alignment = MAGPIE_PHYSICS._getAlignment(fwd, targetDir);
-	if(alignment) At = MAGPIE_PHYSICS.scaleVector(At, alignment);
-	return { At, Tt }
-}
-/**
- * 
- * @param {vector3} fwd forward vector 
- * @param {vector3} Dt target direction (Dₜ)
- * @returns {ratio} alignment ratio (Dₐ)
- */
-MAGPIE_PHYSICS._getAlignment = function getAlignmentPower(fwd, Dt)
-{
-	const ePrefix = "[PHYSICS].getAlignment: ";
-	try
-	{
-		// 1. ensure vectors are normalized
-		if(!fwd) fwd = MAGPIE.KEY.POVART.FWD;
-		if(!this.isValidVector(Dt))
-			throw new Error(`${Dt} is invalid Dₜ`);
-		const f = this.normalizeVector(fwd);
-		const t = this.normalizeVector(Dt);
-		// 2. calculate dot product
-		const dot = MAGPIE_PHYSICS.dotProduct(f, t);
-		// 3. clamp to 0.0 - 1.0 (we don't want negative thrust)
-		const Da = Math.max(0, dot);
-		if(!this.isValidVector(Da))
-			throw new Error(`${Da} is invalid Dₐ`);
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {vector3} P0
- * @param {vector3} V0
- * @param {vector3} P1
- * @param {entity_stats} params 
- * @param {distance} toler 
- * @returns {vector3} Aₜ (target acceleration)
- */
-MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, toler)
-{
-	const ePrefix = "[PHYSICS].getAt: ";
-	try
-	{
-		if(!this.isValidVector(P0))
-			throw new Error(`${P0} is invalid P₀`);
-		if(!this.isValidVector(P1))
-			throw new Error(`${P1} is invalid P₁`);
-		const D0 = this.distanceTo(P0, P1);
-		if(!this.isValidVector(V0))
-			throw new Error(`${V0} is invalid V₀`);
-		if(!this.isValidParams(params))
-			throw new Error(`${params} is invalid PARAMS`);
-		const { Vmax, Amax, Bmax } = params;
-		const S0 = this.mag(V0);
-		// 1. calculate braking distance
-		const Bdist = (S0**2) / (2 * Bmax);
-		if(D0 <= Bdist + toler) 
-		{
-			//we're already there. Nullify V0
-			if(D0 <= toler)
-			{
-				const scalar = this.scaleVector(V0, -1);
-				const At = this.vector_clamp_mag(scalar, Bmax);
-				const arrived = S0 < 1e-9 ? true : false;
-				return { At, arrived, proximity: true, braking: true }
-			}
-			// we need to slow down to stop at target
-			const Abrake = this.getBrakingA(P0, P1, V0, 0);
-			const At = this.vector_clamp_mag(Abrake, Bmax);
-			return { At, arrived: false, proximity: false, braking: true }
-		}
-		else
-		{
-			// we are in transit: accelerate toward Vmax
-			const Vt = this.targetVelocity(P0, P1, Vmax);
-			const dV = this.subVectors(Vt, V0);
-			const At = this.vector_clamp_mag(dV, Amax);
-			return { At, arrived: false, proximity: false, braking: false }
-		}
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {vector3} P0 
- * @param {vector3} P1 
- * @param {vector3} fwd
- * @returns {rotor} O₁ target orientation 
- */
-MAGPIE_PHYSICS._getO1toP1 = function _getO1toP1(P0, P1, fwd)
-{
-	const ePrefix = "[PHYSICS].getO1toP1: ";
-	try
-	{
-		if(!fwd) fwd = MAGPIE.KEY.POVART.FWD;
-		if(!this.isValidVector(P0))
-			throw new Error(`${P0} is invalid P₀`);
-		if(!this.isValidVector(P1))
-			throw new Error(`${P1} is invalid P₁`);
-		// 1. get relative distance vector
-		const dx = P1[0] - P0[0];
-		const dy = P1[1] - P0[1];
-		const dz = P1[2] - P0[2];
-		// 2. normalize to get the direction vector
-		const dist = Math.sqrt(dx**2 + dy**2 + dz**2);
-		if(dist < 0.0001) return new Float64Array([0,0,0,1]); //already there
-		const dir = [dx / dist, dy / dist, dz / dist];
-		// 3. generate the rotor that aligns forward with dir
-		// this uses your existing rotorFromVectors logic
-		const O1 = this.rotorFromVectors(fwd, dir)
-		if(!this.isValidRotor(O1))
-			throw new Error(`${O1} is invalid O₁`);
-		return O1
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * @desc calculates the maximum torque magnitude (Tₘₐₓ) based on
- * entity_stats {@link MAGPIE.KEY.STATS.meta}
- * @param {entity_stats} stats 
- * @param {Number} a (alpha) desired angular acceleration (rad/s^2)
- * @returns {Number} Tₘₐₓ magnitude scalar
- */
-MAGPIE_PHYSICS._getTmax = function _getTmax(stats, a)
-{
-	const ePrefix = "[PHYSICS].getTmax: ";
-	try
-	{
-		// 1. calculate the inertia tensor
-		const I = this._calculateInertiaTensor(stats);
-		// 2. use maximum inertia component as baseline
-		// ensures the entity has enough 'muscle' to rotate
-		const Imax = Math.max(I[0], I[1], I[2]);
-		//3. T = I * alpha
-		const Tmax = Imax * a
-		if(isNaN(Tmax))
-			throw new Error(`${Tmax} is invalid Tₘₐₓ`);
-		return Tmax
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {rotor} dR ΔR
- * @param {vector3} R0 R₀
- * @param {Number} Tmax Tₘₐₓ
- * @param {Number} pR priority Ratio
- * @returns {vector3} Tₜ target torque 
- */
-MAGPIE_PHYSICS._getTt = function _getTt(dR, R0, Tmax, pR = 1)
-{
-	const ePrefix = "[PHYSICS].getTt: ";
-	try
-	{
-		if(!this.isValidRotor(dR))
-			throw new Error(`${dR} is invalid ΔR`);
-		if(!this.isValidVector(R0))
-			throw new Error(`${R0} is invalid R₀`);
-		if(isNaN(Tmax))
-			throw new Error(`${Tmax} is invalid Tₘₐₓ`);
-		if(isNaN(pR))
-			throw new Error(`${pR} is invalid priority Ratio`)
-		// 1. convert the rotor delta into a raw "desired change" vector
-		//this represents the direction and magnitude of the turn needed
-		const desiredR = [dR[0], dR[1], dR[2]];
-		// 2. account for inertia/current momentum
-		// we subtract current angular velocity (R0) so we don't overshoot
-		// it's like 'braking' as we approach the target orientation
-		let Tt = [
-			desiredR[0] - R0[0],
-			desiredR[1] - R0[1],
-			desiredR[2] - R0[2]
-		];
-		// 3. apply the priority weight (pR)
-		// this happens BEFORE clamping so the 'intent' is scaled first.
-		Tt = Tt.map(axis => axis * pR);
-		// 4. final clamp to physical limits
-		const mag = this.mag(Tt);
-		if(mag > Tmax) 
-		{
-			const scalar = Tmax / mag;
-			Tt = Tt.map(axis => axis * scalar)
-		}
-		if(!this.isValidVector(Tt))
-			throw new Error(`${Tt} is invalid Tₜ`)
-		return Tt
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {rotor} O0 O₀
- * @param {rotor} O1 O₁
- * @returns {rotor} ΔR
- */
-MAGPIE_PHYSICS._getDeltaR = function _getDeltaR(O0, O1)
-{
-	const ePrefix = "[PHYSICS].getDeltaR: ";
-	try
-	{
-		// 1. Get the conjugate of O0 (the 'inverse' orientation)
-		const O0_inv = this._rotor_conjugate(O0);
-		// 2. multiply target by inverse to get difference
-		const deltaR = this._rotor_multiply(O1, O0_inv);
-		return deltaR
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {vector3} P0 current position (P₀)
- * @param {vector3} P1 target position (P₁)
- * @returns {Number} distance (m)
- */
-MAGPIE_PHYSICS.distanceTo = function distanceTo(P0, P1)
-{
-	const ePrefix = `[PHYSICS].distanceTo: `;
-	try
-	{
-		const diff = this.subVectors(P1, P0);
-		return this.mag(diff);
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-		return NaN
-	}
-}
-/**
- * 
- * @param {vector3} P0 current position (P₀)
- * @param {vector3} P1 target position (P₁)
- * @param {vector3} V0 current velocity (V₀)
- * @param {Number} stopDistance distance (m)
- * @returns {vector3} Braking acceleration (Ab)
- */
-MAGPIE_PHYSICS.getBrakingA = function getBrakingA(P0, P1, V0, stopDistance = 0)
-{
-	const ePrefix = `[PHYSICS].getBrakingA: `;
-	let Abrake = [0,0,0];
-	try
-	{
-		const currentDist = this.distanceTo(P0, P1);
-		if(isNaN(currentDist))
-			throw new Error(`${currentDist} is invalid current distance`);
-		const brakingDist = currentDist - stopDistance;
-		if(isNaN(brakingDist))
-			throw new Error(`${brakingDist} is invalid braking distance`);
-		const currentSpeed = this.mag(V0);
-		// if you are already inside the safe zone, kill acceleration
-		if(brakingDist <= 0 || currentSpeed < 0.001) return Abrake;
-		// calculate required deceleration magnitude: A = V^2 / (2D)
-		const decelMag = (currentSpeed ** 2) / (2 * brakingDist);
-		const travelDir = this.normalizeVector(V0);
-		// apply acceleration exactly opposite to the current direction of travel
-		Abrake = this.scaleVector(travelDir, -decelMag);
-		if(!this.isValidVector(Abrake)) throw new Error(`${Abrake} is invalid Ab`)
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e); 
-		Abrake = [0,0,0];
-	}
-	finally
-	{
-		return Abrake
-	}
-}
-/**
- * 
- * @param {[Number, Number, Number]} vector 
- * @returns {Boolean}
- */
-MAGPIE_PHYSICS.isVectorZero = function isVectorZero(vector)
-{
-	const ePrefix = `[PHYSICS].isVectorZero: `;
-	try
-	{
-		if(!this.isValidVector(vector))
-			throw new Error(`${vector} is invalid`)
-		if(vector.some(n => n > 0))
-			return false
-		return true
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-		return true
-	}
-}
-/**
- * 
- * @param {POVART} POVART0
- * @param {Number} dt 
- * @param {vector3} dA 
- * @param {bivector} dT 
- * @returns {{P1: vector3, O1: rotor, V1: vector3}}
- */
-MAGPIE_PHYSICS._POVART_POV1fromDeltaAT = function _POVART_POV1fromDeltaAT(POVART0, dt, dA, dT)
-{
-	const ePrefix = `[PHYSICS].POV1: `;
-	try
-	{
-		if(!this.isValidVector(dA))
-			throw new Error(`${dA} is invalid vector dA`);
-		if(!this.isValidVector(dT))
-			throw new Error(`${dT} is invalid bivector dT`);
-		const { P0, O0, V0, A0, R0, T0 } = MAGPIE_PHYSICS.decomp_POVART(POVART0);
-		const T1 = MAGPIE_PHYSICS.addVectors(T0, dT);
-		const dR = MAGPIE_PHYSICS.scaleVector(T1, dT);
-		const R1 = MAGPIE_PHYSICS.addVectors(R0, dR);
-		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
-		const cO = MAGPIE_PHYSICS.rotorCompose(dO, O0);
-		const O1 = MAGPIE_PHYSICS.rotorNormalize(cO);
-		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
-		const dV = MAGPIE_PHYSICS.scaleVector(A1, dt);
-		const V1 = MAGPIE_PHYSICS.addVectors(V0, dV);
-		const dP = MAGPIE_PHYSICS.scaleVector(V1, dt);
-		const P1 = MAGPIE_PHYSICS.addVectors(P0, dP);
-		return { P1, O1, V1, A1, R1, T1 }
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-	}
-}
-/**
- * 
- * @param {POVART} POVART0 
- * @param {POVART} POVART1 
- * @returns {{Da: distance, Dg: distance}} Da: absolute distance, Dg: geodetic distance
- */
-MAGPIE_PHYSICS._POVART_distanceTravelled = function _POVART_distanceTravelled(POVART0, POVART1)
-{
-	const ePrefix = `[PHYSICS].distanceTravelled: `;
-	try
-	{
-		const P0 = this.getPosition(POVART0);
-		const P1 = this.getPosition(POVART1);
-		const P_C = this.getCelestialID(POVART0);
-		const celestial = MAGPIE_HIVE.getEntity(P_C);
-		if(!celestial) throw new Error(`unable to fetch celestial body`);
-		const r = celestial.radius();
-		const Da = this.distanceTo(P0, P1);
-		const Dg = this._geod_distanceTo(P0, P1, r);
-		return { Da, Dg }
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-	}
-}
-/**
- * 
- * @param {vector3} P0 
- * @param {vector3} P1 
- * @param {distance} r 
- * @returns {distance} 
- */
-MAGPIE_PHYSICS._geod_distanceTo = function _geod_distanceTo(P0, P1, r)
-{
-	const ePrefix = `[PHYSICS].geodDistanceTo: `;
-	try
-	{
-		if(!this.isValidVector(P0))
-			throw new Error(`${P0} is invalid vector P₀`);
-		if(!this.isValidVector(P1)) 
-			throw new Error(`${P1} is invalid vector P₁`);
-		if(!r || isNaN(r))
-			throw new Error(`${r} is invalid radius`);
-		const u0 = MAGPIE_PHYSICS.normalizeVector(P0);
-		const u1 = MAGPIE_PHYSICS.normalizeVector(P1);
-		const angle = Math.acos(MAGPIE_PHYSICS.dotProduct(u0, u1));
-		return Number(r * angle)
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-	}
-}
-//#endregion
-//------------------------------------------------------------------------
-/**
- * @name target
- * @desc section of {@link MAGPIE_PHYSICS.meta}
- * 
- */
-//------------------------------------------------------------------------
-//#region > target
-//------------------------------------------------------------------------
-MAGPIE_PHYSICS.target = {};
-/**
- * 
- * @param {vector3} P0 current position (P₀)
- * @param {vector3} P1 target position (P₁)
- * @param {Number} cruiseSpeed Vspeed (m/s)
- * @returns {vector3} target velocity (V₁)
- */
-MAGPIE_PHYSICS.targetVelocity = function targetVelocity(P0, P1, cruiseSpeed = 1)
-{
-	const ePrefix = `[MAGPIE_PHYSICS].targetVelocity: `;
-	try
-	{
-		const diff = this.subVectors(P1, P0);
-		const dir = this.normalizeVector(diff);
-		return this.scaleVector(dir, cruiseSpeed);
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-		return [NaN, NaN, NaN]
-	}
-}
-/**
- * 
- * @param {second} dt 
- * @param {vector3} At 
- * @param {acceleration} Amax 
- * @returns {vector3}
- */
-MAGPIE_PHYSICS._POVART_applyTargetA = function _POVART_applyTargetA(dt, At, Amax)
-{
-	const ePrefix = `[PHYSICS].applyTargetA: `;
-	try
-	{
-		const dA = this.scaleVector(this.vector_clamp_mag(At, Amax), dt);
-		if(!this.isValidVector(dA))
-			throw new Error(`${dA} is invalid vector dA`);
-		return dA
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-	}
-}
-/**
- * 
- * @param {Number} dt ms 
- * @param {rotor} O0  
- * @param {bivector} Tt 
- * @param {[x<Number>, y<Number>, z<Number>]} Tmax
- * @param {[x<Number>, y<Number>, z<Number>]} inertia 
- * @returns {bivector} dT
- */
-MAGPIE_PHYSICS._POVART_applyTargetT = function _POVART_applyTargetT(dt, O0, Tt, Tmax, inertia)
-{
-	const ePrefix = `[PHYSICS].applyTargetT: `;
-	try
-	{
-		const Oinv = this.rotorReverse(O0);
-		const Tlocal = this.rotorApply(Oinv, Tt);
-		const netCapX = Math.max(0, Tmax[0] - inertia[0]) || 1;
-		const netCapY = Math.max(0, Tmax[1] - inertia[1]) || 1;
-		const netCapZ = Math.max(0, Tmax[2] - inertia[2]) || 1;
-		const TclampX = this._U_clampRange(Tlocal[0], -netCapX, netCapX);
-		const TclampY = this._U_clampRange(Tlocal[1], -netCapY, netCapY);
-		const TclampZ = this._U_clampRange(Tlocal[2], -netCapZ, netCapZ);
-		const Tclamped = this.rotorApply(O0, [TclampX, TclampY, TclampZ]);
-		const dT = this.scaleVector(Tclamped, dt);
-		if(!this.isValidVector(dT))
-			throw new Error(`${dT} is invalid vector dT`);
-		return dT
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-	}
-}
-//#endregion
-//------------------------------------------------------------------------
-/**
- * @desc back to {@link MAGPIE_PHYSICS.meta}
  * 
  */
 //========================================================================
-//#endregion --- Physics
+//#region - CELESTIAL
+//========================================================================
+MAGPIE_PHYSICS.celestial = {}
+/**
+ * 
+ * @param {mass} mass 
+ * @param {Number} CMF 
+ * @returns 
+ */
+MAGPIE_PHYSICS.celestialDensity = function celestialDensity(mass, CMF)
+{
+	const C10 = mass;
+	const C11 = CMF;
+	const exp1 = 5.51 * C10**(0.189 / (1.07 - 0.21 * (C11 / 100))**3);
+	const exp2 = 3.5 + 4.37 * (C11 / 100);
+	if(C10 > 0.6 || exp1 > exp2) return exp1;
+	return exp2
+}
+/**
+ * 
+ * back to {@link MAGPIE_PHYSICS.celestial}
+ */
+//========================================================================
+//#endregion
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - MATERIA
+//========================================================================
+MAGPIE_PHYSICS.materia = {};
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Collision
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @return {vector3}
+ */
+MAGPIE_PHYSICS._calculate_collisionBox = function _calculate_collisionBox(entity)
+{
+	const ePrefix = "[PHYSICS].calculateCollisionBox: ";
+	const K = MAGPIE.KEY.STATS;
+	let LENGTH = entity.STATS[K.LENGTH];
+	let HEIGHT = entity.STATS[K.HEIGHT];
+	let WIDTH = entity.STATS[K.WIDTH];
+	try
+	{
+		if([LENGTH, HEIGHT, WIDTH].some(n => isNaN(n)))
+		{
+			const MASSKG = entity.STATS[K.MASSKG];
+			const DEX = entity.STATS[K.DEX];
+			const DensKgL = entity.STATS[K.DENSITY] || 1;
+			const VolL = entity.STATS[K.VOLUME] || MASSKG / DensKgL;
+			const stretch = K.STRETCH;
+			const r = Math.pow((3 * VolL) / (4 * Math.PI), 1 / 3)
+			const E = (1 + (DEX / 100 * stretch)) * 0.1;
+			if(!LENGTH || isNaN(LENGTH))
+			{
+				const length = (2 * r) * E;
+				if(isNaN(length))
+					throw new Error(`${length} is invalid length`)
+				entity.STATS[K.LENGTH] = length
+				LENGTH = entity.STATS[K.LENGTH];
+			}
+			const mod = 1 / Math.sqrt(E);
+			if(!HEIGHT || isNaN(HEIGHT))
+			{
+				const height = (2 * r) * mod;
+				if(isNaN(height))
+					throw new Error(`${height} is invalid height`)
+				entity.STATS[K.HEIGHT] = height
+				HEIGHT = entity.STATS[K.HEIGHT];
+			}
+			if(!WIDTH || isNaN(WIDTH))
+			{
+				const width = (2 * r) * mod;
+				if(isNaN(width))
+					throw new Error(`${width} is invalid width`)
+				entity.STATS[K.WIDTH] = width
+				WIDTH = entity.STATS[K.WIDTH];
+			}
+		}
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+	finally
+	{
+		const CB = [LENGTH, HEIGHT, WIDTH]
+		if(this.isValidVector(CB))
+			return CB
+		return [0,0,0] 
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @returns {mass}
+ */
+MAGPIE_PHYSICS._calculate_growthMassKg = function _calculate_growthMassKg(entity)
+{
+	const ePrefix = "[PHYSICS].calculateGrowthMassKg: ";
+	try
+	{
+		const K = MAGPIE.KEY.STATS;
+		const e = MAGPIE.KEY.PHYSICS.EULER;
+		const MASS = entity.STATS[K.MASS];
+		const gRate = entity.STATS[K.G_R];
+		const gInflect = entity.STATS[K.G_I];
+		const gLVL = entity._get_growthLevel();
+		const FAT = entity._get_fatLevel();
+		const expon = 1 / (1 + e * Math.pow(-gRate * (gLVL - gInflect)));
+		return (MASS * 10) * expon * (1 + (FAT / 100))
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @section of {@link MAGPIE_PHYSICS}
+ * @child of {@link MAGPIE_PHYSICS.geodetic}
+ * @reference {@link MAGPIE.KEY.PHYSICS.AERO} {@link MAGPIE.KEY.STATS.meta}
+ * 
+ */
+//========================================================================
+// #region - AERO
+//========================================================================
+MAGPIE_PHYSICS.aero = {}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} celestial body 
+ * @param {Array<Number>} coords lat°, lon°, ASL (m)
+ * @param {Array<Number>} POVART1 latest worldstate of the entity
+ * @param {Number} Cf Coefficient of Friction (μ)
+ * @param {Number} Cl Coefficient of Lift
+ * @param {Number} Cd Coefficient of Drag
+ * @param {Number} CoM Center of Mass
+ * @param {Number} CoL Center of Lift
+ * @returns {{Fg: acceleration, Fd: force, Ff: force, Fl: force, AoA: angle}} 
+ * 
+ */
+MAGPIE_PHYSICS.currentAeroForces = function currentAeroForces(celestial, coords, POVART1, Cf, Cl, Cd, CoM, CoL)
+{
+	const { ASL } = coords;
+	const { P0 } = this.getPosition(POVART1);
+	const Fg = this._celestial_LocalG(celestial, P0);
+	const Fd = this._aero_calculateFd(C, coords, Cl, Cd, CoM, CoL, AoA);
+	const Fl = this._aero_calculateFl(C, coords, Cl, Cd, CoM, CoL, AoA);
+	const AoA = this._aero_calculateAoA(POVART1);
+	return { Fg, Fd, Fl, AoA }
+}
+/**
+ * @todo local Gravity
+ * @param {MAGPIE_CELESTIAL} celestial
+ * @param {vector3} P0
+ */
+MAGPIE_PHYSICS._celestial_LocalG = function _celestial_LocalG(celestial, P0)
+{
+	const mass = celestial.traits[MAGPIE.KEY.CELESTIAL.MASS];
+	const G = this._forces_calculate2BodyGravityVector(P0, mass);
+	return this.mag(G);
+}
+/**
+ * @todo Ff friction force
+ * @param {MAGPIE_CELESTIAL} C  
+ * @param {coords} coords lat, lon, ASL 
+ * @param {Number} Cf entity's coefficient of friction
+ * @param {vector3} V0 entity's Velocity vector
+ * @returns {force} Friction force (N)
+ */
+MAGPIE_PHYSICS._geod_calculateFf = function _geod_calculateFf(C, coords, Cf, V0)
+{
+	return 0.1
+}
+/**
+ * @todo Fd drag
+ * @param {MAGPIE_CELESTIAL} C
+ * @param {coords} coords 
+ * @param {Number} Cl 
+ * @param {Number} Cd 
+ * @param {Number} CoM 
+ * @param {Number} CoL  
+ * @param {angle} AoA
+ * @returns {force} (Fd) drag force in Newtons (N)
+ */
+MAGPIE_PHYSICS._aero_calculateFd = function _aero_calculateFd(C, coords, Cl, Cd, CoM, CoL, AoA)
+{
+	return 0.1
+}
+/**
+ * @todo Fl lift
+ * @param {MAGPIE_CELESTIAL} C
+ * @param {coords} coords 
+ * @param {Number} Cl 
+ * @param {Number} Cd 
+ * @param {Number} CoM 
+ * @param {Number} CoL
+ * @param {angle} AoA  
+ * @returns {force} (Fl) lift force in Newtons (N)
+ */
+MAGPIE_PHYSICS._aero_calculateFl = function _aero_calculateFl(C, coords, Cl, Cd, CoM, CoL, AoA)
+{
+	return 0.1
+}
+/**
+ * 
+ * @param {rotor} O0
+ * @param {vector3} V0
+ * @param {vector3} fwd default forward vector {@link MAGPIE.KEY.POVART.FWD}
+ * @returns {angle_rad} angle of attack in radians
+ */
+MAGPIE_PHYSICS._aero_calculateAoArad = function _aero_calculateAoArad(O0, V0, fwd)
+{
+	const message = `[PHYSICS].calculateAoArad: `
+	try
+	{
+		const speed = this.mag(V0);
+		if(isNaN(V0) || speed < 0.1) return NaN;
+		//
+		if(!fwd || fwd.some(n => !n))
+			fwd = MAGPIE.KEY.POVART.FWD;
+		const fwd_world = this.rotorApply(O0, fwd);
+		const V_dir = this.normalizeVector(V0);
+		//
+		const dot = this.dotProduct(fwd_world, V_dir);
+		const angle = Math.acos(this._U_clampRange(dot, -1, 1));
+		if(isNaN(angle)) throw new Error(`(${angle}) is invalid`)
+		//
+		// determine sign: project velocity onto local "up" axis
+		//assuming [0,0,1] is local up (Z-axis in many coordinate systems)
+		const up = this.rotorApply(O0, MAGPIE.KEY.POVART.UP);
+		const AoA = this.dotProduct(V_dir, up) < 0 ? angle : -angle;
+		return AoA;
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+	}
+};
+/**
+ * 
+ * back to {@link MAGPIE_PHYSICS.aero}
+ */
+//========================================================================
+//#endregion --- Aero
+//========================================================================
+/**
+ * 
+ * 
+ */
+//========================================================================
+//#region - UTILITY
+//========================================================================
+MAGPIE_PHYSICS.Utility = {};
+/**
+ * 
+ * @param {entity_stats} params 
+ * @returns {Boolean}
+ */
+MAGPIE_PHYSICS.isValidParams = function isValidParams(params)
+{
+	const ePrefix = "[PHYSICS].isValidParams: ";
+	try
+	{
+		if(!params)
+			throw new Error(`${params} is invalid params`);
+		if(params.length < MAGPIE.KEY.STATS.ARRAY)
+			throw new Error(`${params} is invalid STATS format`);
+		if(params.some(n => isNaN(n)))
+			throw new Error(`${params} has invalid numbers`);
+		return true
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} number 
+ * @param {Number} min 
+ * @param {Number} max 
+ * @returns {Number} clamped
+ */
+MAGPIE_PHYSICS._U_clampRange = function clampRange(number, min, max)
+{
+	return MAGPIE_SYSTEM.Math.clampRange(number, min, max);
+}
+/**
+ * 
+ * @param {Number} knots 
+ * @returns {velocity} Vspeed in m/s
+ */
+MAGPIE_PHYSICS._U_knotsToMPS = function _U_knotsToMPS(knots)
+{
+	return Number(((knots * MAGPIE.KEY.PHYSICS.NM) / 3600).toFixed(5))
+}
+/**
+ * 
+ * @param {velocity} MPS 
+ * @returns {Number} kts
+ */
+MAGPIE_PHYSICS._U_MPStoKnots = function _U_MPStoKnots(MPS)
+{
+	return Number(((MPS / MAGPIE.KEY.PHYSICS.NM) * 3600).toFixed(5))
+}
+MAGPIE_PHYSICS._aero_calculateAoA = function _aero_calculateAoA(POVART0, fwd)
+{
+	const rad = this._aero_calculateAoArad(POVART0, fwd);
+	return this._U_rad_to_deg(rad);
+}
+MAGPIE_PHYSICS._U_rad_to_deg = function _U_rad_to_deg(radians)
+{
+	return MAGPIE_SYSTEM.Math.convertRadToDeg(radians)
+}
+MAGPIE_PHYSICS._U_deg_to_rad = function _U_deg_to_rad(degrees)
+{
+	return MAGPIE_SYSTEM.Math.convertDegToRad(degrees)
+}
+MAGPIE_PHYSICS._aero_calculateCf = function()
+{
+	//@todo calculate Cf
+};
+MAGPIE_PHYSICS._aero_calculateCl = function()
+{
+	//@todo calculate Cl
+};
+MAGPIE_PHYSICS._aero_calculateCd = function()
+{
+	//@todo calculate Cd
+};
+MAGPIE_PHYSICS._aero_calculateCoM = function()
+{
+	//@todo calculate CoM
+};
+MAGPIE_PHYSICS._aero_calculateCoL = function()
+{
+	//@todo calculate CoL
+};
+/**
+ * @desc {@link MAGPIE.KEY.STATS.meta}
+ * @param {entity_stats} stats 
+ * @returns {vector3} inertia tensor [Ix, Iy, Iz]
+ */
+MAGPIE_PHYSICS._calculateInertiaTensor = function calculateInertia(stats)
+{
+	const ePrefix = "[PHYSICS].calculateInertia: ";
+	try
+	{
+		if(!this.isValidParams(stats))
+			throw new Error(`${stats} is invalid STATS`);
+		const K = MAGPIE.KEY.STATS;
+		const L = stats[K.LENGTH];
+		const H = stats[K.HEIGHT];
+		const W = stats[K.WIDTH];
+		const m = stats[K.MASSKG];
+		const factor = (1 / 12) * m;
+		const I = [
+			factor * (H**2 + W**2), //x-axis(Roll)
+			factor * (L**2 + H**2), //y-axis (Pitch)
+			factor * (L**2 + W**2) //z-axis (Yaw)
+		];
+		if(!this.isValidVector(I))
+			throw new Error(`${I} is invalid I vector`);
+		return I
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+} 
+/**
+ * 
+ * @param {entity_stats} stats
+ * @returns {alpha} (α) in rad/s^2 
+ */
+MAGPIE_PHYSICS._calculateAgilityAlpha = function calculateAgilityAlpha(stats)
+{
+	const ePrefix = "[PHYSICS].calculateAgilityAlpha: ";
+	try
+	{
+		if(!this.isValidParams(stats))
+			throw new Error(`${stats} is invalid STATS`);
+		const K = MAGPIE.KEY.STATS;
+		const L = stats[K.LENGTH];
+		const H = stats[K.HEIGHT];
+		const W = stats[K.WIDTH];
+		const GMAX = stats[K.GMAX];
+		// 1. find the distance from center to further corner (pythagoras)
+		// this is true radius 'r' of the entity
+		const r = Math.sqrt((L/2)**2 + (H/2)**2 + (W/2)**2);
+		// 2. alpha = max_linear_acceleration / radius
+		// this ensures no point on the ship exceeds GMAX
+		const a = GMAX / r;
+		if(isNaN(a))
+			throw new Error(`${a} is invalid alpha`)
+		return a
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {STAT} dex Dexterity parameter (DEX₁)
+ * @param {spin} a initial agility alpha (a₀) in rad/s
+ * @returns {coefficient} final agility alpha (a₁)
+ */
+MAGPIE_PHYSICS._get_agilityModifier = function agilityModifier(dex, a)
+{
+	const MOD = MAGPIE.KEY.STATS.AGILITY_MOD_MIN;
+	const MAX = MAGPIE.KEY.STATS.AGILITY_MOD_MAX;
+	const multiplier = MOD + (dex / MAX);
+	return a * multiplier
+}
+/**
+ * 
+ * back to {@link MAGPIE_PHYSICS.Utility}
+ */
+//========================================================================
+//#endregion
 //========================================================================
 module.exports = { MAGPIE_PHYSICS }
 /**
