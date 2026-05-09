@@ -1388,7 +1388,10 @@ io.on("connection", (socket) => {
 		}
 		next()
 	})
-	MAGPIE_SERVER.HANDLER.forEach(handler => handler(io, socket, MAGPIE_SERVER));
+	MAGPIE_SERVER.HANDLER.forEach(handler => {
+		if(typeof handler === "function")
+			handler(io, socket, MAGPIE_SERVER);
+	})
 	socket.on("disconnect", (reason) => {
 		if(playerID !== 0)
 			MAGPIE_SERVER.log(`${ePrefix} disconnected — ${reason}`, "console", false);

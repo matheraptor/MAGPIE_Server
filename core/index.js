@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.2
+ * @version 0.21.3
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,9 +20,11 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.21.2 2026 05 09
+ * @version 0.21.3 2026 05 09
  * - ADDED: hive refresh fully restored
  * - ADDED: hive.move 
+ * - FIXED: SERVER.js handler not type-checking, causing a commented-out 
+ * 		playerHandler.js to crash the boot
  * - FIXED: unnecessary "zod" dependency mistakenly added by ESlint
  * - FIXED: playerHandler.js put on stand-by
  * 
@@ -308,7 +310,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 2],
+			version: [0, 21, 3],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260509"
 		};
