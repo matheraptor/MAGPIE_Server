@@ -7,22 +7,17 @@
  * 
  * @description stuff below here is wiped after save
  */
-const { 
-    MAGPIE_PHYSICS, 
+const {  
     MAGPIE,
-    MAGPIE_SERVER, 
-    MAGPIE_SYSTEM,
-    r, 
-    MAGPIE_ENTITY, 
-    MAGPIE_DATE,
-    MAGPIE_CELESTIAL,
- } = require("../database");
+ } = require("../core/index");
 //========================================================================
 // #region - Scratchpad
 
 // #endregion
 //========================================================================
 r.context.diego = r.context.DATABASE.loadEntitySync(1773811141134)
+r.context.Terra = r.context.DATABASE
+    .loadEntitySync(r.context.diego.STATS[MAGPIE.KEY.POVART.P_C])
 r.context.diego.exps.pop()
 r.context.diego.refresh(0,0.1)
 r.context.diego = r.context.SERVER.HIVE._reg_entityByIndex(1);

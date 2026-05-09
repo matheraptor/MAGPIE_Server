@@ -411,7 +411,7 @@ worker.setRowTransaction = function setRowTransaction(tableName, rows, columns, 
 	return this.makeTransaction(db, () => {
 		const columnNames = columns.join(", ");
 		const placeholders = columns.map(() => "?").join(", ");
-		const sql = `INSER OR REPLACE INTO ${tableName} (${columnNames})`
+		const sql = `INSERT OR REPLACE INTO ${tableName} (${columnNames})`
 			+ ` VALUES (${placeholders})`;
 		const cacheKey = `SAVE:${tableName}:${columns.join(",")}`;
 		const statement = worker.getStatement(cacheKey, sql, db);

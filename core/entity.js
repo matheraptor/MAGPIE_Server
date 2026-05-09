@@ -69,7 +69,7 @@ MAGPIE_ENTITY.meta = {};
  * 
  * @version 0.20.6
  * - ADDED: destructure/recompose POVART with new POVART+ORBIT+STATS format
- * - ADDED: placeholder hive helpers @todo link helpers in SERVER.js 
+ * - ADDED: placeholder hive helpers link helpers in SERVER.js 
  * 
  */
 //------------------------------------------------------------------------
@@ -1061,6 +1061,7 @@ MAGPIE_ENTITY.prototype._M_importSTATS = function importMateriaSTATS(STATS)
 //========================================================================
 /**
  * @desc 
+ * @todo how to switch between POVART/orbital?
  * @param {Number} switchID 
  * @param {duration} dt in s
  * @returns {Promise<Boolean>}
@@ -1075,6 +1076,8 @@ MAGPIE_ENTITY.prototype.refresh = async function refresh(switchID, dt)
 		if(isNaN(dt))
 			throw new Error(`${dt} is invalid dT`);
 		this.updated = Date.now();
+		if(this.type < MAGPIE.KEY.ENTITY.TYPE.get("MATERIA").type)
+			return true
 		const input = this.processExp(switchID, dt);
 		const emote = this.processEmote(switchID, dt, input);
 		const { exp: state, target } = this.processStates(switchID, dt, emote?.exp);

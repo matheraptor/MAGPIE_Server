@@ -1525,23 +1525,50 @@ MAGPIE_HIVE.prototype.pause = function pause()
 /**
  * @name database
  * @desc 
- * 
+ * @typedef {import("./database_worker").database_result} database_result
  */
 //------------------------------------------------------------------------
 // #region > Database
 //------------------------------------------------------------------------
+/**
+ * 
+ * @param {entityID} entityID
+ * @returns {MAGPIE_ENTITY} 
+ */
 MAGPIE_HIVE.prototype.loadEntitySync = function loadEntitySync(entityID)
 {
 	//
 }
+MAGPIE_HIVE.__loadEntitySync = MAGPIE_HIVE.prototype.loadEntitySync;
+/**
+ * 
+ * @param {entityID} entityID
+ * @returns {Promise<MAGPIE_ENTITY>} 
+ */
+MAGPIE_HIVE.prototype.loadEntity = async function loadEntity(entityID)
+{
+	//
+}
+MAGPIE_HIVE.__loadEntity = MAGPIE_HIVE.prototype.loadEntity;
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @returns {Promise<database_result>}
+ */
 MAGPIE_HIVE.prototype.saveEntity = async function saveEntity(entity)
 {
 	//
 }
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity
+ * @returns {database_result}
+ */
 MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
 {
 	//
 }
+MAGPIE_HIVE.__saveEntitySync = MAGPIE_HIVE.prototype.saveEntitySync;
 /**
  * 
  * @param {entityID[]} entityIDarray 
@@ -1552,10 +1579,6 @@ MAGPIE_HIVE.prototype.loadEntities = function loadEntities(entityIDarray)
 	//
 }
 MAGPIE_HIVE.__loadEntities = MAGPIE_HIVE.prototype.loadEntities;
-MAGPIE_HIVE.prototype.saveEntities = async function saveEntities(entityArray)
-{
-	//
-}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1595,32 +1618,7 @@ MAGPIE_HIVE.__refresh = MAGPIE_HIVE.prototype.refresh;
  */
 MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 {
-	const ePrefix = "[HIVE].host: ";
-	try
-	{
-		const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
-		const layerName = K?.name;
-		const slot = this.nextSlot(layerID);
-		if(isNaN(slot))
-			throw new Error(`[LAYER-${layerID}] is full`);
-		this[layerName][slot] = layerID < 2 ? entity : entity.ID;
-		this._registry.set(entity.ID, {
-			layerID: layerID,
-			slot: slot,  
-			target: targetLayerID, 
-			retain: true
-		});
-		const layerRecord = this._registry.get(layerID);
-		layerRecord.nextSlot = (slot + 1) <= K.slots ? slot + 1 : -1
-		this._registry.set(layerID, layerRecord);
-		const message = `[HIVE].hosting [ENTITY-${entity.ID}] on `
-			+ `[${layerName}][${slot}] with target [LAYER-${targetLayerID}]`
-		MAGPIE_SYSTEM.log(message)
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
+	//
 }
 MAGPIE_HIVE.__host = MAGPIE_HIVE.prototype.host;
 MAGPIE_HIVE.prototype.nextSlot = function nextSlot(layerID)

@@ -1058,7 +1058,7 @@ MAGPIE.KEY.STATS.TMAX_Y = MAGPIE.KEY.STATS.TMAX_X + 1;
 MAGPIE.KEY.STATS.TMAX_Z = MAGPIE.KEY.STATS.TMAX_Y + 1;
 /** @type {index} Coefficient of Buoyancy */
 MAGPIE.KEY.STATS.FB = MAGPIE.KEY.STATS.TMAX_Z + 1;
-/** @type {index} Coefficient of integrity @todo Unsure of this */
+/** @type {index} @todo Coefficient of integrity: unsure of this */
 MAGPIE.KEY.STATS.CM = MAGPIE.KEY.STATS.FB + 1;
 /** @type {index} */
 MAGPIE.KEY.STATS.MASSKG = MAGPIE.KEY.STATS.CM + 1;

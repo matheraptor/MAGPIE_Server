@@ -136,7 +136,7 @@ MAGPIE_DATABASE.saveEntity = async function saveEntity(entity)
 		const payload = this.prepareEntity(entity);
 		if(!payload)
 			throw new Error(`unable to prepare ${entity}`);
-		const result = await this.call("saveWorldRow", ["MAGPIE_ENTITY", payload]);
+		const result = await this.call("saveWorldRow", "MAGPIE_ENTITY", payload);
 		if(!result)
 			throw new Error(`unable to save [ENTITY-${entity.ID}`);
 		return result
@@ -180,7 +180,7 @@ MAGPIE_DATABASE.transactionSaveEntities = async function saveEntities(entityArra
 	try
 	{
 		const payloads = entityArray.map(entity => this.prepareEntity(entity));
-		const result = await this.call("saveEntities", [payloads])
+		const result = await this.call("saveEntities", payloads)
 		return !!result
 	}
 	catch(e)
@@ -349,9 +349,10 @@ MAGPIE_DATABASE.loadEntity = async function loadEntity(entityID)
 	const ePrefix = `[DATABASE].loadEntity: `;
 	try
 	{
-		const entity = await this.call("loadWorldRow", ["MAGPIE_ENTITY", {ID: entityID}]);
-		if(!(entity instanceof MAGPIE_ENTITY))
+		const data = await this.call("loadWorldRow", "MAGPIE_ENTITY", {ID: entityID});
+		if(!data?.ID)
 			throw new Error(`[ENTITY-${entityID}] not found`)
+		const entity = Object.setPrototypeOf(data, MAGPIE_ENTITY.prototype);
 		return entity
 	}
 	catch(e)
