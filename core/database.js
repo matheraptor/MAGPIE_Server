@@ -59,7 +59,6 @@ MAGPIE_DATABASE._pending = new Map();
 MAGPIE_DATABASE.sync = require("./database_worker");
 const { Worker } = require("worker_threads");
 const { MAGPIE_PLAYER } = require("./player.js");
-const { pl } = require("zod/locales");
 const { MAGPIE_EXP, MAGPIE_KEY } = require("./component.js");
 MAGPIE_DATABASE.worker = new Worker("./core/database_worker.js");
 MAGPIE_DATABASE.call = function call(method, ...args)

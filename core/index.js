@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.0
+ * @version 0.21.1
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,9 +20,10 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.21.0 2026 05 09
+ * @version 0.21.1 2026 05 09
  * - ADDED: hive refresh fully restored
  * - ADDED: hive.move 
+ * - FIXED: unnecessary "zod" dependency mistakenly added by ESlint
  * 
  * @version 0.20.9 2026 05 08
  * - ADDED: database multi-entity save transaction
@@ -306,7 +307,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 0],
+			version: [0, 21, 1],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260509"
 		};

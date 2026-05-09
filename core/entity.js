@@ -36,7 +36,6 @@ const {
 } = require("./component");
 const STATE = require("../data/states")
 const { MAGPIE_PHYSICS } = require("./physics");
-const { array } = require("zod");
 const ENTITY_TYPES = require("../data/entity_types");
 /**
  * 

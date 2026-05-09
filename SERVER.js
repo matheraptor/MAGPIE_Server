@@ -1697,7 +1697,6 @@ MAGPIE_SERVER.scratchpad.log = function log(input)
 // #region - BOOT
 //========================================================================
 const REPL = require("repl");
-const { en } = require("zod/locales");
 console.clear();
 const r = REPL.start("MAGPIE_SERVER > ")
 MAGPIE_SERVER.CLI._createLoadBar();
