@@ -144,14 +144,15 @@ MAGPIE_PHYSICS.geodeticDDtoDMS = function geodeticDDtoDMS(lat = "", lon = "")
 }
 /**
  * {@link MAGPIE_PHYSICS.targetDistanceSph}
- * @param {Number} lat DD latitude (ϕ)
- * @param {Number} lon DD longitude (λ)
- * @param {Number} R radius from the center of the celestial body (R_c + ASL)
+ * @param {coords} C0 
+ * @param {distance} r
  * @returns {vector3} Position vector [x, y, z]
  */
-MAGPIE_PHYSICS.geodeticToCartesian = function geodeticToCartesian(lat, lon, R)
+MAGPIE_PHYSICS.geodeticToCartesian = function geodeticToCartesian(C0, r)
 {
-	if(!R) R = MAGPIE.KEY.PHYSICS.EARTH.R;
+	if(!r) r = MAGPIE.KEY.PHYSICS.EARTH.RADIUS;
+	const [lat,lon,ASL] = C0;
+	const R = r + ASL;
 	const phi = lat * (Math.PI / 180);
 	const lambda = lon * (Math.PI / 180);
 	const x = R * Math.cos(phi) * Math.cos(lambda);

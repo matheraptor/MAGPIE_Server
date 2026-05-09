@@ -302,6 +302,7 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {import("./index").angle_rad} angle_rad
  * @typedef {import("./index").vector3} vector3
  * @typedef {import("./index").bivector} bivector
+ * @typedef {import("./index").rotor} rotor
  * @typedef {import("./index").angle_deg} angle_deg
  * @typedef {{
  * name: String,
@@ -543,6 +544,60 @@ MAGPIE_ENTITY._get_POVART = function getPOVART(entity)
 MAGPIE_ENTITY._get_decomp_POVART = function getDecompPOVART(POVART)
 {
 	return MAGPIE_PHYSICS.decomp_POVART(POVART);
+}
+/**
+ * 
+ * @returns {vector3}
+ */
+MAGPIE_ENTITY.prototype._get_P0 = function getP0()
+{
+	const K = MAGPIE.KEY.POVART;
+	return [this.STATS[K.P_X], this.STATS[K.P_Y], this.STATS[K.P_Z]]
+}
+/**
+ * 
+ * @returns {rotor}
+ */
+MAGPIE_ENTITY.prototype._get_O0 = function getO0()
+{
+	const K = MAGPIE.KEY.POVART;
+	return [this.STATS[K.O_YZ], this.STATS[K.O_XZ], this.STATS[K.O_XY], this.STATS[K.O_W]]
+}
+/**
+ * 
+ * @returns {vector3}
+ */
+MAGPIE_ENTITY.prototype._get_V0 = function getV0()
+{
+	const K = MAGPIE.KEY.POVART;
+	return [this.STATS[K.V_X], this.STATS[K.V_Y], this.STATS[K.V_Z]]
+}
+/**
+ * 
+ * @returns {vector3}
+ */
+MAGPIE_ENTITY.prototype._get_A0 = function getA0()
+{
+	const K = MAGPIE.KEY.POVART;
+	return [this.STATS[K.A_X], this.STATS[K.A_Y], this.STATS[K.A_Z]]
+}
+/**
+ * 
+ * @returns {bivector}
+ */
+MAGPIE_ENTITY.prototype._get_R0 = function getR0()
+{
+	const K = MAGPIE.KEY.POVART;
+	return [this.STATS[K.R_YZ], this.STATS[K.R_XZ], this.STATS[K.R_XY]]
+}
+/**
+ * 
+ * @returns {bivector}
+ */
+MAGPIE_ENTITY.prototype._get_T0 = function getT0()
+{
+	const K = MAGPIE.KEY.POVART;
+	return [this.STATS[K.T_YZ], this.STATS[K.T_XZ], this.STATS[K.T_XY]]
 }
 MAGPIE_ENTITY.prototype._get_STATS = function getSTATS()
 {

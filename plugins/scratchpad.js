@@ -15,6 +15,7 @@ const {
 
 // #endregion
 //========================================================================
+r.context.diego = r.context.HIVE._GuestsBase[0]
 r.context.diego = r.context.DATABASE.loadEntitySync(1773811141134)
 r.context.Terra = r.context.DATABASE
     .loadEntitySync(r.context.diego.STATS[MAGPIE.KEY.POVART.P_C])
