@@ -375,6 +375,28 @@ worker.createTable = function createTable(tableName, schema, db)
 		throw e
 	}
 }
+/**
+ * 
+ * @param {String} tableName 
+ * @param {Database} db 
+ * @returns {database_result}
+ */
+worker.dropTable = function dropTable(tableName, db)
+{
+	return db.prepare(`DROP TABLE IF EXISTS ${tableName}`).run();
+}
+/**
+ * 
+ * @param {String} tableName 
+ * @param {String} columnName 
+ * @param {String} type 
+ * @param {Database} db
+ * @returns {database_result} 
+ */
+worker.addColumnToTable = function addColumnToTable(tableName, columnName, type, db)
+{
+	return db.prepare(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${type}`).run()
+}
 // #endregion
 //------------------------------------------------------------------------
 /**

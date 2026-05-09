@@ -1506,6 +1506,70 @@ MAGPIE_ENTITY.prototype.processKeys = function processKeys(exp)
  * 
  */
 //========================================================================
+// #region - EMOTES
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Seek
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ */
+MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}]._emote_seekTarget: `;
+	try
+	{
+		const POVART0 = MAGPIE_ENTITY._get_POVART(this);
+		const entity = MAGPIE_ENTITY._hive_getEntitySync(exp.targetID);
+		const P1 = entity._get_P0();
+		const tolerance = 1; //@todo dynamic seekTarget tolerance
+		const pR = 0.5; //@todo dynamic seekTarget priority ratio
+		const intensity = exp.value;
+		const options = {
+			tolerance: tolerance,
+			intensity: intensity,
+			fwd: MAGPIE.KEY.POVART.FWD,
+			agility: this.STATS[MAGPIE.KEY.STATS.DEX],
+			pR: pR
+		}
+		const output = MAGPIE_PHYSICS
+			._emote_seekTarget(POVART0, P1, this.STATS, options);
+		const { arrived, proximity, braking } = output;
+		if(arrived)
+		{
+			exp.ID = Date.now();
+			const targetKey = exp.keys.findIndex(MAGPIE.KEY.INDEX.TARGET);
+			exp.keys[targetKey] = MAGPIE.KEY.INDEX.TRIVIAL;
+		}
+		this.exps.push(exp)
+ 	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
 // #region - State
 //========================================================================
 /**

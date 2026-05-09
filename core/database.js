@@ -204,12 +204,17 @@ MAGPIE_DATABASE.prepareEntity = function prepareEntity(entity)
 	try
 	{
 		if(!(entity instanceof MAGPIE_ENTITY))
-			throw new Error(`${entity} is invalid MAGPIE_ENTITY`)
+			throw new Error(`${entity} is invalid MAGPIE_ENTITY`);
+		const K = MAGPIE.KEY.STATS;
+		const compoundID = entity.STATS[K.COMPOUND];
+		const hostID = entity.STATS[K.HOST];
 		const payload = {
 			ID: entity.ID,
 			type: entity.type,
-			data: entity,
-			updated: entity.updated
+			updated: entity.updated,
+			compoundID: compoundID || null,
+			hostID: hostID || null,
+			data: entity
 		}
 		return payload
 	}
@@ -320,12 +325,188 @@ MAGPIE_DATABASE.preparePlayer = function preparePlayer(player)
 			username: player.username,
 			email: player.email,
 			PASS: player.PASS,
-			isFrozen: player.isFrozen ? 1 : 0
+			isFrozen: player.isFrozen ? 1 : 0,
+			data: player
 		}
+		return payload
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * @typedef {{
+ * ID: epoch_real,
+ * subjectID: Number,
+ * targetID: Number,
+ * data: MAGPIE_EXP
+ * }} exp_payload
+ * @param {MAGPIE_EXP} exp 
+ * @returns {exp_payload}
+ */
+MAGPIE_DATABASE.prepareExp = function prepareExp(exp)
+{
+	if(!(exp instanceof MAGPIE_EXP))
+		throw new Error(`${exp} is invalid EXP`)
+	const payload = {
+		ID: exp.ID,
+		subjectID: exp.subjectID || null,
+		targetID: exp.targetID || null,
+		data: exp
+	}
+	return payload
+} 
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {Promise<worker_result>} 
+ */
+MAGPIE_DATABASE.saveExp = async function saveExp(exp)
+{
+	const ePrefix = "[DATABASE].saveExp: ";
+	try
+	{
+		const payload = this.prepareExp(exp);
+		const result = await this.call("saveWorldRow", ["MAGPIE_EXP", payload])
+		if(!result)
+			throw new Error(`unable to save [EXP-${exp.ID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.saveExpSync = function saveExpSync(exp)
+{
+	const ePrefix = "[DATABASE].saveExp: ";
+	try
+	{
+		const payload = this.prepareExp(exp);
+		this.saveExpRelation(exp);
+		const result = this.sync.saveWorldRow("MAGPIE_EXP", payload);
+		if(!result)
+			throw new Error(`unable to save [EXP-${exp.ID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {worker_result}
+ */
+MAGPIE_DATABASE.saveExpRelation = function saveExpRelation(exp)
+{
+	let payloads = [];
+	exp.keys.forEach(key => {
+		const payload = {
+			expID: exp.ID,
+			keyID: key
+		}
+		payloads.push(payload)
+	})
+	const result = this.sync.makeTransaction(this.sync.world, () => {
+		for(const payload of payloads)
+		{
+			const { values, columns } = this.sync.rowSetter(payload);
+			this.sync.setRow("EXP_KEYS", values, columns, this.sync.world);
+		}
+		return true
+	})
+	if(!result)
+		throw new Error(`unable to save relations for [EXP-${exp.ID}]`)
+	return result
+}
+/**
+ * 
+ * @typedef {{
+ * ID: epoch_real,
+ * type: Enumerator<Number>,
+ * label: String,
+ * originID: Number,
+ * compoundID: Number,
+ * symbolID: Number
+ * }} key_payload
+ * @param {MAGPIE_KEY} key 
+ * @returns {key_payload}
+ */
+MAGPIE_DATABASE.prepareKey = function prepareKey(key)
+{
+	return {
+		ID: key.ID,
+		type: key.type,
+		label: key.label,
+		originID: key.originID || null,
+		compoundID: key.compoundID || null,
+		symbolID: key.symbolID || null
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_KEY} key
+ * @returns {Promise<worker_result>} 
+ */
+MAGPIE_DATABASE.saveKey = async function saveKey(key)
+{
+	const ePrefix = "[DATABASE].saveKey: ";
+	try
+	{
+		const payload = this.prepareKey(key);
+		const result = await this.call("saveWorldRow", ["MAGPIE_KEY", payload])
+		if(!result)
+			throw new Error(`unable to save [KEY-${key.ID}]`)
+		await this.call("saveWorldRow", ["key_legacies", {
+			keyID: key.originID,
+			legacyID: key.ID
+		}])
+		await this.call("saveWorldRow", ["key_components", {
+			keyID: key.compoundID,
+			componentID: key.ID
+		}])
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.messag, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_KEY} key
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.saveKeySync = function saveKeySync(key)
+{
+	const ePrefix = "[DATABASE].saveKey: ";
+	try
+	{
+		const payload = this.prepareKey(key);
+		const result = this.sync.saveWorldRow("MAGPIE_KEY", payload);
+		if(!result)
+			throw new Error(`unable to save [KEY-${key.ID}]`)
+		this.sync.saveWorldRow("key_legacies", {
+			keyID: key.originID,
+			legacyID: key.ID
+		})
+		this.sync.saveWorldRow("key_components", {
+			keyID: key.compoundID,
+			componentID: key.ID
+		})
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.messag, e)
 	}
 }
 // #endregion
@@ -537,6 +718,84 @@ MAGPIE_DATABASE.loadKeySync = function loadKeySync(keyID)
 		if(!(key instanceof MAGPIE_KEY))
 			throw new Error(`[KEY-${keyID}] not in database`);
 		return key
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > delete
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} expID
+ * @returns {Promise<worker_result>} 
+ */
+MAGPIE_DATABASE.deleteExp = async function deleteExp(expID)
+{
+	const ePrefix = "[DATABASE].deleteExp: ";
+	try
+	{
+		const result = await this.call("deleteRow", ["MAGPIE_EXP", {ID: expID}])
+		if(!result)
+			throw new Error(`unable to delete [EXP-${expID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} expID
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.deleteExpSync = function deleteExpSync(expID)
+{
+	const ePrefix = "[DATABASE].deleteEXP: ";
+	try
+	{
+		const result = this.sync.world.prepare(
+			"DELETE FROM EXP_KEYS WHERE expID = ?"
+		).run(expID)
+		if(!result)
+			throw new Error(`unable to delete [EXP-${expID}]`)
+		const message = `deleted ${result.changes} key relations for [EXP-${expID}]`;
+		MAGPIE_SYSTEM.log(ePrefix + message, "console", true)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} expID
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.deleteKeyLegacy = function deleteExpSync(expID)
+{
+	const ePrefix = "[DATABASE].deleteEXP: ";
+	try
+	{
+		const result = this.sync.world.prepare(
+			"DELETE FROM EXP_KEYS WHERE expID = ?"
+		).run(expID)
+		if(!result)
+			throw new Error(`unable to delete [EXP-${expID}]`)
+		const message = `deleted ${result.changes} key relations for [EXP-${expID}]`;
+		MAGPIE_SYSTEM.log(ePrefix + message, "console", true)
+		return result
 	}
 	catch(e)
 	{

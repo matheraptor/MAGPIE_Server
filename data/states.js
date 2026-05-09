@@ -183,7 +183,7 @@ const SEEKING_TARGET = {
 				return
 			if(!entity?.ID || isNaN(entity.ID))
 				throw new Error(`${entity} is invalid MAGPIE_ENTITY`);
-			const output = entity._seekTarget(exp);
+			const output = entity._emote_seekTarget(exp);
 			const purge = true;
 			if(output.arrived) entity.removeState(302, 1, purge);
 			if(output.proximity) entity.switchState(302, 303);

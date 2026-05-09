@@ -283,7 +283,12 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
 //------------------------------------------------------------------------
 MAGPIE_KEY.prototype.initialize = function initialize(data)
 {
-	//
+	this.ID = Date.now();
+	this.type = data?.type || 0;
+	this.label = data?.label || "";
+	this.originID = data?.originID || 0;
+	this.compoundID = data?.compoundID || 0;
+	this.symbolID = data?.symbolID || 0;
 }
 // #endregion
 //------------------------------------------------------------------------

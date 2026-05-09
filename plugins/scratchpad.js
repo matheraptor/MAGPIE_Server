@@ -15,7 +15,7 @@ const {
 
 // #endregion
 //========================================================================
-r.context.diego = r.context.HIVE._GuestsBase[0]
+r.context.diego = r.context.HIVE[MAGPIE.KEY.RUNTIME.LAYER.get(1).name][0]
 r.context.diego = r.context.DATABASE.loadEntitySync(1773811141134)
 r.context.Terra = r.context.DATABASE
     .loadEntitySync(r.context.diego.STATS[MAGPIE.KEY.POVART.P_C])
@@ -51,7 +51,6 @@ PAR[Kp.TMAX_X] = 0.01;
 PAR[Kp.TMAX_Y] = 0.01;
 PAR[Kp.TMAX_Z] = 0;
 r.context.diego.PARAMS = PAR;
-
 
 /**
  const { P0, V0 } = r.context.diego.decomp_POVART();

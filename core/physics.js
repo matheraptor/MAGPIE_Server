@@ -59,6 +59,7 @@ function MAGPIE_PHYSICS()
  * @typedef {Number} epoch_real_s time in s since epoch J2000
  * 
  * @typedef {import("./entity").entity_stats} entity_stats
+ * @typedef {import("./entity").STATS} STATS
  * 
  */
 //========================================================================
@@ -582,7 +583,38 @@ MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, 
 //------------------------------------------------------------------------
 // #region seek
 //------------------------------------------------------------------------
-
+/**
+ * 
+ * @param {vector3} P0 
+ * @param {vector3} P1 
+ * @param {STATS} STATS 
+ * @param {{
+ * 	tolerance: coefficient,
+ * 	intensity: ratio,
+ * 	fwd: vector3,
+ * 	agility: STAT,
+ * 	pR: ratio
+ * }} options  
+ */
+MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS, options)
+{
+	const K = MAGPIE.KEY.STATS;
+	const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0)
+	const a = this._calculateAgilityAlpha(STATS);
+	const a1 = this._get_agilityModifier(options.agility, a);
+	const Tmax = this._getTmax(STATS, a1);
+	const Ot = this._getO1toP1(P0, P1, options.fwd);
+	const dR = this._getDeltaR(O0, Ot);
+	const Tt = this._getTt(dR, R0, Tmax, options.pR);
+	const { At, arrived, proximity, braking } = this
+		._getAt(P0, V0, P1, STATS, options.tolerance);
+	const pR = options.pR || this._getATpR(Ot);
+	return {
+		At: this.scaleVector(At, pR),
+		Tt: this.scaleVector(Tt, (1 - pR)),
+		arrived, proximity, braking
+	}
+}
 /**
  * 
  * @param {POVART} POVART0 
@@ -596,7 +628,7 @@ MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, 
  * 	pR: ratio
  * }} options 
  */
-MAGPIE_PHYSICS._seekTarget = function _seekTarget(POVART0, P1, params, options)
+MAGPIE_PHYSICS._emote_seekSmart = function _emote_seekSmart(POVART0, P1, params, options)
 {
 	const ePrefix = "[PHYSICS].seekTarget: ";
 	try
@@ -605,8 +637,6 @@ MAGPIE_PHYSICS._seekTarget = function _seekTarget(POVART0, P1, params, options)
 			throw new Error(`${POVART0} is invalid subjectPOVART`)
 		if(!this.isValidVector(P1))
 			throw new Error(`${P1} is invalid P₁`)
-		if(!this.isValidParams(params))
-			throw new Error(`${params} is invalid params`);
 		const options_default = {
 			tolerance: 0,
 			intensity: 1,
@@ -757,7 +787,10 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, toler)
 			throw new Error(`${V0} is invalid V₀`);
 		if(!this.isValidParams(params))
 			throw new Error(`${params} is invalid PARAMS`);
-		const { Vmax, Amax, Bmax } = params;
+		const K = MAGPIE.KEY.STATS;
+		const Vmax = params[K.VMAX];
+		const Amax = params[K.AMAX];
+		const Bmax = params[K.BMAX];
 		const S0 = this.mag(V0);
 		// 1. calculate braking distance
 		const Bdist = (S0**2) / (2 * Bmax);

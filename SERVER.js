@@ -840,7 +840,7 @@ MAGPIE_PHYSICS._geod_checkCollisions = function _geod_checkCollisions(data)
  */
 MAGPIE_ENTITY._set_relation = async function _set_relation(payload)
 {
-	return await MAGPIE_DATABASE.call("setRow", payload)
+	return await MAGPIE_DATABASE.call("saveWorldRow", payload)
 }
 /**
  * @desc {@link MAGPIE_ENTITY.__getEXP}
@@ -1487,6 +1487,7 @@ MAGPIE_DATABASE.setup = function setup()
 {
 	const ePrefix = "[DATABASE].setup: ";
 	const integer = "INTEGER NOT NULL";
+	const integerNullable = "INTEGER"
 	const integerKey = "INTEGER PRIMARY KEY";
 	const foreignKey = " FOREIGN KEY";
 	const blob = "JSON NOT NULL";
@@ -1506,8 +1507,8 @@ MAGPIE_DATABASE.setup = function setup()
 			ID: integerKey,
 			type: integer,
 			updated: integer,
-			compundID: integer,
-			hostID: integer,
+			compoundID: integerNullable,
+			hostID: integerNullable,
 			data: blob,
 			fk1: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_ENTITY(ID)",
 			fk2: "FOREIGN KEY (hostID) REFERENCES MAGPIE_ENTITY(ID)"
@@ -1531,7 +1532,7 @@ MAGPIE_DATABASE.setup = function setup()
 			compoundID: integer,
 			componentID: integer,
 			"PRIMARY KEY": "(compoundID, componentID)",
-			fk1: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_ENTITY(ID)",
+			fk1: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_ENTITY(ID) ON DELETE CASCADE",
 			fk2: "FOREIGN KEY (componentID) REFERENCES MAGPIE_ENTITY(ID)"
 		})
 		tables.set("entity_components", entity_components);
@@ -1539,43 +1540,71 @@ MAGPIE_DATABASE.setup = function setup()
 			hostID: integer,
 			equipID: integer,
 			"PRIMARY KEY": "(hostID, equipID)",
-			fk1: "FOREIGN KEY (hostID) REFERENCES MAGPIE_ENTITY(ID)",
+			fk1: "FOREIGN KEY (hostID) REFERENCES MAGPIE_ENTITY(ID) ON DELETE CASCADE",
 			fk2: "FOREIGN KEY (equipID) REFERENCES MAGPIE_ENTITY(ID)"
 		})
 		tables.set("entity_equips", entity_equips);
 		const events = this.sync.createWorldTable("MAGPIE_EVENT", {
 			ID: integerKey,
 			type: integer,
-			parentID: integer,
+			parentID: integerNullable,
 			status: integer,
 			updated: integer,
-			data: blob
+			data: blob,
+			fk1: "FOREIGN KEY (parentID) REFERENCES MAGPIE_EVENT(ID)"
 		})
 		tables.set("events", events);
 		const event_children = this.sync.createWorldTable("event_children", {
-			eventID: integer,
+			parentID: integer,
+			childID: integer,
+			fk1: "FOREIGN KEY (parentID) REFERENCES MAGPIE_EVENT(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (childID) REFERENCES MAGPIE_EVENT(ID)"
 		})
 		const keys = this.sync.createWorldTable("MAGPIE_KEY", {
 			ID: integerKey,
 			type: integer,
-			data: blob
+			label: text,
+			originID: integerNullable,
+			compoundID: integerNullable,
+			symbolID: integerNullable,
+			fk1: "FOREIGN KEY (originID) REFERENCES MAGPIE_KEY(ID)",
+			fk2: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_KEY(ID)",
+			fk3: "FOREIGN KEY (symbolID) REFERENCES MAGPIE_SYMBOL(ID)"
 		});
 		tables.set("keys", keys);
 		const exps = this.sync.createWorldTable("MAGPIE_EXP", {
 			ID: integerKey,
-			subjectID: integer,
-			targetID: integer,
-			data: blob
+			subjectID: integerNullable,
+			targetID: integerNullable,
+			data: blob,
+			fk1: "FOREIGN KEY (subjectID) REFERENCES MAGPIE_ENTITY(ID)",
+			fk2: "FOREIGN KEY (targetID) REFERENCES MAGPIE_ENTITY(ID)"
 		})
 		tables.set("exps", exps);
 		const exp_keys = this.sync.createWorldTable("EXP_KEYS", {
 			expID: integer,
 			keyID: integer,
 			"PRIMARY KEY": "(expID, keyID)",
-			fk1: "FOREIGN KEY (expID) REFERENCES MAGPIE_EXP(ID)",
+			fk1: "FOREIGN KEY (expID) REFERENCES MAGPIE_EXP(ID) ON DELETE CASCADE",
 			fk2: "FOREIGN KEY (keyID) REFERENCES MAGPIE_KEY(ID)"
 		})
 		tables.set("exp_keys", exp_keys);
+		const key_legacies = this.sync.createWorldTable("key_legacies", {
+			keyID: integer,
+			legacyID: integer,
+			"PRIMARY KEY": "(keyID, legacyID)",
+			fk1: "FOREIGN KEY (keyID) REFERENCES MAGPIE_KEY(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (legacyID) REFERENCES MAGPIE_KEY(ID)"
+		});
+		tables.set("key_legacies", key_legacies);
+		const key_components = this.sync.createWorldTable("key_components", {
+			keyID: integer,
+			componentID: integer,
+			"PRIMARY KEY": "(keyID, componentID)",
+			fk1: "FOREIGN KEY (keyID) REFERENCES MAGPIE_KEY(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (componentID) REFERENCES MAGPIE_KEY(ID)"
+		});
+		tables.set("key_components", key_components);
 		const metastate = this.sync.createWorldTable("MAGPIE_METASTATE", {
 			key: textKey,
 			data: blob

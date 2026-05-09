@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.3
+ * @version 0.21.4
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,9 +20,12 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.21.3 2026 05 09
+ * @version 0.21.4 2026 05 09
  * - ADDED: hive refresh fully restored
  * - ADDED: hive.move 
+ * - ADDED: database_worker dropTable and addColumnToTable methods
+ * - FIXED: database tables foreign keys not properly setup
+ * - FIXED: database tables fields not properly setup
  * - FIXED: SERVER.js handler not type-checking, causing a commented-out 
  * 		playerHandler.js to crash the boot
  * - FIXED: unnecessary "zod" dependency mistakenly added by ESlint
@@ -310,7 +313,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 3],
+			version: [0, 21, 4],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260509"
 		};
@@ -409,6 +412,8 @@ MAGPIE.KEY.INDEX.SUBJECT = 10;
 MAGPIE.KEY.INDEX.OBJECT = MAGPIE.KEY.INDEX.SUBJECT + 1;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TARGET = MAGPIE.KEY.INDEX.OBJECT + 1;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TRIVIAL = MAGPIE.KEY.INDEX.TARGET + 1;
 // #endregion
 //------------------------------------------------------------------------
 /**
