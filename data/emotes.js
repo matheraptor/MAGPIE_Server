@@ -41,7 +41,7 @@ data.push(
 			const ePrefix = `[EMOTE-302].seekTarget: `;
 			const results = {};
 			const index = exp.value;
-			results.addState = [INDEX.SEEKING_TARGET, index];
+			results.addState = INDEX.SEEKING_TARGET;
 			results.removeState = null;
 			results.switchState = null;
 			results.exp = exp;

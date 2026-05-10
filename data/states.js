@@ -183,6 +183,11 @@ const SEEKING_TARGET = {
 				return
 			if(!entity?.ID || isNaN(entity.ID))
 				throw new Error(`${entity} is invalid MAGPIE_ENTITY`);
+			const POVART0 = exp.subjectID.slice(0,30);
+			const P1 = exp.targetID.slice(0,3);
+			const STATS = exp.subjectID;
+			const toler = exp.keys.find(key => key === MAGPIE.KEY.INDEX.PROXIMITY) ? 1 : 0;
+			const options = {intensity: exp.value, tolerance: toler}
 			const output = entity._emote_seekTarget(exp);
 			const purge = true;
 			if(output.arrived) entity.removeState(302, 1, purge);

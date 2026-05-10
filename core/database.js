@@ -389,7 +389,7 @@ MAGPIE_DATABASE.saveExpSync = function saveExpSync(exp)
 	try
 	{
 		const payload = this.prepareExp(exp);
-		this.saveExpRelation(exp);
+		// this.saveExpRelation(exp);
 		const result = this.sync.saveWorldRow("MAGPIE_EXP", payload);
 		if(!result)
 			throw new Error(`unable to save [EXP-${exp.ID}]`)
@@ -465,14 +465,16 @@ MAGPIE_DATABASE.saveKey = async function saveKey(key)
 		const result = await this.call("saveWorldRow", ["MAGPIE_KEY", payload])
 		if(!result)
 			throw new Error(`unable to save [KEY-${key.ID}]`)
-		await this.call("saveWorldRow", ["key_legacies", {
-			keyID: key.originID,
-			legacyID: key.ID
-		}])
-		await this.call("saveWorldRow", ["key_components", {
-			keyID: key.compoundID,
-			componentID: key.ID
-		}])
+		if(key.originID)
+			await this.call("saveWorldRow", ["key_legacies", {
+				keyID: key.originID,
+				legacyID: key.ID
+			}])
+		if(key.compoundID)
+			await this.call("saveWorldRow", ["key_components", {
+				keyID: key.compoundID,
+				componentID: key.ID
+			}])
 		return result
 	}
 	catch(e)
@@ -494,14 +496,16 @@ MAGPIE_DATABASE.saveKeySync = function saveKeySync(key)
 		const result = this.sync.saveWorldRow("MAGPIE_KEY", payload);
 		if(!result)
 			throw new Error(`unable to save [KEY-${key.ID}]`)
-		this.sync.saveWorldRow("key_legacies", {
-			keyID: key.originID,
-			legacyID: key.ID
-		})
-		this.sync.saveWorldRow("key_components", {
-			keyID: key.compoundID,
-			componentID: key.ID
-		})
+		if(key.originID)
+			this.sync.saveWorldRow("key_legacies", {
+				keyID: key.originID,
+				legacyID: key.ID
+			})
+		if(key.compoundID)
+			this.sync.saveWorldRow("key_components", {
+				keyID: key.compoundID,
+				componentID: key.ID
+			})
 		return result
 	}
 	catch(e)
@@ -714,9 +718,10 @@ MAGPIE_DATABASE.loadKeySync = function loadKeySync(keyID)
 	const ePrefix = "[DATABASE].loadKeySync: ";
 	try
 	{
-		const key = this.sync.loadWorldRow("MAGPIE_KEY", {ID: keyID});
-		if(!(key instanceof MAGPIE_KEY))
+		const key = this.sync.getRow("MAGPIE_KEY", {ID: keyID}, this.sync.world)[0];
+		if(!key?.ID)
 			throw new Error(`[KEY-${keyID}] not in database`);
+		Object.setPrototypeOf(key, MAGPIE_KEY.prototype);
 		return key
 	}
 	catch(e)

@@ -599,6 +599,14 @@ MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, 
 MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS, options)
 {
 	const K = MAGPIE.KEY.STATS;
+	if(!options?.agility)
+		options.agility = STATS[K.DEX];
+	if(!options?.fwd)
+		options.fwd = MAGPIE.KEY.POVART.FWD;
+	if(!options?.pR)
+		options.pR = 0.5;
+	if(!options?.tolerance)
+		options.tolerance = 0;
 	const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0)
 	const a = this._calculateAgilityAlpha(STATS);
 	const a1 = this._get_agilityModifier(options.agility, a);
@@ -608,9 +616,10 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const Tt = this._getTt(dR, R0, Tmax, options.pR);
 	const { At, arrived, proximity, braking } = this
 		._getAt(P0, V0, P1, STATS, options.tolerance);
+	const A1 = this.scaleVector(At, Math.max(options.value,1))
 	const pR = options.pR || this._getATpR(Ot);
 	return {
-		At: this.scaleVector(At, pR),
+		At: this.scaleVector(A1, pR),
 		Tt: this.scaleVector(Tt, (1 - pR)),
 		arrived, proximity, braking
 	}

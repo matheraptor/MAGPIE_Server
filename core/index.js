@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.4
+ * @version 0.21.5
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,10 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.21.5 2026 05 10
+ * - FIXED: a number of typos and logic bugs in entity.refresh, states, and 
+ * 	emotes related to processing exp
  * 
  * @version 0.21.4 2026 05 09
  * - ADDED: hive refresh fully restored
@@ -313,9 +317,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 4],
+			version: [0, 21, 5],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260509"
+			firmwareDate: "20260510"
 		};
 	}
 }

@@ -303,6 +303,11 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {import("./index").bivector} bivector
  * @typedef {import("./index").rotor} rotor
  * @typedef {import("./index").angle_deg} angle_deg
+ * @typedef {import("./index").acceleration} acceleration
+ * @typedef {import("./index").force} force
+ * @typedef {angle_deg} lat
+ * @typedef {angle_deg} lon
+ * @typedef {distance} ASL
  * @typedef {{
  * name: String,
  * type: Enumerator<Number>,
@@ -654,10 +659,10 @@ MAGPIE_ENTITY._hive_getEXP = function _hive_getEXP(expID)
 }
 /**
  * 
- * @param {expID} expID 
+ * @param {MAGPIE_EXP} exp
  * @returns {MAGPIE_KEY[]}
  */
-MAGPIE_ENTITY._hive_getEXPkeys = function _hive_getEXPkeys(expID)
+MAGPIE_ENTITY._hive_getEXPkeys = function _hive_getEXPkeys(exp)
 {
 	//
 }
@@ -728,6 +733,14 @@ MAGPIE_ENTITY.prototype.getComponents = async function getComponents()
 MAGPIE_ENTITY.prototype.getEquips = async function getEquips()
 {
 	return await MAGPIE_ENTITY._hive_getRelatives("entity_equips", "hostID", "equipID")
+}
+MAGPIE_ENTITY.prototype._get_POVART = function _get_POVART()
+{
+	return MAGPIE_ENTITY._get_POVART(this)
+}
+MAGPIE_ENTITY.prototype._get_celestial = function _get_celestial()
+{
+	return MAGPIE_ENTITY._hive_getEntitySync(this.STATS[MAGPIE.KEY.POVART.P_C])
 }
 /**
  * @name 
@@ -1137,9 +1150,7 @@ MAGPIE_ENTITY.prototype.refresh = async function refresh(switchID, dt)
 		const { exp: state, target } = this.processStates(switchID, dt, emote?.exp);
 		this.processAgency(switchID, dt, state, input?.keys || []);
 		const output = this.updatePhysics(switchID, dt, target);
-		output.exp = input?.exp;
-		output.POVART_t = target?.POVART_t || {};
-		MAGPIE_ENTITY.__socketEmit(output, this);
+		MAGPIE_ENTITY.__socketEmit(output, input?.exp, this);
 		return true
 	}
 	catch(e)
@@ -1158,23 +1169,11 @@ MAGPIE_ENTITY.prototype.refresh = async function refresh(switchID, dt)
 //------------------------------------------------------------------------
 /**
  * 
- * @param {{
- * POVART1: {P1: vector3, O1: rotor, V1: vector3, A1: vector3, R1: bivector, T1: bivector},
- * STATS: Float64Array,
- * POVART_t: POVART,
- * exp: MAGPIE_EXP,
- * geodetic: {
- * lat: angle_deg,
- * lon: angle_deg,
- * ASL: distance,
- * C: MAGPIE_ENTITY,
- * r: Number,
- * forces: Float64Array
- * }
- * }} output 
+ * @param {Number[]} output 
+ * @param {MAGPIE_EXP} exp
  * @param {MAGPIE_ENTITY} entity
  */
-MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, entity)
+MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity)
 {
 	//
 }
@@ -1205,6 +1204,8 @@ MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt)
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error(`${exp} is invalid EXP`);
 		const keys = this.processKeys(exp);
+		exp.subjectID = this.STATS;
+		exp.targetID = MAGPIE_ENTITY._hive_getEntitySync(exp.targetID)?.STATS;
 		return { exp, keys }
 	}
 	catch(e)
@@ -1227,26 +1228,28 @@ MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt)
  * 
  * @param {Number} switchID 
  * @param {duration} dt 
- * @param {MAGPIE_EXP} exp 
+ * @param {{exp: MAGPIE_EXP, keys: MAGPIE_KEY[]}} input 
  * @returns {MAGPIE_EXP}
  */
-MAGPIE_ENTITY.prototype.processEmote = function processEmote(switchID, dt, exp)
+MAGPIE_ENTITY.prototype.processEmote = function processEmote(switchID, dt, input)
 {
 	const ePrefix = `[ENTITY-${this.ID}].processEmote: `;
+	const exp = input?.exp;
 	if(!exp) return
 	try
 	{
-		if(!(inputExp instanceof MAGPIE_EXP)) 
+		if(!(exp instanceof MAGPIE_EXP)) 
 			throw new Error(`${exp} is invalid MAGPIE_EXP`)
 		const emote = MAGPIE_EMOTE.INDEX.get(exp.emoteID);
 		if(!(emote instanceof MAGPIE_EMOTE)) 
 			throw new Error(`${exp.emoteID} is invalid MAGPIE_EMOTE`)
 		const output = emote.onAction(exp, this);
 		if(!output?.exp)
-			throw new Error(`${output} is invalid emote output`)
-		this.addState(output.addState);
-		this.removeState(output.removeState);
-		this.switchState(output.switchState);
+			throw new Error(`${output} is invalid emote output`);
+		const stateIndex = 0; //@todo how do we figure out stateIndex from emote?
+		this.addState([output.addState, stateIndex]);
+		this.removeState([output.removeState, stateIndex]);
+		this.switchState([output.switchState[0]], stateIndex, output.switchState[1]);
 		return output.exp
 	}
 	catch(e)
@@ -1365,25 +1368,7 @@ MAGPIE_ENTITY.prototype.processAgency = function processAgency(switchID, dt, exp
  * @param {Number} switchID 
  * @param {duration} dt 
  * @param {{At: vector3, Tt: bivector}} target 
- * @returns {{
- * STATS: Float64Array,
- * geodetic: { 
- * lat: angle_deg, 
- * lon: angle_deg, 
- * ASL: distance, 
- * C: MAGPIE_ENTITY,
- * r: distance,
- * forces: Float64Array 
- * },
- * POVART1: { 
- * P1: vector3, 
- * O1: rotor, 
- * V1: vector3, 
- * A1: vector3, 
- * R1: bivector, 
- * T1: bivector 
- * }
- * }}
+ * @returns {[lat,lon,ASL,radius: distance,Fg: acceleration,...force[]]}
  */
 MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, target)
 {
@@ -1440,16 +1425,10 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, tar
 		const P1 = MAGPIE_PHYSICS.addVectors(P0, dP);
 		const C1 = MAGPIE_PHYSICS.cartesianToGeodetic(P1, r);
 		const [lat,lon,ASL] = C1;
-		update.geodetic.lat = lat;
-		update.geodetic.lon = lon;
-		update.geodetic.ASL = ASL;
-		update.geodetic.C = C;
-		update.geodetic.r = r;
-		update.geodetic.forces = forces;
+		const output = new Float64Array([lat,lon,ASL,r,...forces])
 		//
 		this._set_POVART({P1, O1, V1, A1, R1, T1 });
-		update.POVART1 = { P1, O1, V1, A1, R1, T1 };
-		return update
+		return output
 	}
 	catch(e)
 	{
@@ -1482,7 +1461,7 @@ MAGPIE_ENTITY.prototype.processKeys = function processKeys(exp)
 			throw new Error(`${exp} is invalid MAGPIE_EXP`)
 		const keyList = exp.keys;
 		if(keyList.length < 1) return
-		const keys = MAGPIE_ENTITY._hive_getEXPkeys(exp.ID);
+		return MAGPIE_ENTITY._hive_getEXPkeys(exp);
 	}
 	catch(e)
 	{

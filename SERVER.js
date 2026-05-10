@@ -852,7 +852,7 @@ MAGPIE_ENTITY._hive_getEXP = function _hive_getEXP(expID)
 {
 	const regEXP = MAGPIE_SERVER.HIVE.getEXP(expID);
 	if(regEXP instanceof MAGPIE_EXP) return regEXP;
-	MAGPIE_DATABASE.loadExpSync(expID);
+	return MAGPIE_DATABASE.loadExpSync(expID);
 }
 /**
  * 
@@ -906,18 +906,23 @@ MAGPIE_ENTITY._hive_getRelatives = async function _hive_getRelatives(rT, pK, fK)
 }
 /**
  * 
- * @param {expID} expID 
+ * @param {MAGPIE_EXP} exp
  * @returns {MAGPIE_KEY[]}
  */
-MAGPIE_ENTITY._hive_getEXPkeys = function _hive_getEXPkeys(expID)
+MAGPIE_ENTITY._hive_getEXPkeys = function _hive_getEXPkeys(exp)
 {
 	const ePrefix = `[ENTITY-${this.ID}].getEXPkeys: `;
 	try
 	{
-		const payload = [exp.ID, "expID", "keyID", "exp_keys", "MAGPIE_EXP"]
-		const recall = MAGPIE_DATABASE.sync.getWorldRelatedRows(...payload);
+		if(exp.keys.every(key => key < 100000))
+			return
+		const recall = MAGPIE_DATABASE.sync.world.prepare(
+			`SELECT TARGET.* FROM MAGPIE_EXP target 
+			JOIN exp_keys rel ON target.ID = rel.keyID
+			WHERE rel.expID = ?`
+		).all(exp);
 		if(!recall || recall?.length < 1)
-			throw new Error(`unable to fetch keys for [EXP-${expID}]`)
+			throw new Error(`unable to fetch keys for [EXP-${exp.ID}]`)
 		return recall
 	}
 	catch(e)
@@ -927,38 +932,33 @@ MAGPIE_ENTITY._hive_getEXPkeys = function _hive_getEXPkeys(expID)
 }
 /**
  * 
- * @param {{
- * POVART1: {P1: vector3, O1: rotor, V1: vector3, A1: vector3, R1: bivector, T1: bivector},
- * STATS: Float64Array,
- * POVART_t: { Pt: vector3 , Ot: rotor, Vt: vector3, At: vector3, Rt: bivector, Tt: bivector },
- * exp: MAGPIE_EXP,
- * geodetic: {
- * lat: angle_deg,
- * lon: angle_deg,
- * ASL: distance,
- * C: MAGPIE_ENTITY,
- * r: Number,
- * forces: Float64Array
- * }
- * }} output 
+ * @param {Number[]} output 
+ * @param {MAGPIE_EXP} exp
  * @param {MAGPIE_ENTITY} entity
  */
-MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, entity)
+MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity)
 {
 	const ePrefix = `[ENTITY-${entity.ID}].socketEmit: `;
 	try
 	{
 		const Kp = MAGPIE.KEY.POVART;
-		const {lat,lon,ASL,forces} = output.geodetic;
-		const { P1, O1, V1, A1, R1, T1 } = output.POVART1;
-		const [] = forces;
+		const C = entity._get_celestial();
+		const P1 = entity._get_P0();
+		const O1 = entity._get_O0();
+		const V1 = entity._get_V0();
+		const A1 = entity._get_A0();
+		const R1 = entity._get_R0();
+		const T1 = entity._get_T0();
+		const lat = output[0];
+		const lon = output[1];
+		const ASL = output[2];
+		const r = output[3];
+		const forces = output.slice(4);
 		const Vspeed = MAGPIE_PHYSICS.mag(V1);
 		const Vknots = MAGPIE_PHYSICS._U_MPStoKnots(Vspeed);
 		const Acc = MAGPIE_PHYSICS.mag(A1);
 		const hdg = MAGPIE_PHYSICS._rotor_toHeadingAbs(O1);
-		const POVART_t = output.POVART_t;
-		const Pt = POVART_t?.Pt || [0,0,0]
-		const r = output.geodetic.r;
+		const Pt = exp?.targetID?.slice(0, Kp.P_C) || [0,0,0]
 		const Ct = MAGPIE_PHYSICS.cartesianToGeodetic(Pt, r);
 		const dist = MAGPIE_PHYSICS._geod_distanceTo(P1, Pt, r || 1);
 		const ETA_s = Math.floor(dist / Vspeed);
@@ -972,10 +972,11 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, entity)
 			Vknots: Vknots,
 			Acceleration: Acc,
 			Heading: hdg,
-			CelestialBody: output.geodetic.C.name,
+			CelestialBody: C.name,
 			targetCoods: Ct,
 			distanceTo: dist,
-			ETA: ETA
+			ETA: ETA,
+			forces: forces
 		};
 		io.to(`entity_${entity.ID}`).emit("entity_update", data);
 	}
@@ -1605,6 +1606,32 @@ MAGPIE_DATABASE.setup = function setup()
 			fk2: "FOREIGN KEY (componentID) REFERENCES MAGPIE_KEY(ID)"
 		});
 		tables.set("key_components", key_components);
+		const symbols = this.sync.createWorldTable("MAGPIE_SYMBOL", {
+			ID: integerKey,
+			type: integer,
+			requirementID: integerNullable,
+			compoundID: integerNullable,
+			data: blob,
+			fk1: "FOREIGN KEY (requirementID) REFERENCES MAGPIE_SYMBOL(ID)",
+			fk2: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_SYMBOL(ID)"
+		});
+		tables.set("symbols", symbols);
+		const symbol_recipes = this.sync.createWorldTable("symbol_recipes", {
+			requirementID: integer,
+			recipeID: integer,
+			"PRIMARY KEY": "(requirementID, recipeID)",
+			fk1: "FOREIGN KEY (requirementID) REFERENCES MAGPIE_SYMBOL(ID)",
+			fk2: "FOREIGN KEY (recipeID) REFERENCES MAGPIE_SYMBOL(ID)"
+		});
+		tables.set("symbol_recipes", symbol_recipes);
+		const symbol_components = this.sync.createWorldTable("symbol_components", {
+			compoundID: integer,
+			componentID: integer,
+			"PRIMARY KEY": "(compoundID, componentID)",
+			fk1: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_SYMBOL(ID)",
+			fk2: "FOREIGN KEY (componentID) REFERENCES MAGPIE_SYMBOL(ID)"
+		});
+		tables.set("symbol_components", symbol_components);
 		const metastate = this.sync.createWorldTable("MAGPIE_METASTATE", {
 			key: textKey,
 			data: blob
@@ -1751,6 +1778,7 @@ r.context.RUNTIME = MAGPIE_SERVER.RUNTIME;
 r.context.HIVE = MAGPIE_SERVER.HIVE;
 r.context.DATABASE = MAGPIE_SERVER.DATABASE;
 r.context.PHYSICS = MAGPIE_PHYSICS;
+r.context.EMOTE = MAGPIE_EMOTE;
 MAGPIE_SERVER.CLI._updateLoadBar(20);
 r.context.io = io;
 MAGPIE_SERVER.BOOT.connect()

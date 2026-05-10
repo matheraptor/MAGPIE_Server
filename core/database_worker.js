@@ -650,7 +650,8 @@ worker.getWorldRelatedRows = function getWorldRelatedRows(primaryKeyValue, prima
 		JOIN ${relationTable} rel ON target.ID = rel.${foreignKeyName}
 		WHERE rel.${primaryKeyName} = ?`
 	const results = worker.world.prepare(sql).all(primaryKeyValue);
-	return this.resultsLoader(results)
+	if(results.length > 0)
+		return this.resultsLoader(results)
 }
 /**
  * 
