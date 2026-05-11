@@ -320,39 +320,73 @@ MAGPIE_HIVE.__server = {};
  * 
  * @desc {@link MAGPIE_HIVE.__refresh}
  * @param {Number} layerID
- * @param {Number} switchID
+ * @param {Number} runtimeID
  * 
  * @returns {Promise<Boolean>} 
  */
-MAGPIE_HIVE.prototype.refresh = async function refresh(layerID, switchID)
+MAGPIE_HIVE.refresh = async function refresh(runtimeID, switchID)
 {
 	const ePrefix = "[HIVE].refresh: ";
 	try
 	{
-		for(let i = 0; i <= switchID; i++)
+		const layer = MAGPIE.KEY.RUNTIME.LAYER;
+		const Base = 0;
+		const Game = 1;
+		const TICK = 2;
+		const Super = 3;
+		const Mega = 4;
+		const Ultra = 5;
+		const layerBase = layer.get(Base);
+		const layerGame = layer.get(Game);
+		const layerTICK = layer.get(TICK);
+		const layerSuper = layer.get(Super);
+		const layerMega = layer.get(Mega);
+		const layerUltra = layer.get(Ultra);
+		if(switchID === 0)
+			await this.tick_buffer(layerBase.name, Base, Base, layerBase.delta);
+		if(switchID === 1)
 		{
-			layerID = i;
-			const layerStandard = 2;
-			const K = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
-			const layerName = K.name;
-			const dt = K.delta;
-			if(layerID < layerStandard)
-			{
-				await this.tick_buffer(layerName, layerID, switchID, dt);
-				continue
-			}
-			if(switchID < layerStandard && layerID < layerStandard) continue
-			await this.tick_remote(layerName, layerID, switchID, dt);
+			await this.tick_buffer(layerBase.name, Base, Game, layerBase.delta);
+			await this.tick_buffer(layerGame.name, Game, Game, layerGame.delta);
 		}
-		if(switchID < 3) return
-		await this.save()
+		if(switchID === 2)
+		{
+			await this.tick_buffer(layerBase.name, Base, TICK, layerBase.delta);
+			await this.tick_buffer(layerGame.name, Game, TICK, layerBase.delta);
+			await this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.delta);
+		}
+		if(switchID === 3)
+		{
+			await this.tick_buffer(layerBase.name, Base, Super, layerBase.delta);
+			await this.tick_buffer(layerGame.name, Game, Super, layerBase.delta);
+			await this.tick_buffer(layerTICK.name, TICK, Super, layerBase.delta);
+			await this.tick_remote(layerSuper.name, Super, Super, layerSuper.delta);
+			await this.save()
+		}
+		if(switchID === 4)
+		{
+			await this.tick_buffer(layerBase.name, Base, Mega, layerBase.delta);
+			await this.tick_buffer(layerGame.name, Game, Mega, layerBase.delta);
+			await this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.delta);
+			await this.tick_remote(layerSuper.name, Super, Mega, layerBase.delta);
+			await this.tick_remote(layerMega.name, Mega, Mega, layerMega.delta);
+		}
+		if(switchID === 5)
+		{
+			await this.tick_buffer(layerBase.name, Base, Ultra, layerBase.delta);
+			await this.tick_buffer(layerGame.name, Game, Ultra, layerBase.delta);
+			await this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.delta);
+			await this.tick_remote(layerSuper.name, Super, Ultra, layerBase.delta);
+			await this.tick_remote(layerMega.name, Mega, Ultra, layerBase.delta);
+			await this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.delta);
+		}
 	}
 	catch(e)
 	{
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 	}
 }
-MAGPIE_HIVE.prototype.tick_buffer = async function tick_buffer(layerName, layerID, switchID, dt)
+MAGPIE_HIVE.tick_buffer = async function tick_buffer(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_buffer: ";
 	const layer = this[layerName];
@@ -365,7 +399,7 @@ MAGPIE_HIVE.prototype.tick_buffer = async function tick_buffer(layerName, layerI
 			/** @type {MAGPIE_ENTITY} */
 			const entry = this.getSlot(slot, layerID)
 			if(!entry) return
-			const entity = layerID < 2 ? entry : this.loadEntitySync(entry);
+			const entity = layerID < 3 ? entry : this.loadEntitySync(entry);
 			if(entity.type < 1) return
 			const pass = await entity.refresh(switchID, dt)
 			if(!pass) this.kick(entity.ID, layerID);
@@ -377,7 +411,7 @@ MAGPIE_HIVE.prototype.tick_buffer = async function tick_buffer(layerName, layerI
 	}
 }
 
-MAGPIE_HIVE.prototype.tick_remote = async function tick_remote(layerName, layerID, switchID, dt)
+MAGPIE_HIVE.tick_remote = async function tick_remote(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_remote: ";
 	for(let i = 0; i < this[layerName].length; i++)
@@ -422,13 +456,14 @@ MAGPIE_HIVE.prototype.tick_remote = async function tick_remote(layerName, layerI
  * @param {Number} layerID 
  * @returns {MAGPIE_ENTITY}
  */
-MAGPIE_HIVE.prototype.getSlot = function getSlot(slot, layerID)
+MAGPIE_HIVE.getSlot = function getSlot(slot, layerID)
 {
-	const ePrefix = "[HIVE].isValidSlot: ";
+	const ePrefix = "[HIVE].getSlot: ";
 	try
 	{
-		const entity = this[MAGPIE.KEY.RUNTIME.LAYER.get(layerID)?.name][slot]
-		const valid = layerID < 2 ? (entity instanceof MAGPIE_ENTITY) : isNaN(entity);
+		const layerName = MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name;
+		const entity = this[layerName][slot]
+		const valid = layerID < 3 ? (entity instanceof MAGPIE_ENTITY) : !isNaN(entity);
 		if(!valid)
 			throw new Error(`[LAYER-${layerID}][${slot}] is invalid entity slot`)
 		return entity
@@ -443,7 +478,7 @@ MAGPIE_HIVE.prototype.getSlot = function getSlot(slot, layerID)
  * @param {expID} expID
  * @returns {MAGPIE_EXP} 
  */
-MAGPIE_HIVE.prototype.getEXP = function getEXP(expID)
+MAGPIE_HIVE.getEXP = function getEXP(expID)
 {
 	const entry = this._registry.get(expID);
 	const index = entry?.index;
@@ -454,13 +489,13 @@ MAGPIE_HIVE.prototype.getEXP = function getEXP(expID)
  * @param {entityID} entityID 
  * @returns {MAGPIE_ENTITY}
  */
-MAGPIE_HIVE.prototype.getEntity = function getEntity(entityID)
+MAGPIE_HIVE.getEntity = function getEntity(entityID)
 {
 	const ePrefix = "[HIVE].getEntity: ";
 	try
 	{
 		const entry = this._registry.get(entityID);
-		if(!entry || entry?.layerID >= 2) 
+		if(!entry || entry?.layerID >= 3) 
 			return MAGPIE_DATABASE.loadEntitySync(entityID);
 		const index = entry.slot;
 		const layer = MAGPIE.KEY.RUNTIME.LAYER.get(entry.layerID);
@@ -488,7 +523,7 @@ MAGPIE_HIVE.prototype.getEntity = function getEntity(entityID)
  * @param {Number} targetLayerID 
  * @returns {void}
  */
-MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
+MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID)
 {
 	const ePrefix = "[HIVE].host: ";
 	try
@@ -500,7 +535,7 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 		const slot = this.nextSlot(layerID);
 		if(isNaN(slot))
 			throw new Error(`[LAYER-${layerID}] is full`);
-		this[layerName][slot] = layerID < 2 ? entity : entity.ID;
+		this[layerName][slot] = layerID < 3 ? entity : entity.ID;
 		this._registry.set(entity.ID, {
 			layerID: layerID,
 			slot: slot,  
@@ -519,7 +554,7 @@ MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
-MAGPIE_HIVE.prototype.kick = function kick(entityID, reason = "dev")
+MAGPIE_HIVE.kick = function kick(entityID, reason = "dev")
 {
 	const ePrefix = "[HIVE].kick: ";
 	try
@@ -538,7 +573,7 @@ MAGPIE_HIVE.prototype.kick = function kick(entityID, reason = "dev")
 		const nextSlot = layerRecord.nextSlot - 1;
 		const entity = this[layerName][index];
 		this[layerName][index] = this[layerName][lastSlot];
-		this[layerName][lastSlot] = layerID < 2 ? new MAGPIE_ENTITY() : 0;
+		this[layerName][lastSlot] = layerID < 3 ? new MAGPIE_ENTITY() : 0;
 		layerRecord.nextSlot = nextSlot;
 		this._registry.delete(entityID);
 		this._registry.set(layerID, layerRecord);
@@ -561,7 +596,7 @@ MAGPIE_HIVE.prototype.kick = function kick(entityID, reason = "dev")
  * @param {Number} layerB_ID 
  * @param {Number} targetLayerID 
  */
-MAGPIE_HIVE.prototype.move = function move(entityID, layerB_ID, targetLayerID = NaN)
+MAGPIE_HIVE.move = function move(entityID, layerB_ID, targetLayerID = NaN)
 {
 	const ePrefix = "[HIVE].move: ";
 	try
@@ -600,7 +635,7 @@ MAGPIE_HIVE.prototype.move = function move(entityID, layerB_ID, targetLayerID = 
 //------------------------------------------------------------------------
 // #region boot
 //------------------------------------------------------------------------
-MAGPIE_HIVE.prototype.setup = function setup()
+MAGPIE_HIVE.setup = function setup()
 {
 	const K = MAGPIE.KEY.RUNTIME.LAYER;
 	const layerBase = K.get(0).name;
@@ -611,6 +646,7 @@ MAGPIE_HIVE.prototype.setup = function setup()
 	const layerUltra = K.get(5).name;
 	this[layerBase] = new Array(K.get(0).slots).fill(new MAGPIE_ENTITY());
 	this[layerGame] = new Array(K.get(1).slots).fill(new MAGPIE_ENTITY());
+	this[layerStandard] = new Array(K.get(2).slots).fill(new MAGPIE_ENTITY());
 	this._registry.set(0, {name: layerBase, 	nextSlot: 0});
 	this._registry.set(1, {name: layerGame, 	nextSlot: 0});
 	this._registry.set(2, {name: layerStandard, nextSlot: 0});
@@ -623,9 +659,8 @@ MAGPIE_HIVE.prototype.setup = function setup()
  * 
  * 
  */
-MAGPIE_HIVE.prototype.awake = async function awake()
+MAGPIE_HIVE.awake = async function awake()
 {
-	MAGPIE_HIVE.__awake.call(this);
 	const ePrefix = `[HIVE].awake: `;
 	try
 	{
@@ -636,29 +671,18 @@ MAGPIE_HIVE.prototype.awake = async function awake()
 		if(valid && hydrated)
 			this._registry = hive;
 		const list = Array.from(this._registry.entries())
-			.filter(e => e[0] > 10 && e[1].layerID < 2);
-		const base = list.filter(e => e[1].layerID === 0);
-		const game = list.filter(e => e[1].layerID === 1);
-		const layerBase = MAGPIE.KEY.RUNTIME.LAYER.get(0);
-		const layerGame = MAGPIE.KEY.RUNTIME.LAYER.get(1);
-		const base_entities = this.loadEntities(base.map(e => e[0]));
-		const game_entities = this.loadEntities(game.map(e => e[0]));
-		if(base_entities.length > 0)
-			base_entities.forEach(e => {
-				const entityID = e.ID;
-				const index = this._registry.get(entityID).slot
-				this[layerBase.name][index] = e;
-			});
-		const base_message = `loaded ${base_entities.length} entities into ${layerBase.name}`
-		MAGPIE_SERVER.log(ePrefix + base_message, null, true)
-		if(game_entities.length > 0)
-			game_entities.forEach(e => {
-				const entityID = e.ID;
-				const index = this._registry.get(entityID).slot;
-				this[layerGame.name][index] = e;
-			})
-		const game_message = `loaded ${game_entities.length} entities into ${layerGame.name}`;
-		MAGPIE_SERVER.log(ePrefix + game_message, null, true)
+			.filter(e => e[0] > 10);
+		const layer = MAGPIE.KEY.RUNTIME.LAYER;
+		list.forEach(entry => {
+			const entityID = entry[0];
+			const record = entry[1];
+			const layerID = record.layerID;
+			const slot = record.slot;
+			const target = record.target;
+			const layerName = layer.get(layerID).name;
+			this[layerName][slot] = layerID < 3 ? this.loadEntitySync(entityID) : entityID;
+		})
+		MAGPIE_SERVER.log(ePrefix + `loaded ${list.length}x entities`)
 	}
 	catch(e)
 	{
@@ -666,7 +690,7 @@ MAGPIE_HIVE.prototype.awake = async function awake()
 		this.pause();
 	}
 }
-MAGPIE_HIVE.prototype.save = async function save()
+MAGPIE_HIVE.save = async function save()
 {
 	const ePrefix = "[HIVE].save: ";
 	try
@@ -690,14 +714,15 @@ MAGPIE_HIVE.prototype.save = async function save()
  * 
  * @returns {Promise<Number>}
  */
-MAGPIE_HIVE.prototype.saveEntities = async function saveEntities()
+MAGPIE_HIVE.saveEntities = async function saveEntities()
 {
 	const ePrefix = "[HIVE].saveEntities: ";
 	try
 	{
-		const base = this._GuestsBase.filter(entity => entity.type > 0);
-		const game = this._GuestsGame.filter(entity => entity.type > 0);
-		console.log(base.length)
+		const layer = MAGPIE.KEY.RUNTIME.LAYER;
+		const base = this[layer.get(0).name].filter(entity => entity.type > 0);
+		const game = this[layer.get(1).name].filter(entity => entity.type > 0);
+		const TICK = this[layer.get(2).name].filter(entity => entity.type > 0);
 		if(base.length > 0)
 		{
 			const base_result = await MAGPIE_DATABASE.transactionSaveEntities(base);
@@ -710,7 +735,13 @@ MAGPIE_HIVE.prototype.saveEntities = async function saveEntities()
 			if(!game_result)
 				throw new Error(`unable to save ${game.length}x entities in layer1`)
 		}
-		return base.length + game.length
+		if(TICK.length > 0)
+		{
+			const TICK_result = await MAGPIE_DATABASE.transactionSaveEntities(TICK);
+			if(!TICK_result)
+				throw new Error(`unable to save ${TICK.length}x entities in layer2`)
+		}
+		return base.length + game.length + TICK.length
 	}
 	catch(e)
 	{
@@ -733,7 +764,7 @@ MAGPIE_HIVE.prototype.saveEntities = async function saveEntities()
  * @param {entityID} entityID 
  * @returns {MAGPIE_ENTITY}
  */
-MAGPIE_HIVE.prototype.loadEntitySync = function loadEntitySync(entityID)
+MAGPIE_HIVE.loadEntitySync = function loadEntitySync(entityID)
 {
 	return MAGPIE_DATABASE.loadEntitySync(entityID);
 }
@@ -742,7 +773,7 @@ MAGPIE_HIVE.prototype.loadEntitySync = function loadEntitySync(entityID)
  * @param {entityID} entityID 
  * @returns {Promise<MAGPIE_ENTITY>}
  */
-MAGPIE_HIVE.prototype.loadEntity = async function loadEntity(entityID)
+MAGPIE_HIVE.loadEntity = async function loadEntity(entityID)
 {
 	return await MAGPIE_DATABASE.loadEntity(entityID)
 }
@@ -751,7 +782,7 @@ MAGPIE_HIVE.prototype.loadEntity = async function loadEntity(entityID)
  * @param {MAGPIE_ENTITY} entity 
  * @returns {Promise<database_result>}
  */
-MAGPIE_HIVE.prototype.saveEntity = async function saveEntity(entity)
+MAGPIE_HIVE.saveEntity = async function saveEntity(entity)
 {
 	return await MAGPIE_DATABASE.saveEntity(entity)
 }
@@ -760,7 +791,7 @@ MAGPIE_HIVE.prototype.saveEntity = async function saveEntity(entity)
  * @param {MAGPIE_ENTITY} entity 
  * @returns {database_result}
  */
-MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
+MAGPIE_HIVE.saveEntitySync = function saveEntitySync(entity)
 {
 	return MAGPIE_DATABASE.saveEntitySync(entity);
 }
@@ -770,7 +801,7 @@ MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
  * @param {entityID[]} entityIDs
  * @returns {MAGPIE_ENTITY[]} 
  */
-MAGPIE_HIVE.prototype.loadEntities = function loadEntities(entityIDs)
+MAGPIE_HIVE.loadEntities = function loadEntities(entityIDs)
 {
 	const ePrefix = "[HIVE].loadEntities: ";
 	let list = [];
@@ -883,6 +914,24 @@ MAGPIE_ENTITY._hive_setEntity = async function _hive_setEntity(entity)
 }
 /**
  * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_ENTITY._hive_setExp = async function _hive_setExp(exp)
+{
+	return await MAGPIE_DATABASE.saveExp(exp);
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {database_result}
+ */
+MAGPIE_ENTITY._hive_setExpSync = function _hive_setExpSync(exp)
+{
+	return MAGPIE_DATABASE.saveExpSync(exp);
+}
+/**
+ * 
  * @param {String} rT name of relatives table
  * @param {String} pK name of parent foreign key
  * @param {String} fK name of child foreign key
@@ -914,16 +963,21 @@ MAGPIE_ENTITY._hive_getEXPkeys = function _hive_getEXPkeys(exp)
 	const ePrefix = `[ENTITY-${this.ID}].getEXPkeys: `;
 	try
 	{
-		if(exp.keys.every(key => key < 100000))
-			return
-		const recall = MAGPIE_DATABASE.sync.world.prepare(
-			`SELECT TARGET.* FROM MAGPIE_EXP target 
-			JOIN exp_keys rel ON target.ID = rel.keyID
-			WHERE rel.expID = ?`
-		).all(exp);
-		if(!recall || recall?.length < 1)
-			throw new Error(`unable to fetch keys for [EXP-${exp.ID}]`)
-		return recall
+		// if(exp.keys.every(key => key < 100000))
+		// 	return
+		const keys = []
+		exp.keys.forEach(keyID => {
+			keys.push(MAGPIE_DATABASE.loadKeySync(keyID))
+		})
+		return keys
+		// const recall = MAGPIE_DATABASE.sync.world.prepare(
+		// 	`SELECT TARGET.* FROM MAGPIE_EXP target 
+		// 	JOIN exp_keys rel ON target.ID = rel.keyID
+		// 	WHERE rel.expID = ?`
+		// ).all(exp);
+		// if(!recall || recall?.length < 1)
+		// 	throw new Error(`unable to fetch keys for [EXP-${exp.ID}]`)
+		// return recall
 	}
 	catch(e)
 	{
@@ -936,11 +990,12 @@ MAGPIE_ENTITY._hive_getEXPkeys = function _hive_getEXPkeys(exp)
  * @param {MAGPIE_EXP} exp
  * @param {MAGPIE_ENTITY} entity
  */
-MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity)
+MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, POVART0, dt)
 {
 	const ePrefix = `[ENTITY-${entity.ID}].socketEmit: `;
 	try
 	{
+		const { P0, V0, A0 } = MAGPIE_PHYSICS.decomp_POVART(POVART0)
 		const Kp = MAGPIE.KEY.POVART;
 		const C = entity._get_celestial();
 		const P1 = entity._get_P0();
@@ -956,11 +1011,12 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity)
 		const forces = output.slice(4);
 		const Vspeed = MAGPIE_PHYSICS.mag(V1);
 		const Vknots = MAGPIE_PHYSICS._U_MPStoKnots(Vspeed);
-		const Acc = MAGPIE_PHYSICS.mag(A1);
+		const Acc = MAGPIE_PHYSICS.mag(A1) / dt;
 		const hdg = MAGPIE_PHYSICS._rotor_toHeadingAbs(O1);
 		const Pt = exp?.targetID?.slice(0, Kp.P_C) || [0,0,0]
 		const Ct = MAGPIE_PHYSICS.cartesianToGeodetic(Pt, r);
 		const dist = MAGPIE_PHYSICS._geod_distanceTo(P1, Pt, r || 1);
+		const dist2 = MAGPIE_PHYSICS.distanceTo(P1, Pt);
 		const ETA_s = Math.floor(dist / Vspeed);
 		const ETA = MAGPIE_SYSTEM.Utility.printETA(ETA_s);
 		const data = {
@@ -973,11 +1029,17 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity)
 			Acceleration: Acc,
 			Heading: hdg,
 			CelestialBody: C.name,
-			targetCoods: Ct,
+			targetCoords: Ct,
 			distanceTo: dist,
 			ETA: ETA,
 			forces: forces
 		};
+		const V0_mag = MAGPIE_PHYSICS.mag(V0);
+		const A0_mag = MAGPIE_PHYSICS.mag(A0);
+		if(!MAGPIE_ENTITY?._delta)
+			MAGPIE_ENTITY._delta = Date.now();
+		MAGPIE_ENTITY._delta += dt * 1000;
+		const dP = MAGPIE_PHYSICS.distanceTo(P0, P1);
 		io.to(`entity_${entity.ID}`).emit("entity_update", data);
 	}
 	catch(e)
@@ -998,7 +1060,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity)
 MAGPIE_SERVER.SYS._metastate_tick_base = MAGPIE_METASTATE._TICK_base;
 MAGPIE_METASTATE.prototype.TICK_base = async function TICK_base(layerID, switchID)
 {
-	MAGPIE_SERVER.HIVE.refresh(layerID, switchID);
+	// MAGPIE_SERVER.HIVE.refresh(layerID, switchID);
 	const now = performance.now();
 	this.date.millisecond = Math.floor(now % 1000);
 	if(switchID === 2) 
@@ -1768,7 +1830,7 @@ MAGPIE_EMOTE.setup();
 MAGPIE_STATE.setup();
 MAGPIE_SERVER.CLI._incrementLoadBar(5);
 /** @type {MAGPIE_HIVE} */
-MAGPIE_SERVER.HIVE = new MAGPIE_HIVE();
+MAGPIE_SERVER.HIVE = MAGPIE_HIVE;
 MAGPIE_SERVER.HIVE.setup();
 /** @type {new MAGPIE_METASTATE} */
 MAGPIE_SERVER.METASTATE = null;

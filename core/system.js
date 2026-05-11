@@ -40,12 +40,11 @@ function MAGPIE_RUNTIME()
     this.initialize(...arguments);
 }
 /**
- * @constructor
- * @returns {new MAGPIE_HIVE}
+ * @desc {@link MAGPIE_HIVE.meta}
  */
-function MAGPIE_HIVE()
+class MAGPIE_HIVE
 {
-	this.initialize(...arguments);
+	//
 }
 /** @param {metastate_data} data @returns {new MAGPIE_METASTATE} */
 function MAGPIE_METASTATE(data = {})
@@ -1149,11 +1148,14 @@ MAGPIE_RUNTIME.prototype.initialize = function initialize()
     this.meta.desc = "Provides a 'heartbeat' to the process" +
 		" and orchestrates the systems."
     this.meta.firmwareName = "MAGPIE_RUNTIME";
+	this._base = 0;
+	this._game = 0;
+	this._standard = 0;
     this._TICK = 0;
     this._TICKsuper = 0;
     this._TICKmega = 0;
     this._TICKultra = 0;
-    this._now = 0;
+    this._now = Date.now();
     this._busy = false;
     this._loop = null;
 	this._GuestsBase = [];
@@ -1199,8 +1201,8 @@ MAGPIE_RUNTIME.prototype.awake = function awake()
 	try
 	{
 		this._loop = setInterval(() => {
-			this.refresh();
-		}, 1);
+			this.refresh()
+		}, 1)
 		MAGPIE_SYSTEM.log(ePrefix + `awakened with ${this._registry.size} guests`);
 		this.isActive = true;
 	}
@@ -1236,21 +1238,41 @@ MAGPIE_RUNTIME.prototype._memoryUsage = function memoryUsage(logToFile = false)
 MAGPIE_RUNTIME.tick = {};
 MAGPIE_RUNTIME.prototype.refresh = function refresh()
 {
-	const now = Date.now() - this._now;
-	const standardDelta = 1000;
-	if(now >= standardDelta) return this.TICK_standard();
-	const layer = MAGPIE.KEY.RUNTIME.LAYER;
+	if(!this.isActive) return
+	const dt = Date.now() - this._now;
+	this._now += dt;
+	this._base += dt;
+	this._game += dt;
+	this._standard += dt;
+	while(this._base > 1)
+	{
+		this.TICK_base();
+		this._base--;
+	}
+	if(this._game > 16)
+	{
+		this.TICK_game();
+		this._game -= 16;
+	}
+	if(this._standard > 1000)
+	{
+		this.TICK_standard();
+		this._standard -= 1000;
+	}
+}
+MAGPIE_RUNTIME.prototype.TICK_base = async function TICK_base()
+{
 	const layerBase = 0;
 	const switchBase = 0;
-	this.tick_layer(layerBase, switchBase);
+	await this.tick_layer(layerBase, switchBase);
+}
+MAGPIE_RUNTIME.prototype.TICK_game = async function TICK_game()
+{
+	const layerBase = 0;
 	const layerGame = 1;
 	const switchGame = 1;
-	const gameDelta = layer.get(layerGame).delta * 1000;
-	if(Math.floor(performance.now()) % 16) 
-	{
-		this.tick_layer(layerBase, switchGame)
-		this.tick_layer(layerGame, switchGame);
-	}
+	await this.tick_layer(layerBase, switchGame);
+	await this.tick_layer(layerGame, switchGame);
 }
 MAGPIE_RUNTIME.prototype.TICK_standard = async function TICK_standard()
 {
@@ -1466,49 +1488,44 @@ MAGPIE_HIVE.meta.desc = "";
 //------------------------------------------------------------------------
 // #region > proto
 //------------------------------------------------------------------------
-MAGPIE_HIVE.prototype.initialize = function initialize()
-{
-	MAGPIE_SYSTEM.prototype.initialize.call(this);
-	const layers = MAGPIE.KEY.RUNTIME.LAYER;
-	const layerBase = layers.get(0);
-	const layerGame = layers.get(1);
-	const layerStandard = layers.get(2);
-	const layerSuper = layers.get(3);
-	const layerMega = layers.get(4);
-	const layerUltra = layers.get(5);
-	this.meta.name = MAGPIE_HIVE.meta.name;
-	this.meta.desc = MAGPIE_HIVE.meta.desc;
-	/** @type {hive_buffer} */
-	this[layerBase.name] = [];
-	/** @type {hive_buffer} */
-	this[layerGame.name] = [];
-	/** @type {hive_layer} default size: 5,000 */
-	this[layerStandard.name] = new Float64Array(layerStandard.slots).fill(0);
-	/** @type {hive_layer} default size: 10,000 */
-	this[layerSuper.name] = new Float64Array(layerSuper.slots).fill(0);
-	/** @type {hive_layer} default size: 50,000 */
-	this[layerMega.name] = new Float64Array(layerMega.slots).fill(0);
-	/** @type {hive_layer} default size: 100,000 */
-	this[layerUltra.name] = new Float64Array(layerUltra.slots).fill(0);
-	this._expBuffer = [];
-	this._keyBuffer = [];
-	/** 
-	 * @type {hive_registry}
-	 * @desc Map<entityID, hive_entry: {
-	 * layerID: Number,
-	 * slot: Number,
-	 * target: Number,
-	 * retrain: Boolean
-	 * }>
-	 * */
-	this._registry = new Map();
-}
-MAGPIE_HIVE.prototype.awake = async function awake()
+const layers = MAGPIE.KEY.RUNTIME.LAYER;
+const layerBase = layers.get(0);
+const layerGame = layers.get(1);
+const layerStandard = layers.get(2);
+const layerSuper = layers.get(3);
+const layerMega = layers.get(4);
+const layerUltra = layers.get(5);
+MAGPIE_HIVE.meta.name = MAGPIE_HIVE.meta.name;
+MAGPIE_HIVE.meta.desc = MAGPIE_HIVE.meta.desc;
+/** @type {hive_buffer} */
+MAGPIE_HIVE[layerBase.name] = [];
+/** @type {hive_buffer} */
+MAGPIE_HIVE[layerGame.name] = [];
+/** @type {hive_layer} default size: 5,000 */
+MAGPIE_HIVE[layerStandard.name] = [];
+/** @type {hive_layer} default size: 10,000 */
+MAGPIE_HIVE[layerSuper.name] = new Float64Array(layerSuper.slots).fill(0);
+/** @type {hive_layer} default size: 50,000 */
+MAGPIE_HIVE[layerMega.name] = new Float64Array(layerMega.slots).fill(0);
+/** @type {hive_layer} default size: 100,000 */
+MAGPIE_HIVE[layerUltra.name] = new Float64Array(layerUltra.slots).fill(0);
+MAGPIE_HIVE._expBuffer = [];
+MAGPIE_HIVE._keyBuffer = [];
+/** 
+ * @type {hive_registry}
+ * @desc Map<entityID, hive_entry: {
+ * layerID: Number,
+ * slot: Number,
+ * target: Number,
+ * retrain: Boolean
+ * }>
+ * */
+MAGPIE_HIVE._registry = new Map();
+MAGPIE_HIVE.awake = async function awake()
 {
 	//
 }
-MAGPIE_HIVE.__awake = MAGPIE_HIVE.prototype.awake;
-MAGPIE_HIVE.prototype.pause = function pause()
+MAGPIE_HIVE.pause = function pause()
 {
 	const ePrefix = `[HIVE].method: `;
 	try
@@ -1535,27 +1552,25 @@ MAGPIE_HIVE.prototype.pause = function pause()
  * @param {entityID} entityID
  * @returns {MAGPIE_ENTITY} 
  */
-MAGPIE_HIVE.prototype.loadEntitySync = function loadEntitySync(entityID)
+MAGPIE_HIVE.loadEntitySync = function loadEntitySync(entityID)
 {
 	//
 }
-MAGPIE_HIVE.__loadEntitySync = MAGPIE_HIVE.prototype.loadEntitySync;
 /**
  * 
  * @param {entityID} entityID
  * @returns {Promise<MAGPIE_ENTITY>} 
  */
-MAGPIE_HIVE.prototype.loadEntity = async function loadEntity(entityID)
+MAGPIE_HIVE.loadEntity = async function loadEntity(entityID)
 {
 	//
 }
-MAGPIE_HIVE.__loadEntity = MAGPIE_HIVE.prototype.loadEntity;
 /**
  * 
  * @param {MAGPIE_ENTITY} entity 
  * @returns {Promise<database_result>}
  */
-MAGPIE_HIVE.prototype.saveEntity = async function saveEntity(entity)
+MAGPIE_HIVE.saveEntity = async function saveEntity(entity)
 {
 	//
 }
@@ -1564,21 +1579,19 @@ MAGPIE_HIVE.prototype.saveEntity = async function saveEntity(entity)
  * @param {MAGPIE_ENTITY} entity
  * @returns {database_result}
  */
-MAGPIE_HIVE.prototype.saveEntitySync = function saveEntitySync(entity)
+MAGPIE_HIVE.saveEntitySync = function saveEntitySync(entity)
 {
 	//
 }
-MAGPIE_HIVE.__saveEntitySync = MAGPIE_HIVE.prototype.saveEntitySync;
 /**
  * 
  * @param {entityID[]} entityIDarray 
  * @returns {MAGPIE_ENTITY[]}
  */
-MAGPIE_HIVE.prototype.loadEntities = function loadEntities(entityIDarray)
+MAGPIE_HIVE.loadEntities = function loadEntities(entityIDarray)
 {
 	//
 }
-MAGPIE_HIVE.__loadEntities = MAGPIE_HIVE.prototype.loadEntities;
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1595,11 +1608,26 @@ MAGPIE_HIVE.__loadEntities = MAGPIE_HIVE.prototype.loadEntities;
  * @param {Number} switchID
  * @returns {Promise<Boolean>} 
  */
-MAGPIE_HIVE.prototype.refresh = async function refresh(layerID, switchID)
+MAGPIE_HIVE.refresh = async function refresh(layerID, switchID)
 {
 	//
 }
-MAGPIE_HIVE.__refresh = MAGPIE_HIVE.prototype.refresh;
+MAGPIE_HIVE.tick_buffer = async function tick_buffer(layerName, layerID, switchID, dt)
+{
+	//
+}
+MAGPIE_HIVE.tick_remote = async function tick_remote(layerName, layerID, switchID, dt)
+{
+	//
+}
+MAGPIE_HIVE.save = async function save()
+{
+	//
+}
+MAGPIE_HIVE.saveEntities = async function saveEntities()
+{
+	//
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1616,12 +1644,11 @@ MAGPIE_HIVE.__refresh = MAGPIE_HIVE.prototype.refresh;
  * @param {Number} layerID 
  * @param {Number} targetLayerID 
  */
-MAGPIE_HIVE.prototype.host = function host(entity, layerID, targetLayerID)
+MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID)
 {
 	//
 }
-MAGPIE_HIVE.__host = MAGPIE_HIVE.prototype.host;
-MAGPIE_HIVE.prototype.nextSlot = function nextSlot(layerID)
+MAGPIE_HIVE.nextSlot = function nextSlot(layerID)
 {
 	// const K = MAGPIE.KEY.RUNTIME.LAYER;
 	// const layerName = K.get(layerID)?.name;
@@ -1633,16 +1660,14 @@ MAGPIE_HIVE.prototype.nextSlot = function nextSlot(layerID)
  * @param {entityID} entityID
  * @returns {MAGPIE_ENTITY} 
  */
-MAGPIE_HIVE.prototype.getSlot = function getSlot(entityID)
+MAGPIE_HIVE.getSlot = function getSlot(entityID)
 {
 	//
 }
-MAGPIE_HIVE.__getSlot = MAGPIE_HIVE.prototype.getSlot;
-MAGPIE_HIVE.prototype.kick = function kick(entityID)
+MAGPIE_HIVE.kick = function kick(entityID)
 {
 	//
 }
-MAGPIE_HIVE.__kick = MAGPIE_HIVE.prototype.kick;
 // #endregion
 //------------------------------------------------------------------------
 /**

@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.5
+ * @version 0.21.7
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,16 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.21.7 2026 05 11
+ * - FIXED: entity.updatePhysics infinite getAt due to no cutoff dV
+ * - FIXED: entity.updatePhysics incorrectly applying vector deltas
+ * - FIXED: physics._emote_seekTarget incorrectly passing options?.tolerance
+ * 		instead of options
+ * - FIXED: runtime refresh incorrectly ticking layers
+ * - FIXED: hive refresh incorrectly ticking entities, causing invalid 
+ * 		physics updates
+ * - FIXED: hive standard layer incorrectly treated as remote
  * 
  * @version 0.21.5 2026 05 10
  * - FIXED: a number of typos and logic bugs in entity.refresh, states, and 
@@ -317,9 +327,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 5],
+			version: [0, 21, 7],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260510"
+			firmwareDate: "20260511"
 		};
 	}
 }
@@ -392,7 +402,9 @@ MAGPIE.KEY.TYPE.METACONTEXT = MAGPIE.KEY.TYPE.CONTEXT + 1;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.EXP = MAGPIE.KEY.TYPE.METACONTEXT + 1;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METAEXP = MAGPIE.KEY.TYPE.EXP + 1;
+MAGPIE.KEY.TYPE.EMOTE = MAGPIE.KEY.TYPE.EXP + 1;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.METAEXP = MAGPIE.KEY.TYPE.EMOTE + 1;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.TICKET = MAGPIE.KEY.TYPE.METAEXP + 1;
 /** @type {key_type} */

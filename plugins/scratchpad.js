@@ -15,8 +15,11 @@ const {
 
 // #endregion
 //========================================================================
+r.context.WP4 = r.context.PHYSICS.geodeticToCartesian()
 r.context.diego = r.context.HIVE[MAGPIE.KEY.RUNTIME.LAYER.get(1).name][0]
 r.context.diego.exps.push(r.context.METASTATE.contents.exp)
+r.context.exp = r.context.DATABASE
+    .loadExpSync(r.context.METASTATE.contents.exp)
 r.context.diego = r.context.DATABASE.loadEntitySync(1773811141134)
 r.context.Terra = r.context.DATABASE
     .loadEntitySync(r.context.diego.STATS[MAGPIE.KEY.POVART.P_C])

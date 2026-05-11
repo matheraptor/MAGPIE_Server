@@ -169,7 +169,7 @@ MAGPIE_PHYSICS.geodeticToCartesian = function geodeticToCartesian(C0, r)
 MAGPIE_PHYSICS.cartesianToGeodetic = function cartesianToGeodetic(P0, R)
 {
 	if(!this.isValidVector(P0)) return
-	if(!R) R = MAGPIE.KEY.PHYSICS.EARTH.R;
+	if(!R) R = MAGPIE.KEY.PHYSICS.EARTH.RADIUS;
 	const [x,y,z] = P0;
 	const totR = Math.sqrt(x**2 + y**2 + z**2);
 	const lat = Math.asin(z / totR) * (180 / Math.PI);
@@ -350,17 +350,16 @@ MAGPIE_PHYSICS.targetVelocity = function targetVelocity(P0, P1, cruiseSpeed = 1)
 }
 /**
  * 
- * @param {second} dt 
  * @param {vector3} At 
  * @param {acceleration} Amax 
  * @returns {vector3}
  */
-MAGPIE_PHYSICS._POVART_applyTargetA = function _POVART_applyTargetA(dt, At, Amax)
+MAGPIE_PHYSICS._POVART_applyTargetA = function _POVART_applyTargetA(At, Amax)
 {
 	const ePrefix = `[PHYSICS].applyTargetA: `;
 	try
 	{
-		const dA = this.scaleVector(this.vector_clamp_mag(At, Amax), dt);
+		const dA = this.vector_clamp_mag(At, Amax)
 		if(!this.isValidVector(dA))
 			throw new Error(`${dA} is invalid vector dA`);
 		return dA
@@ -372,14 +371,13 @@ MAGPIE_PHYSICS._POVART_applyTargetA = function _POVART_applyTargetA(dt, At, Amax
 }
 /**
  * 
- * @param {Number} dt ms 
  * @param {rotor} O0  
  * @param {bivector} Tt 
  * @param {[x<Number>, y<Number>, z<Number>]} Tmax
  * @param {[x<Number>, y<Number>, z<Number>]} inertia 
  * @returns {bivector} dT
  */
-MAGPIE_PHYSICS._POVART_applyTargetT = function _POVART_applyTargetT(dt, O0, Tt, Tmax, inertia)
+MAGPIE_PHYSICS._POVART_applyTargetT = function _POVART_applyTargetT(O0, Tt, Tmax, inertia)
 {
 	const ePrefix = `[PHYSICS].applyTargetT: `;
 	try
@@ -393,7 +391,7 @@ MAGPIE_PHYSICS._POVART_applyTargetT = function _POVART_applyTargetT(dt, O0, Tt, 
 		const TclampY = this._U_clampRange(Tlocal[1], -netCapY, netCapY);
 		const TclampZ = this._U_clampRange(Tlocal[2], -netCapZ, netCapZ);
 		const Tclamped = this.rotorApply(O0, [TclampX, TclampY, TclampZ]);
-		const dT = this.scaleVector(Tclamped, dt);
+		const dT = Tclamped
 		if(!this.isValidVector(dT))
 			throw new Error(`${dT} is invalid vector dT`);
 		return dT
@@ -481,7 +479,7 @@ MAGPIE_PHYSICS._POVART_getTargetAT = function(POVART0, A1, T1, dt)
 }
 /**
  * 
- * @param {MAGPIE_ENTITY} entity 
+ * @param {MAGPIE_ENTITY} entity
  * @param {duration} dt 
  * @param {vector3} At 
  * @param {bivector} Tt
@@ -498,8 +496,8 @@ MAGPIE_PHYSICS._POVART_applyTargetAT = function applyTargetAT(entity, dt, At, Tt
 		const Amax = PAR[K.AMAX];
 		const inertia = [PAR[K.INERT_X], PAR[K.INERT_Y], PAR[K.INERT_Z]];
 		const Tmax = [PAR[K.TMAX_X], PAR[K.TMAX_Y], PAR[K.TMAX_Z]];
-		const At2 = this._POVART_applyTargetA(dt, At, Amax);
-		const Tt2 = this._POVART_applyTargetT(dt, O0, Tt, Tmax, inertia);
+		const At2 = this._POVART_applyTargetA(At, Amax);
+		const Tt2 = this._POVART_applyTargetT(O0, Tt, Tmax, inertia);
 		if(At2)
 			At = At2;
 		if(Tt2)
@@ -538,10 +536,10 @@ MAGPIE_PHYSICS._POVART_applyTargetAT = function applyTargetAT(entity, dt, At, Tt
  * @param {Number} Vmax max speed
  * @param {Number} Amax max acceleratio
  * @param {Number} Bmax max braking
- * @param {Number} toler tolerance (m)
+ * @param {Number} tolerance tolerance (m)
  * @returns {vector3} A₁
  */
-MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, Bmax, toler = 0.5)
+MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, Bmax, tolerance = 0.5)
 {
 	const ePrefix = `[PHYSICS].moveLinear: `;
 	try
@@ -549,16 +547,16 @@ MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, 
 		const D0 = this.distanceTo(P0, P1);
 		const S0 = this.mag(V0);
 		// 1. arrival check
-		if(D0 <= toler)
+		if(D0 <= tolerance)
 		{
 			const finalBrake = this.getBrakingA(P0, P1, V0, 0);
 			return this.vector_clamp_mag(finalBrake, Bmax);
 		}
 		// 2. Braking start check
 		const Bdist = (S0 ** 2) / (2 * Bmax);
-		if(D0 <= Bdist + toler)
+		if(D0 <= Bdist + tolerance)
 		{
-			const brakeA = this.getBrakingA(P0, P1, V0, toler);
+			const brakeA = this.getBrakingA(P0, P1, V0, tolerance);
 			return this.vector_clamp_mag(brakeA, Bmax);
 		}
 		// 3. transit / acceleration phase
@@ -603,21 +601,17 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 		options.agility = STATS[K.DEX];
 	if(!options?.fwd)
 		options.fwd = MAGPIE.KEY.POVART.FWD;
-	if(!options?.pR)
-		options.pR = 0.5;
-	if(!options?.tolerance)
-		options.tolerance = 0;
 	const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0)
 	const a = this._calculateAgilityAlpha(STATS);
 	const a1 = this._get_agilityModifier(options.agility, a);
 	const Tmax = this._getTmax(STATS, a1);
 	const Ot = this._getO1toP1(P0, P1, options.fwd);
 	const dR = this._getDeltaR(O0, Ot);
-	const Tt = this._getTt(dR, R0, Tmax, options.pR);
+	const Tt = this._getTt(dR, R0, Tmax, options?.pR);
 	const { At, arrived, proximity, braking } = this
-		._getAt(P0, V0, P1, STATS, options.tolerance);
-	const A1 = this.scaleVector(At, Math.max(options.value,1))
-	const pR = options.pR || this._getATpR(Ot);
+		._getAt(P0, V0, P1, STATS, options);
+	const A1 = this.scaleVector(At, Math.max(options.intensity,1))
+	const pR = options?.pR || this._getATpR(Ot);
 	return {
 		At: this.scaleVector(A1, pR),
 		Tt: this.scaleVector(Tt, (1 - pR)),
@@ -779,10 +773,16 @@ MAGPIE_PHYSICS._getAlignment = function getAlignmentPower(fwd, Dt)
  * @param {vector3} V0
  * @param {vector3} P1
  * @param {entity_stats} params 
- * @param {distance} toler 
+ * @param {{
+ * tolerance: Number,
+ * enableBraking: Boolean,
+ * dumb: Boolean,
+ * brakingThreshold: Number,
+ * brakingMode: String
+ * }} options 
  * @returns {vector3} Aₜ (target acceleration)
  */
-MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, toler)
+MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 {
 	const ePrefix = "[PHYSICS].getAt: ";
 	try
@@ -796,40 +796,74 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, toler)
 			throw new Error(`${V0} is invalid V₀`);
 		if(!this.isValidParams(params))
 			throw new Error(`${params} is invalid PARAMS`);
+		if(!options?.tolerance)
+			options.tolerance = options?.dumb ? 0 : 1;
 		const K = MAGPIE.KEY.STATS;
 		const Vmax = params[K.VMAX];
 		const Amax = params[K.AMAX];
 		const Bmax = params[K.BMAX];
 		const S0 = this.mag(V0);
-		// 1. calculate braking distance
-		const Bdist = (S0**2) / (2 * Bmax);
-		if(D0 <= Bdist + toler) 
+		if(options?.dumb)
 		{
-			//we're already there. Nullify V0
-			if(D0 <= toler)
-			{
-				const scalar = this.scaleVector(V0, -1);
-				const At = this.vector_clamp_mag(scalar, Bmax);
-				const arrived = S0 < 1e-9 ? true : false;
-				return { At, arrived, proximity: true, braking: true }
-			}
-			// we need to slow down to stop at target
-			const Abrake = this.getBrakingA(P0, P1, V0, 0);
-			const At = this.vector_clamp_mag(Abrake, Bmax);
-			return { At, arrived: false, proximity: false, braking: true }
-		}
-		else
-		{
-			// we are in transit: accelerate toward Vmax
 			const Vt = this.targetVelocity(P0, P1, Vmax);
 			const dV = this.subVectors(Vt, V0);
 			const At = this.vector_clamp_mag(dV, Amax);
-			return { At, arrived: false, proximity: false, braking: false }
+			return {
+				At, arrived: false, proximity: false, braking: false
+			}
+		}
+		// ════════════════════════════════════════════════════════════
+        // SMART MODE: Three-phase approach (arrival → braking → transit)
+        // ════════════════════════════════════════════════════════════
+		// 1. calculate braking distance
+		const Bdist = (S0**2) / (2 * Bmax);
+		// ──────────────────────────────────────────────────────────────
+        // PHASE 1: Arrival — already within tolerance, brake to stop
+        // ──────────────────────────────────────────────────────────────
+		if(D0 <= options.tolerance)
+		{
+			const At = this.getBrakingA(P0, P1, V0, 0);
+			const clamped = this.vector_clamp_mag(At, Bmax);
+			const arrived = S0 < 1e-9 ? true : false;
+			return {
+				At: clamped, arrived, proximity: true, braking: true
+			}
+		}
+		// ──────────────────────────────────────────────────────────────
+        // PHASE 2: Braking — within braking distance, decelerate
+        // ──────────────────────────────────────────────────────────────
+		if(D0 <= Bdist + options.tolerance)
+		{
+			if(options?.brakingMode === "waypoint")
+			{
+				const Vt = this.targetVelocity(P0, P1, Vmax);
+				const dV = this.subVectors(Vt, V0);
+				const At = this.vector_clamp_mag(dV, Amax);
+				return {
+					At, arrived: false, proximity: true, braking: false,
+					trigger: "next"
+				}
+			}
+			const At = this.getBrakingA(P0, P1, V0, options.tolerance);
+			const clamped = this.vector_clamp_mag(At, Bmax);
+			return {
+				At: clamped, arrived: false, proximity: true, braking: true
+			}
+		}
+		// ──────────────────────────────────────────────────────────────
+        // PHASE 3: Transit — far enough, accelerate to cruise speed
+        // ──────────────────────────────────────────────────────────────
+		const Vt = this.targetVelocity(P0, P1, Vmax);
+		const dV = this.subVectors(Vt, V0);
+		const At = this.vector_clamp_mag(dV, Amax);
+		return {
+			At, arrived: false, proximity: false, braking: false
 		}
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return { At: [0,0,0], arrived: false, proximity: false, braking: false }
 	}
 }
 /**
@@ -1012,7 +1046,7 @@ MAGPIE_PHYSICS.getBrakingA = function getBrakingA(P0, P1, V0, stopDistance = 0)
 			throw new Error(`${brakingDist} is invalid braking distance`);
 		const currentSpeed = this.mag(V0);
 		// if you are already inside the safe zone, kill acceleration
-		if(brakingDist <= 0 || currentSpeed < 0.001) return Abrake;
+		if(brakingDist <= 0 || currentSpeed < 0) return Abrake;
 		// calculate required deceleration magnitude: A = V^2 / (2D)
 		const decelMag = (currentSpeed ** 2) / (2 * brakingDist);
 		const travelDir = this.normalizeVector(V0);
@@ -2668,9 +2702,9 @@ MAGPIE_PHYSICS.rotorFromVectors = function rotorFromVectors(a, b)
 		const mag_a = this.mag(a);
 		const mag_b = this.mag(b);
 		let check = [];
-		if(mag_a !== 1)
+		if(Math.abs(mag_a - 1) > 1e-9)
 			check.push(`a[${a}].mag(${mag_a}) must be 1`);
-		if(mag_b !== 1)
+		if(Math.abs(mag_b - 1) > 1e-9)
 			check.push(`b[${b}].mag(${mag_b}) must be 1`);
 		if(check.length > 0)
 			throw new Error(`${check[0]} | ${check[1]}`)
