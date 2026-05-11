@@ -774,7 +774,8 @@ MAGPIE_PHYSICS._getAlignment = function getAlignmentPower(fwd, Dt)
  * @param {vector3} P1
  * @param {entity_stats} params 
  * @param {{
- * tolerance: Number,
+ * tolerance: coefficient,
+ * intensity: coefficient,
  * enableBraking: Boolean,
  * dumb: Boolean,
  * brakingThreshold: Number,
@@ -800,8 +801,11 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 			options.tolerance = options?.dumb ? 0 : 1;
 		const K = MAGPIE.KEY.STATS;
 		const Vmax = params[K.VMAX];
+		const Vsafe = Math.min(Vmax, Vmax * options?.intensity || 1);
 		const Amax = params[K.AMAX];
+		const Asafe = Math.min(Amax, Amax * options?.intensity || 1);
 		const Bmax = params[K.BMAX];
+		const Bsafe = Math.min(Bmax, Bmax * options?.intensity || 1);
 		const S0 = this.mag(V0);
 		if(options?.dumb)
 		{
@@ -823,7 +827,7 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		if(D0 <= options.tolerance)
 		{
 			const At = this.getBrakingA(P0, P1, V0, 0);
-			const clamped = this.vector_clamp_mag(At, Bmax);
+			const clamped = this.vector_clamp_mag(At, Bsafe);
 			const arrived = S0 < 1e-9 ? true : false;
 			return {
 				At: clamped, arrived, proximity: true, braking: true
@@ -836,16 +840,16 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		{
 			if(options?.brakingMode === "waypoint")
 			{
-				const Vt = this.targetVelocity(P0, P1, Vmax);
+				const Vt = this.targetVelocity(P0, P1, Vsafe);
 				const dV = this.subVectors(Vt, V0);
-				const At = this.vector_clamp_mag(dV, Amax);
+				const At = this.vector_clamp_mag(dV, Asafe);
 				return {
 					At, arrived: false, proximity: true, braking: false,
 					trigger: "next"
 				}
 			}
 			const At = this.getBrakingA(P0, P1, V0, options.tolerance);
-			const clamped = this.vector_clamp_mag(At, Bmax);
+			const clamped = this.vector_clamp_mag(At, Bsafe);
 			return {
 				At: clamped, arrived: false, proximity: true, braking: true
 			}
@@ -853,9 +857,12 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		// ──────────────────────────────────────────────────────────────
         // PHASE 3: Transit — far enough, accelerate to cruise speed
         // ──────────────────────────────────────────────────────────────
-		const Vt = this.targetVelocity(P0, P1, Vmax);
+		const Vt = this.targetVelocity(P0, P1, Vsafe);
 		const dV = this.subVectors(Vt, V0);
-		const At = this.vector_clamp_mag(dV, Amax);
+		//@todo getAt cruise tolerance
+		const At = this.mag(dV) > options.tolerance 
+			? this.vector_clamp_mag(dV, Asafe)
+			: [0,0,0]
 		return {
 			At, arrived: false, proximity: false, braking: false
 		}
@@ -2730,6 +2737,11 @@ MAGPIE_PHYSICS.rotorFromVectors = function rotorFromVectors(a, b)
 		return [NaN, NaN, NaN, NaN];
 	}
 }
+/**
+ * 
+ * @param {rotor} rotor 
+ * @returns {angle_deg}
+ */
 MAGPIE_PHYSICS._rotor_toHeadingAbs = function _rotor_toHeadingAbs(rotor)
 {
 	const ePrefix = `[PHYSICS].rotorToHdg: `;

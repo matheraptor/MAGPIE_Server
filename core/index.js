@@ -20,7 +20,9 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.21.7 2026 05 11
+ * @version 0.21.8 2026 05 11
+ * - FIXED: physics.getAt has no cruise tolerance, causing jittering of 
+ * 	acceleration to constantly match the cruise speed
  * - FIXED: entity.updatePhysics infinite getAt due to no cutoff dV
  * - FIXED: entity.updatePhysics incorrectly applying vector deltas
  * - FIXED: physics._emote_seekTarget incorrectly passing options?.tolerance
@@ -327,7 +329,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 7],
+			version: [0, 21, 8],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260511"
 		};

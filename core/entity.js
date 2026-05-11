@@ -22,8 +22,6 @@ function MAGPIE_ENTITY(data = {})
 {
 	this.initialize(data)
 }
-
-MAGPIE_ENTITY.meta = {}
 const { MAGPIE } = require("./index");
 const { MAGPIE_SYSTEM } = require("./system");
 const { 
@@ -160,7 +158,7 @@ MAGPIE_ENTITY._hive_setExp = async function _hive_setExp(exp)
 /**
  * 
  * @param {MAGPIE_EXP} exp
- * @returns {Boolean} 
+ * @returns {database_result} 
  */
 MAGPIE_ENTITY._hive_setExpSync = function _hive_setExpSync(exp)
 {
@@ -1132,7 +1130,7 @@ MAGPIE_ENTITY.prototype._M_importSTATS = function importMateriaSTATS(STATS)
 //------------------------------------------------------------------------
 /**
  * 
- * @desc back to {@link }
+ * @desc back to {@link MAGPIE_ENTITY.meta}
  *
  */
 //========================================================================
@@ -1456,7 +1454,7 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		this._set_POVART({P1, O1, V1, A1, R1, T1 });
 		const dist = MAGPIE_PHYSICS.distanceTo(P0, this._get_P0());
 		// MAGPIE_SYSTEM._logging_debug(`dP: ${MAGPIE_PHYSICS.mag(dP)}, dist: ${dist}, dt: ${dt}`)
-		// MAGPIE_SYSTEM._logging_debug(MAGPIE_PHYSICS.mag(dV))
+		// MAGPIE_SYSTEM._logging_debug(MAGPIE_PHYSICS.mag(A1) / dt)
 		return output
 	}
 	catch(e)
@@ -1573,8 +1571,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		const options = {
 			intensity: intensity,
 			fwd: MAGPIE.KEY.POVART.FWD,
-			agility: this.STATS[MAGPIE.KEY.STATS.DEX],
-			pR: pR
+			agility: this.STATS[MAGPIE.KEY.STATS.DEX]
 		}
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, P1, this.STATS, options);
@@ -1615,7 +1612,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
  * 
  */
 //========================================================================
-// #region - State
+// #region - STATE
 //========================================================================
 /**
  * 
@@ -1695,6 +1692,82 @@ MAGPIE_ENTITY.prototype.switchState = function switchState(stateA, stateB)
 /**
  * 
  * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - EXP
+//========================================================================
+MAGPIE_ENTITY.exp = {};
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > getters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} expID 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_ENTITY.prototype._get_exp_target = function _get_exp_target(expID)
+{
+	const exp = MAGPIE_ENTITY._hive_getEXP(expID);
+	const targetID = typeof exp.targetID === "number" 
+		? exp.targetID
+		: exp.targetID[MAGPIE.KEY.POVART.E_ID]
+	return MAGPIE_ENTITY._hive_getEntitySync(targetID)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > setters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} expID 
+ * @param {Number} targetID 
+ * @returns {database_result}
+ */
+MAGPIE_ENTITY.prototype._set_exp_targetID = function _set_exp_targetID(expID, targetID)
+{
+	const exp = MAGPIE_ENTITY._hive_getEXP(expID);
+	if(typeof exp.targetID === "number")
+		exp.targetID = targetID;
+	else exp.targetID[MAGPIE.KEY.POVART.E_ID] = targetID
+	return MAGPIE_ENTITY._hive_setExpSync(exp);
+}
+/**
+ * 
+ * @param {Number} expID 
+ * @param {Number} value 
+ * @returns {database_result}
+ */
+MAGPIE_ENTITY.prototype._set_exp_value = function _set_exp_value(expID, value)
+{
+	const exp = MAGPIE_ENTITY._hive_getEXP(expID)
+	exp.value = Number(value);
+	return MAGPIE_ENTITY._hive_setExpSync(exp);
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link MAGPIE_ENTITY.exp}
  *
  */
 //========================================================================
