@@ -63,6 +63,7 @@ lerna-debug.log*
 *.db
 sync_db.ps1
 pull_db.ps1
+db/
 
 # test
 test/
