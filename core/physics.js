@@ -608,9 +608,10 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const Tt = this._getTt(dR, R0, Tmax, options?.pR);
 	const { At, arrived, proximity, braking } = this
 		._getAt(P0, V0, P1, STATS, options);
-	const A1 = this.scaleVector(At, Math.max(options.intensity,1))
-	const pR = options?.pR || this._getATpR(Ot);
+	const A1 = this.scaleVector(At, options.intensity)
+	const pR = options?.pR || this._getATpR(Ot, P0, O0);
 	const newTt = this.scaleVector(Tt, (1 - pR));
+	// MAGPIE_SYSTEM._logging_debug(pR)
 	return {
 		At: this.scaleVector(A1, pR),
 		Tt: newTt,
@@ -723,18 +724,21 @@ MAGPIE_PHYSICS._smartSeek = function smartSeek(POVART0, params, P1, options)
 /**
  * 
  * @param {rotor} dO 
- * @param {angle} threshold angle where we start prioritizing motion (~15°)
+ * @param {vector3} P0
+ * @param {rotor} O0
+ * @param {angle_rad} threshold angle where we start prioritizing motion (~15°)
  * @returns {ratio} 0.0 (pure torque) to 1.0 (pure acceleration) 
  */
-MAGPIE_PHYSICS._getATpR = function getATpR(dO, threshold = 0.26)
+MAGPIE_PHYSICS._getATpR = function getATpR(dO, P0, O0, threshold = 0.26)
 {
 	// 1. get absolute angle of error in radians
-	const Ae = this._rotor_angle(dO);
+	const Ae = this._rotor_angle(dO, P0, O0);
 	// 2. map the error to a ratio
 	// if error is 0, pR is 1.0. If error is >= threshold, pR is 0.0
 	const ratio = 1.0 - (Ae / threshold);
 	if(isNaN(ratio)) throw new Error(`${ratio} is invalid pR`);
 	// 3. clamp 0-1
+	// MAGPIE_SYSTEM._logging_debug(ratio)
 	return this._U_clampRange(ratio, 0, 1); 
 }
 /**
@@ -900,6 +904,7 @@ MAGPIE_PHYSICS._getO1toP1 = function _getO1toP1(P0, P1)
 		const finalTurnRad = targetHdgRad - offsetRad;
 		const O1 = this.rotorFromAxisAngle(up, finalTurnRad);
 		const hdg = this._rotor_toHeadingAbs(O1, P0);
+		// MAGPIE_SYSTEM._logging_debug(hdg);
 		return O1
 	}
 	catch(e)
@@ -2940,22 +2945,24 @@ MAGPIE_PHYSICS._rotor_multiply = function _rotor_multiply(A, B)
 }
 /**
  * 
- * @param {rotor} dO
- * @returns {angle} 0 to PI 
+ * @param {rotor} rotor [yz,xz,xy,w]
+ * @param {vector3} P0 Position₀ [x,y,z]
+ * @param {rotor} O0 Orientation₀ [yz,xz,xy,w]
+ * @returns {angle_rad} 0 to PI 
  */
-MAGPIE_PHYSICS._rotor_angle = function getRotorAngle(dO)
+MAGPIE_PHYSICS._rotor_angle = function getRotorAngle(rotor, P0, O0)
 {
 	const ePrefix = "[PHYSICS].getRotorAngle: ";
 	try
 	{
-		// 1. ensure the scalar component (w) is clamped to valid acos
-		// this prevent NaN errors due to floating point
-		const w = this._U_clampRange(dO[3], -1, 1);
-		// 2. 2 * acos(w)
-		// Math.abs to ensure positive distance/error
-		const Ar = 2 * Math.acos(w);
-		if(isNaN(Ar)) throw new Error(`${Ar} is invalid Aᵣ`)
-		return this._U_clampRange(Ar, 0, Math.PI)
+		const currentHdg = this._rotor_toHeadingAbs(O0, P0);
+		const targetHdg = this._rotor_toHeadingAbs(rotor, P0);
+		let diff = Math.abs(targetHdg - currentHdg);
+		if(diff > 180) diff = 360 - diff;
+		const Aerror = diff * (Math.PI / 180);
+		if(isNaN(Aerror)) 
+			throw new Error(`${Aerror} is invalid angle Aᵣ`)
+		return Aerror
 	}
 	catch(e)
 	{

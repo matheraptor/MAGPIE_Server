@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.9
+ * @version 0.21.10
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,8 +20,9 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.21.9 2026 05 12
+ * @version 0.21.10 2026 05 12
  * - ADDED: physics new method .rotorFromFrame and .rotorSlerp
+ * - FIXED: physics.getATpR incorrectly calculating Oerror
  * - FIXED: entity.clampToGround incorrectly clamping A and R when it should
  * 		only be clamping P, O, and V
  * 
@@ -334,7 +335,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 9],
+			version: [0, 21, 10],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260512"
 		};
