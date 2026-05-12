@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.10
+ * @version 0.21.11
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,8 +20,12 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.21.10 2026 05 12
+ * @version 0.21.11 2026 05 12
  * - ADDED: physics new method .rotorFromFrame and .rotorSlerp
+ * - FIXED: physics.clampToGround jittery Og output due to contradicting 
+ * 		rotor maths
+ * - FIXED: physics.getAt braking magnitude decreasing exponentially resulting
+ * 		in inability to achieve Vspeed 0 in a timely manner
  * - FIXED: physics.getATpR incorrectly calculating Oerror
  * - FIXED: entity.clampToGround incorrectly clamping A and R when it should
  * 		only be clamping P, O, and V

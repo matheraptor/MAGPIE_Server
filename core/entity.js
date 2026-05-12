@@ -1569,7 +1569,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		}
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, P1, this.STATS, options);
-		const { At, Tt, arrived, proximity, braking } = output;
+		const { At, Tt, arrived, stopping, proximity, braking } = output;
 		if(arrived)
 		{
 			const targetKey = exp.keys.findIndex(key => key === MAGPIE.KEY.INDEX.TARGET);
