@@ -43,7 +43,10 @@ worker.REGISTRY = {
  * @typedef {import("better-sqlite3").Database} Database
  */
 const Database = require("better-sqlite3");
-worker.world = new Database("./db/world.db");
+const path = require("path");
+const worldPath = path.join(__dirname, "..", "db", "world.db");
+const serverPath = path.join(__dirname, "..", "db", "server.db")
+worker.world = new Database(worldPath);
 /**
  * @desc Why this is a "must" for your VM:
  * - Default Mode (DELETE): Every time you write data, SQLite locks 
@@ -56,7 +59,7 @@ worker.world = new Database("./db/world.db");
  */
 worker.world.pragma('journal_mode = WAL');
 worker.world.pragma('foreign_keys = ON');
-worker.server = new Database("./db/server.db");
+worker.server = new Database(serverPath);
 worker.server.pragma('journal_mode = WAL');
 worker.server.pragma('foreign_keys = ON');
 //
