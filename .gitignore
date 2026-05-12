@@ -60,7 +60,7 @@ lerna-debug.log*
 # better-sqlite3
 *.db-shm
 *.db-wal
-test.db
+*.db
 
 # test
 test/
