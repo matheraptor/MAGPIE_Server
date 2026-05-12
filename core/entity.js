@@ -1413,21 +1413,15 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		const CB = MAGPIE_PHYSICS._calculate_collisionBox(this);
 		const r = MAGPIE_ENTITY._get_celestialRadius(C);
 		let C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
-		const inertia = 0; //@todo inertia?
-		const floor = MAGPIE_PHYSICS._geod_clampToGround(C, r, C0, POVART0, inertia);
-		let Ag = [0,0,0];
+		const floor = MAGPIE_PHYSICS._geod_clampToGround(r, C0, POVART0, dt);
 		if(floor.clamped)
 		{
-			Ag = [0,0,0];
 			P0 = floor.Pg;
+			O0 = floor.Og;
 			V0 = floor.Vg;
-			R0 = floor.Rg;
 			C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
 		}
-		else Ag = MAGPIE_PHYSICS._apply_gravity(this, C, P0, dt);
 		// @todo entity.updatePhysics check obstacles and calculate Ac/Tc
-		const Ac = MAGPIE_PHYSICS.addVectors(Ag, [0,0,0])
-		const Tc = [0,0,0];
 		const { At, Tt } = MAGPIE_PHYSICS._POVART_applyTargetAT(this, dt, Ax, Tx, O0);
 		const forcesData = { dt, r, P0, V0, At, C0, CB, STATS: this.STATS };
 		const { Af, Tf, forces } = MAGPIE_PHYSICS._apply_forces(forcesData);
@@ -1438,8 +1432,8 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		const T1 = MAGPIE_PHYSICS.addVectors(T0, dT);
 		const R1 = MAGPIE_PHYSICS.addVectors(R0, T1);
 		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
-		const Oc = MAGPIE_PHYSICS.rotorCompose(dO, O0);
-		const O1 = MAGPIE_PHYSICS.rotorNormalize(Oc);
+		const Ocomp = MAGPIE_PHYSICS.rotorCompose(dO, O0);
+		const O1 = MAGPIE_PHYSICS.rotorNormalize(Ocomp);
 		//
 		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
 		const dV = MAGPIE_PHYSICS.addVectors(V0, A1);

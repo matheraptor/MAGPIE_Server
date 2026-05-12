@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.7
+ * @version 0.21.9
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,11 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.21.9 2026 05 12
+ * - ADDED: physics new method .rotorFromFrame and .rotorSlerp
+ * - FIXED: entity.clampToGround incorrectly clamping A and R when it should
+ * 		only be clamping P, O, and V
  * 
  * @version 0.21.8 2026 05 11
  * - FIXED: physics.getAt has no cruise tolerance, causing jittering of 
@@ -329,9 +334,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 8],
+			version: [0, 21, 9],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260511"
+			firmwareDate: "20260512"
 		};
 	}
 }

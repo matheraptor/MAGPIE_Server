@@ -6,6 +6,7 @@
 //========================================================================
 // #region - INDEX
 //========================================================================
+const { no } = require("zod/locales");
 const { MAGPIE } = require("./index");
 const { MAGPIE_SYSTEM } = require("./system");
 function MAGPIE_PHYSICS()
@@ -179,50 +180,47 @@ MAGPIE_PHYSICS.cartesianToGeodetic = function cartesianToGeodetic(P0, R)
 }
 
 /**
- * 
- * @param {MAGPIE_ENTITY} C celestial body
+ * @todo replace with proper collisions
  * @param {distance} r celestial radius
  * @param {coords} C0 
  * @param {POVART} POVART0 
- * @param {MoI} inertia 
- * @returns {{clamped: Boolean, Pg: vector3, Vg: vector3, Ag: vector3, Rg: bivector}}
+ * @param {duration} dt
+ * @returns {{clamped: Boolean, Pg: vector3, Og: rotor, Vg: vector3 }}
  */
-MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(C, r, C0, POVART0, inertia)
+MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(r, C0, POVART0, dt)
 {
 	const ePrefix = `[PHYSICS].clampToGround: `;
 	try
 	{
-		const floor = 0; //@todo get local floor altitude ASL
-		const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0);
-		const up = this.normalizeVector(P0);
-		//compare against P0
 		const [lat,lon,ASL] = C0;
-		//if AGL < 0, return V1 clamped to ground
-		if(ASL < 0.05)
+		if(ASL >= 0.05)
+			return { clamped: false }
+		const { P0, O0, V0 } = this.decomp_POVART(POVART0);
+		const up = this.normalizeVector(P0);
+		const Pg = this.scaleVector(up, r);
+		const Vvertical = this.dotProduct(V0, up);
+		let Vg = V0;
+		if(Vvertical < 0)
+			Vg = this.subVectors(V0, this.scaleVector(up, Vvertical));
+		const dirFwd = this.rotorApply(O0, MAGPIE.KEY.POVART.FWD);
+		const fwdProjVertical = this.dotProduct(dirFwd, up);
+		let fwdGround = this.subVectors(dirFwd, this.scaleVector(up, fwdProjVertical));
+		if(this.mag(fwdGround) < 1e-6)
 		{
-			//@todo apply floor forces
-			const Oup = this.rotorApply(O0, up);
-			const error = this.crossProduct(up, Oup);
-			const kP = inertia || 5;
-			let Rg = [0,0,0];
-			if(this.mag(error) > 1e-9)
-				Rg = this.scaleVector(error, (1 / kP));
-			const Vv = this.dotProduct(V0, up);
-			const Ag = [0,0,0];
-			// const Ag = this.scaleVector(up, C.gravity());
-			let Vg = V0;
-			if(Vv < 0)
-			{
-				const Vvec = this.scaleVector(up, Vv);
-				Vg = this.subVectors(V0, Vvec);
-			}
-			const Pg = this.scaleVector(up, r);
-			// const Pg = this.geodeticToCartesian(lat, lon, C.radius() + 0.1);
-			// const { Fd } = this.currentAeroForces()
-			return { clamped: true, Pg, Vg, Ag, Rg }
+			const dirRight = this.rotorApply(O0, [1,0,0]);
+			const rightProjVertical = this.dotProduct(dirRight, up);
+			fwdGround = this.crossProduct(this.subVectors(dirRight, this.scaleVector(up, rightProjVertical)), up);
 		}
-		//else, return untouched V0
-		return { clamped: false, Pg: P0, Vg: V0, Ag: A0, Rg: R0 }
+		fwdGround = this.normalizeVector(fwdGround);
+		const targetFwd = fwdGround;
+		const targetUp = up;
+		// const Og = this.rotorFromFrame(MAGPIE.KEY.POVART.FWD, MAGPIE.KEY.POVART.UP, targetFwd, targetUp)
+		const invertedFwdGround = this.scaleVector(fwdGround, -1);
+		const Og_hard = this.rotorFromFrame(invertedFwdGround, up)
+		const halfLife = 0.1;
+		const smoothingFactor = 1.0 - Math.exp(-dt / halfLife);
+		const Og = this.rotorSlerp(O0, Og_hard, smoothingFactor);
+		return { clamped: true, Pg, Vg, Og }
 	}
 	catch(e)
 	{
@@ -605,16 +603,17 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const a = this._calculateAgilityAlpha(STATS);
 	const a1 = this._get_agilityModifier(options.agility, a);
 	const Tmax = this._getTmax(STATS, a1);
-	const Ot = this._getO1toP1(P0, P1, options.fwd);
+	const Ot = this._getO1toP1(P0, P1);
 	const dR = this._getDeltaR(O0, Ot);
 	const Tt = this._getTt(dR, R0, Tmax, options?.pR);
 	const { At, arrived, proximity, braking } = this
 		._getAt(P0, V0, P1, STATS, options);
 	const A1 = this.scaleVector(At, Math.max(options.intensity,1))
 	const pR = options?.pR || this._getATpR(Ot);
+	const newTt = this.scaleVector(Tt, (1 - pR));
 	return {
 		At: this.scaleVector(A1, pR),
-		Tt: this.scaleVector(Tt, (1 - pR)),
+		Tt: newTt,
 		arrived, proximity, braking
 	}
 }
@@ -880,29 +879,27 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
  * @param {vector3} fwd
  * @returns {rotor} O₁ target orientation 
  */
-MAGPIE_PHYSICS._getO1toP1 = function _getO1toP1(P0, P1, fwd)
+MAGPIE_PHYSICS._getO1toP1 = function _getO1toP1(P0, P1)
 {
 	const ePrefix = "[PHYSICS].getO1toP1: ";
 	try
 	{
-		if(!fwd) fwd = MAGPIE.KEY.POVART.FWD;
-		if(!this.isValidVector(P0))
-			throw new Error(`${P0} is invalid P₀`);
-		if(!this.isValidVector(P1))
-			throw new Error(`${P1} is invalid P₁`);
-		// 1. get relative distance vector
-		const dx = P1[0] - P0[0];
-		const dy = P1[1] - P0[1];
-		const dz = P1[2] - P0[2];
-		// 2. normalize to get the direction vector
-		const dist = Math.sqrt(dx**2 + dy**2 + dz**2);
-		if(dist < 0.0001) return new Float64Array([0,0,0,1]); //already there
-		const dir = [dx / dist, dy / dist, dz / dist];
-		// 3. generate the rotor that aligns forward with dir
-		// this uses your existing rotorFromVectors logic
-		const O1 = this.rotorFromVectors(fwd, dir)
-		if(!this.isValidRotor(O1))
-			throw new Error(`${O1} is invalid O₁`);
+		const up = this.normalizeVector(P0);
+		const North = MAGPIE.KEY.POVART.UP;
+		const fwd = MAGPIE.KEY.POVART.FWD;
+		const dotN = this.dotProduct(North, up);
+		const localNorth = this.normalizeVector(this.subVectors(North, this.scaleVector(up, dotN)));
+		const localEast = this.crossProduct(localNorth, up);
+		const dir = this.subVectors(P1, P0);
+		const eastComponent = this.dotProduct(dir, localEast);
+		const northComponent = this.dotProduct(dir, localNorth);
+		const targetHdgRad = Math.atan2(eastComponent, northComponent);
+		const eastFwd = this.dotProduct(fwd, localEast);
+		const northFwd = this.dotProduct(fwd, localNorth);
+		const offsetRad = Math.atan2(eastFwd, northFwd);
+		const finalTurnRad = targetHdgRad - offsetRad;
+		const O1 = this.rotorFromAxisAngle(up, finalTurnRad);
+		const hdg = this._rotor_toHeadingAbs(O1, P0);
 		return O1
 	}
 	catch(e)
@@ -910,6 +907,36 @@ MAGPIE_PHYSICS._getO1toP1 = function _getO1toP1(P0, P1, fwd)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+// MAGPIE_PHYSICS._getO1toP1 = function _getO1toP1(P0, P1, fwd)
+// {
+// 	const ePrefix = "[PHYSICS].getO1toP1: ";
+// 	try
+// 	{
+// 		if(!fwd) fwd = MAGPIE.KEY.POVART.FWD;
+// 		if(!this.isValidVector(P0))
+// 			throw new Error(`${P0} is invalid P₀`);
+// 		if(!this.isValidVector(P1))
+// 			throw new Error(`${P1} is invalid P₁`);
+// 		// 1. get relative distance vector
+// 		const dx = P1[0] - P0[0];
+// 		const dy = P1[1] - P0[1];
+// 		const dz = P1[2] - P0[2];
+// 		// 2. normalize to get the direction vector
+// 		const dist = Math.sqrt(dx**2 + dy**2 + dz**2);
+// 		if(dist < 0.0001) return new Float64Array([0,0,0,1]); //already there
+// 		const dir = [dx / dist, dy / dist, dz / dist];
+// 		// 3. generate the rotor that aligns forward with dir
+// 		// this uses your existing rotorFromVectors logic
+// 		const O1 = this.rotorFromVectors(fwd, dir)
+// 		if(!this.isValidRotor(O1))
+// 			throw new Error(`${O1} is invalid O₁`);
+// 		return O1
+// 	}
+// 	catch(e)
+// 	{
+// 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+// 	}
+// }
 /**
  * @desc calculates the maximum torque magnitude (Tₘₐₓ) based on
  * entity_stats {@link MAGPIE.KEY.STATS.meta}
@@ -2549,6 +2576,14 @@ MAGPIE_PHYSICS.isValidRotor = function isValidRotor(rotor)
 	const mag = this.rotorMagnitude(rotor);
 	return Math.abs(mag - 1) < 1e-9;
 }
+/**
+ * 
+ * @returns {rotor} identity rotor (Oᵢ)
+ */
+MAGPIE_PHYSICS._rotor_identity = function rotorIdentity()
+{
+	return [0,0,0,1]
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -2739,18 +2774,123 @@ MAGPIE_PHYSICS.rotorFromVectors = function rotorFromVectors(a, b)
 }
 /**
  * 
+ * @param {vector3} up 
+ * @param {angle_rad} angleRad 
+ * @returns {rotor}
+ */
+MAGPIE_PHYSICS.rotorFromAxisAngle = function rotorFromAxisAngle(up, angleRad)
+{
+	const halfAngle = angleRad / 2.0;
+	const s = Math.sin(halfAngle);
+	const ax = up[0];
+	const ay = up[1];
+	const az = up[2];
+	const yz = -ax * s;
+	const xz = -ay * s;
+	const xy = -az * s;
+	const w = Math.cos(halfAngle);
+	const rotor = [yz,xz,xy,w]
+	if(!this.isValidRotor(rotor))
+		throw new Error(`${rotor} is invalid rotor`)
+	return rotor
+}
+/**
+ *
+ * @param {vector3} Tfwd target forward
+ * @param {vector3} Tup target up
+ * @returns {rotor}
+ */
+MAGPIE_PHYSICS.rotorFromFrame = function rotorFromFrame(Tfwd, Tup)
+{
+	const fwd = MAGPIE.KEY.POVART.FWD;
+	const up = MAGPIE.KEY.POVART.UP;
+	const rFwd = this.rotorFromVectors(fwd, Tfwd);
+	const transformedUp = this.rotorApply(rFwd, up);
+	const rTwist = this.rotorFromVectors(transformedUp, Tup);
+	return this.rotorCompose(rTwist, rFwd)
+}
+/**
+ * 
+ * @param {rotor} r0 starting rotor
+ * @param {rotor} r1 target rotor
+ * @param {ratio} t interpolation ratio
+ * @returns {rotor} 
+ */
+MAGPIE_PHYSICS.rotorSlerp = function rotorSlerp(r0, r1, t)
+{
+	let dot = this._U_clampRange(this.rotorDotProduct(r0, r1), -1.0, 1.0);
+	let target = r1;
+	if(dot < 0.0)
+	{
+		dot = -dot
+		target = this.rotorInvert(r1)
+	}
+	if(dot > 0.9995)
+	{
+		const result = [
+			r0[0] + t * (target[0] - r0[0]),
+			r0[1] + t * (target[1] - r0[1]),
+			r0[2] + t * (target[2] - r0[2]),
+			r0[3] + t * (target[3] - r0[3])
+		]
+		const mag = this.rotorMagnitude(result);
+		return [result[0] / mag, result[1] / mag, result[2] / mag, result[3] / mag]
+	}
+	const theta_0 = Math.acos(dot);
+	const theta = theta_0 * t;
+	const sin_theta_0 = Math.sin(theta_0);
+	const sin_theta = Math.sin(theta);
+	const s0 = Math.cos(theta) - (dot * sin_theta_0) / sin_theta_0;
+	const s1 = sin_theta / sin_theta_0;
+	return [
+		(s0 * r0[0]) + (s1 * target[0]),
+		(s0 * r0[1]) + (s1 * target[1]),
+		(s0 * r0[2]) + (s1 * target[2]),
+		(s0 * r0[3]) + (s1 * target[3])
+	]
+}
+
+/**
+ * 
+ * @param {rotor} rotor
+ * @returns {rotor} 
+ */
+MAGPIE_PHYSICS.rotorInvert = function rotorInvert(rotor)
+{
+	return [-rotor[0], -rotor[1], -rotor[2], -rotor[3]]
+}
+/**
+ * 
+ * @param {rotor} r0 
+ * @param {rotor} r1
+ * @returns {Number} 
+ */
+MAGPIE_PHYSICS.rotorDotProduct = function rotorDotProduct(r0, r1)
+{
+	return (r0[0] * r1[0]) + (r0[1] * r1[1]) + (r0[2] * r1[2]) + (r0[3] * r1[3])
+}
+/**
+ * 
  * @param {rotor} rotor 
+ * @param {vector3} localUp
  * @returns {angle_deg}
  */
-MAGPIE_PHYSICS._rotor_toHeadingAbs = function _rotor_toHeadingAbs(rotor)
+MAGPIE_PHYSICS._rotor_toHeadingAbs = function _rotor_toHeadingAbs(rotor, P0)
 {
 	const ePrefix = `[PHYSICS].rotorToHdg: `;
 	try
 	{
-		const fwd = this.rotorApply(rotor, MAGPIE.KEY.POVART.FWD);
-		const headingRad = Math.atan2(fwd[0], fwd[1]);
-		const headingDeg = this._U_rad_to_deg(headingRad);
-		return (headingDeg + 360) % 360;
+		const up = this.normalizeVector(P0)
+		const North = MAGPIE.KEY.POVART.UP;
+		const dotN = this.dotProduct(North, up);
+		const localNorth = this.normalizeVector(this.subVectors(North, this.scaleVector(up, dotN)));
+		const localEast = this.crossProduct(localNorth, up);
+		const dir = this.rotorApply(rotor, MAGPIE.KEY.POVART.FWD);
+		const eastComponent = this.dotProduct(dir, localEast);
+		const northComponent = this.dotProduct(dir, localNorth);
+		const headingRad = Math.atan2(eastComponent, northComponent);
+		const hdg = this._U_rad_to_deg(headingRad);
+		return (hdg + 360) % 360
 	}
 	catch(e)
 	{
