@@ -61,6 +61,8 @@ lerna-debug.log*
 *.db-shm
 *.db-wal
 *.db
+sync_db.ps1
+pull_db.ps1
 
 # test
 test/
