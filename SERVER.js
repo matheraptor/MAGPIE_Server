@@ -47,7 +47,10 @@ const {
 	MAGPIE_EXP, 
 	MAGPIE_KEY,
 	MAGPIE_EMOTE,
-	MAGPIE_STATE 
+	MAGPIE_STATE,
+	MAGPIE_SYMBOL,
+	MAGPIE_CONTEXT,
+	MAGPIE_TICKET 
 } = require("./core/component");
 const { MAGPIE_ENTITY } = require("./core/entity");
 const { MAGPIE_PLAYER } = require("./core/player");
@@ -65,9 +68,13 @@ MAGPIE_SERVER.registry = {
 	MAGPIE_COMPONENT,
 	MAGPIE_EXP,
 	MAGPIE_KEY,
+	MAGPIE_EMOTE,
 	MAGPIE_ENTITY,
 	MAGPIE_PLAYER,
-	MAGPIE_DATABASE
+	MAGPIE_DATABASE,
+	MAGPIE_SYMBOL,
+	MAGPIE_CONTEXT,
+	MAGPIE_TICKET
 };
 MAGPIE_SERVER.meta = {}
 MAGPIE_SERVER.perf = {};
@@ -208,7 +215,7 @@ MAGPIE_SERVER.SYS._error = MAGPIE_SYSTEM.error;
 MAGPIE_SYSTEM.error = function error(message, error)
 {
 	MAGPIE_SERVER.SYS._error.call(this, message, error);
-	r.displayPrompt();
+	r.displayPrompt(true);
 }
 MAGPIE_SYSTEM._logging_debug = function server_debug(message)
 {
@@ -1002,6 +1009,8 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, POVART0,
 		const P1 = entity._get_P0();
 		const O1 = entity._get_O0();
 		const V1 = entity._get_V0();
+		const V1hdg = MAGPIE_PHYSICS._get_V0_heading(P1, V1);
+		// MAGPIE_SERVER._debug(`V1hdg: ${V1hdg}`)
 		const A1 = entity._get_A0();
 		const R1 = entity._get_R0();
 		const T1 = entity._get_T0();
@@ -1068,6 +1077,67 @@ MAGPIE_ENTITY._database = async function _database(method, argument)
 MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
 {
 	return MAGPIE_DATABASE[method](argument)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Key
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {String} property 
+ * @param {*} value
+ * @returns {database_result} 
+ */
+MAGPIE_KEY.prototype.set = function set(property, value)
+{
+	this[property] = value;
+	return MAGPIE_DATABASE.saveKeySync(this);
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Exp
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_EXP.__save = async function save(exp)
+{
+	return await MAGPIE_DATABASE.saveExp(exp);
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {database_result}
+ */
+MAGPIE_EXP.__saveSync = function saveSync(exp)
+{
+	return MAGPIE_DATABASE.saveExpSync(exp);
+}
+/**
+ * @returns {MAGPIE_KEY[]}
+ */
+MAGPIE_EXP.prototype.getKeys = function getKeys()
+{
+	let keys = [];
+	for(const ID of this.keys)
+	{
+		keys.push(MAGPIE_DATABASE.loadKeySync(ID));
+	}
+	return keys
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1693,6 +1763,7 @@ MAGPIE_DATABASE.setup = function setup()
 		const symbols = this.sync.createWorldTable("MAGPIE_SYMBOL", {
 			ID: integerKey,
 			type: integer,
+			name: text,
 			requirementID: integerNullable,
 			compoundID: integerNullable,
 			data: blob,

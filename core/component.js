@@ -92,6 +92,8 @@ function MAGPIE_SYMBOL(data)
 // #endregion - 
 //========================================================================
 /**
+ * @typedef {import("./system").database_result} database_result
+ * 
  * @name COMPONENT
  * @desc 
  * 
@@ -211,6 +213,42 @@ MAGPIE_EXP.prototype.initialize = function initialize(data)
 	this.value = data?.value || NaN;
 	this.keys = data?.keys || [NaN];
 }
+/**
+ * @returns {MAGPIE_KEY[]}
+ */
+MAGPIE_EXP.prototype.getKeys = function getKeys()
+{
+	//
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_EXP.__save = async function save(exp)
+{
+	//
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {database_result} 
+ */
+MAGPIE_EXP.__saveSync = function saveSync(exp)
+{
+	//
+}
+/**
+ * 
+ * @param {keyID} keyID 
+ */
+MAGPIE_EXP.prototype.removeKey = function removeKey(keyID)
+{
+	const index = this.keys.findIndex(ID => ID === keyID);
+	this.keys.splice(index, 1);
+	MAGPIE_EXP.__saveSync(this);
+	return keyID
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -228,7 +266,7 @@ MAGPIE_EMOTE.setup = function()
 	const data = require("../data/emotes");
 	for(const emote_data of data)
 	{
-		MAGPIE_EMOTE.INDEX.set(emote_data.ID, new MAGPIE_EMOTE(emote_data))
+		MAGPIE_EMOTE.INDEX.set(emote_data.ID, new MAGPIE_EMOTE(emote_data));
 	}
 }
 /**
@@ -323,6 +361,16 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
 	this.compoundID = Number(data?.compoundID) || 0;
 	this.symbolID = Number(data?.symbolID) || 0;
 }
+/**
+ * 
+ * @param {String} property 
+ * @param {*} value 
+ * @returns {database_result}
+ */
+MAGPIE_KEY.prototype.set = function set(property, value)
+{
+	//
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -341,6 +389,7 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
 //========================================================================
 // #region - SYMBOL
 //========================================================================
+MAGPIE_SYMBOL.meta = "";
 /**
  * @name 
  * @desc 
@@ -356,6 +405,7 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
  */
 MAGPIE_SYMBOL.prototype.initialize = function initialize(data)
 {
+	this._firmware = "MAGPIE_SYMBOL";
 	this.ID = Number(data?.ID) || Date.now();
 	this.type = Number(data?.type) || 0;
 	this.name = String(data?.name) || "";
@@ -363,6 +413,50 @@ MAGPIE_SYMBOL.prototype.initialize = function initialize(data)
 	this.requirementID = Number(data?.requirementID) || 0;
 	this.compoundID = Number(data?.compoundID) || 0;
 	this.STATS = new Float64Array(data?.STATS || 0);
+}
+/**
+ * 
+ * @returns {{ "Number": Number }}
+ */
+MAGPIE_SYMBOL.prototype.mapStats = function mapStats()
+{
+	if(this.STATS.length < 1) return
+	const arr = this.STATS;
+	return Object.fromEntries(
+		arr.reduce((acc, curr, i) => {
+			if(i % 2 === 0) acc.push([curr, arr[i + 1]]);
+			return acc;
+		}, [])
+	)
+}
+/**
+ * 
+ * @returns {{Vmax: Number, Vsafe: Number, Vcruise: Number, Vcreep: Number}}
+ */
+MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
+{
+	const K = MAGPIE.KEY.INDEX;
+	const keys = this.getKeys();
+	if(keys.length < 1) return
+	const Vmax = Number(keys.find(key => key.originID === K.VMAX)?.label);
+	const Vsafe = Number(keys.find(key => key.originID === K.VSAFE)?.label);
+	const Vcruise = Number(keys.find(key => key.originID === K.VCRUISE)?.label);
+	const Vcreep = Number(keys.find(key => key.originID === K.VCREEP)?.label);
+	return { Vmax, Vsafe, Vcruise, Vcreep }
+}
+/**
+ * 
+ * @returns {{Vmax: Number, Vsafe: Number, Vcruise: Number, Vcreep: Number }}
+ */
+MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
+{
+	const map = this.mapStats();
+	const V = MAGPIE.KEY.INDEX;
+	const Vmax = map[V.VMAX];
+	const Vsafe = map[V.VSAFE];
+	const Vcruise = map[V.VCRUISE];
+	const Vcreep = map[V.VCREEP];
+	return { Vsafe, Vcruise, Vcreep }
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -381,7 +475,8 @@ module.exports = {
 	MAGPIE_EXP,
 	MAGPIE_KEY,
 	MAGPIE_CONTEXT,
-	MAGPIE_TICKET
+	MAGPIE_TICKET,
+	MAGPIE_SYMBOL
 }
 /**
  * 

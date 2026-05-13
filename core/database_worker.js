@@ -27,7 +27,12 @@ const { MAGPIE_PLAYER } = require("./player");
 const { 
 	MAGPIE_KEY, 
 	MAGPIE_CONTEXT,
-	MAGPIE_EXP 
+	MAGPIE_EXP,
+	MAGPIE_SYMBOL,
+	MAGPIE_TICKET,
+	MAGPIE_STATE,
+	MAGPIE_COMPONENT,
+	MAGPIE_EMOTE
 } = require("./component");
 worker.REGISTRY = {
 	MAGPIE_LOG,
@@ -37,7 +42,11 @@ worker.REGISTRY = {
 	MAGPIE_PLAYER,
 	MAGPIE_KEY,
 	MAGPIE_CONTEXT,
-	MAGPIE_EXP
+	MAGPIE_EXP,
+	MAGPIE_TICKET,
+	MAGPIE_STATE,
+	MAGPIE_SYMBOL,
+	MAGPIE_EMOTE
 }
 /**
  * @typedef {import("better-sqlite3").Database} Database

@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.22.0
+ * @version 0.22.2
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,8 +20,11 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.22.0 2026 05 13
+ * @version 0.22.2 2026 05 13
  * - ADDED: basic methods and logic for exp/key manipulation
+ * - ADDED: {@link MAGPIE.KEY.EMOTE.INDEX.meta}
+ * - ADDED: {@link MAGPIE_SYMBOL.meta}
+ * - FIXED: key handling and database calls
  * 
  * @version 0.21.11 2026 05 12
  * - ADDED: physics new method .rotorFromFrame and .rotorSlerp
@@ -342,7 +345,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 0],
+			version: [0, 22, 2],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260513"
 		};
@@ -405,39 +408,39 @@ MAGPIE.KEY.TYPE = {};
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.AXIOM = 0;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.KEY = MAGPIE.KEY.TYPE.AXIOM + 1;
+MAGPIE.KEY.TYPE.KEY = 1;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METAKEY = MAGPIE.KEY.TYPE.KEY + 1;
+MAGPIE.KEY.TYPE.METAKEY = 2;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.SEMANTIC = MAGPIE.KEY.TYPE.METAKEY + 1;
+MAGPIE.KEY.TYPE.SEMANTIC = 3;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.CONTEXT = MAGPIE.KEY.TYPE.SEMANTIC + 1;
+MAGPIE.KEY.TYPE.CONTEXT = 4;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METACONTEXT = MAGPIE.KEY.TYPE.CONTEXT + 1;
+MAGPIE.KEY.TYPE.METACONTEXT = 5;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.EXP = MAGPIE.KEY.TYPE.METACONTEXT + 1;
+MAGPIE.KEY.TYPE.EXP = 6;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.EMOTE = MAGPIE.KEY.TYPE.EXP + 1;
+MAGPIE.KEY.TYPE.EMOTE = 7;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.TRIGGER = MAGPIE.KEY.TYPE.EMOTE + 1;
+MAGPIE.KEY.TYPE.TRIGGER = 8;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.EVAL = MAGPIE.KEY.TYPE.TRIGGER + 1;
+MAGPIE.KEY.TYPE.EVAL = 9;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.TIME = MAGPIE.KEY.TYPE.EVAL + 1;
+MAGPIE.KEY.TYPE.TIME = 10;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METAEXP = MAGPIE.KEY.TYPE.TIME + 1;
+MAGPIE.KEY.TYPE.METAEXP = 11;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.TICKET = MAGPIE.KEY.TYPE.METAEXP + 1;
+MAGPIE.KEY.TYPE.TICKET = 12;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METATICKET = MAGPIE.KEY.TYPE.TICKET + 1;
+MAGPIE.KEY.TYPE.METATICKET = 13;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERKEY = MAGPIE.KEY.TYPE.METATICKET + 1;
+MAGPIE.KEY.TYPE.MASTERKEY = 14;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERCONTEXT = MAGPIE.KEY.TYPE.MASTERKEY + 1;
+MAGPIE.KEY.TYPE.MASTERCONTEXT = 15;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTEREXP = MAGPIE.KEY.TYPE.MASTERCONTEXT + 1;
+MAGPIE.KEY.TYPE.MASTEREXP = 16;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERTICKET = MAGPIE.KEY.TYPE.MASTEREXP + 1;
+MAGPIE.KEY.TYPE.MASTERTICKET = 17;
 /** @typedef {Enumerator<Number>} key_index */
 MAGPIE.KEY.INDEX = {};
 MAGPIE.KEY.INDEX.meta = "";
@@ -453,6 +456,14 @@ MAGPIE.KEY.INDEX.TARGET = MAGPIE.KEY.INDEX.OBJECT + 1;
 MAGPIE.KEY.INDEX.TRIVIAL = MAGPIE.KEY.INDEX.TARGET + 1;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TIME = MAGPIE.KEY.INDEX.TRIVIAL + 1;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.VMAX = 3000;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.VSAFE = MAGPIE.KEY.INDEX.VMAX + 1;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.VCRUISE = MAGPIE.KEY.INDEX.VSAFE + 1;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.VCREEP = MAGPIE.KEY.INDEX.VCRUISE + 1;
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1286,6 +1297,40 @@ MAGPIE.KEY.COMPONENT.STATE.ARRAY = MAGPIE.KEY.COMPONENT.STATE.TARGET_TRIGGER + 1
 //#endregion 
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Symbol
+//------------------------------------------------------------------------
+MAGPIE.KEY.SYMBOL = {};
+/**
+ * @typedef {Enumerator<Number>} symbol_type
+ */
+MAGPIE.KEY.SYMBOL.meta = "";
+MAGPIE.KEY.SYMBOL.TYPE = {};
+MAGPIE.KEY.SYMBOL.TYPE.meta = "";
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.AXIOM = 0;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.SEMANTIC = 1;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.RESOURCE = 2;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.MATERIAL = 3;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.PRODUCT = 4;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.SERVICE = 5;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.INTERACTION = 6;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.CONCEPT = 7;
+MAGPIE.KEY.SYMBOL.INDEX = {};
+// #endregion
+//------------------------------------------------------------------------
+/**
  * @desc {@link MAGPIE_STATE}
  * 
  */
@@ -1322,7 +1367,12 @@ MAGPIE.KEY.EMOTE.meta = {};
 MAGPIE.KEY.EMOTE.TYPE = {};
 MAGPIE.KEY.EMOTE.TYPE.DEFAULT = 0;
 MAGPIE.KEY.EMOTE.TYPE.FSM = MAGPIE.KEY.EMOTE.TYPE.DEFAULT + 1;
-MAGPIE.KEY.EMOTE.TYPE.ARRAY = MAGPIE.KEY.EMOTE.TYPE.FSM + 1;
+MAGPIE.KEY.EMOTE.TYPE.TRIGGER = MAGPIE.KEY.EMOTE.TYPE.FSM + 1;
+MAGPIE.KEY.EMOTE.TYPE.ARRAY = MAGPIE.KEY.EMOTE.TYPE.TRIGGER + 1;
+MAGPIE.KEY.EMOTE.INDEX = {};
+MAGPIE.KEY.EMOTE.INDEX.meta = "index of all emotes",
+MAGPIE.KEY.EMOTE.INDEX.SEEK_TARGET = 302;
+MAGPIE.KEY.EMOTE.INDEX.SCHEDULE = 310;
 // #endregion
 //------------------------------------------------------------------------
 /**

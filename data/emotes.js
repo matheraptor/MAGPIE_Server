@@ -1,5 +1,11 @@
 const { MAGPIE } = require("../core/index")
 const { INDEX } = require("./states")
+/**
+ * @typedef {import("../core/entity.js").MAGPIE_ENTITY} MAGPIE_ENTITY
+ * @typedef {import("../core/component.js").MAGPIE_EXP} MAGPIE_EXP
+ * @typedef {import("../core/index").vector3} vector3
+ * @typedef {import("../SERVER.js").bivector} bivector
+ */
 /** @type {import("../SERVER.js").exp_output} */
 const defaults = { exp: null, At: [0,0,0], Tt: [0,0,0], keys: [], persist: null };
 /** 
@@ -8,7 +14,7 @@ const defaults = { exp: null, At: [0,0,0], Tt: [0,0,0], keys: [], persist: null 
  * ID: Number,
  * name: String,
  * type: Enumerator<Number>,
- * description,
+ * description: String,
  * condition: (...args) => Boolean,
  * onAction: Function,
  * onPassive: Function
@@ -17,44 +23,51 @@ const defaults = { exp: null, At: [0,0,0], Tt: [0,0,0], keys: [], persist: null 
  * 
  * */
 const data = [];
-data.push(
+const SEEK_TARGET = {
+	ID: MAGPIE.KEY.EMOTE.INDEX.SEEK_TARGET,
+	name: "SEEK_TARGET",
+	type: MAGPIE.KEY.EMOTE.TYPE.FSM,
+	description: "pushes a target exp in queue and applies a 'seeking' "
+		+ "perma state that queries the target exp for a target POVART to move to. "
+		+ "This ensures that the entity can still process other exps, and that the "
+		+ "target to seek can be updated with fresh info",
+	condition: function(...args)
 	{
-		ID: 302,
-		name: "SEEK_TARGET",
-		type: MAGPIE.KEY.EMOTE.TYPE.FSM,
-		description: "pushes a target exp in queue and applies a 'seeking' "
-			+ "perma state that queries the target exp for a target POVART to move to. "
-			+ "This ensures that the entity can still process other exps, and that the "
-			+ "target to seek can be updated with fresh info",
-		condition: function(...args)
-		{
-			return true
-		},
-		/**
-		 * 
-		 * @param {import("../SERVER.js").exp_payload} exp 
-		 * @param {import("../core/entity.js").STATS} STATS 
-		 * @returns {import("../SERVER.js").exp_output} results
-		 */
-		onAction: function seekTarget(exp, STATS) 
-		{
-			const ePrefix = `[EMOTE-302].seekTarget: `;
-			const results = {};
-			const index = exp.value;
-			results.addState = INDEX.SEEKING_TARGET;
-			results.removeState = null;
-			results.switchState = null;
-			results.exp = exp;
-			results.exp.emoteID = null;
-			results.exp.keys.push(MAGPIE.KEY.INDEX.TARGET)
-			results.persist = {};
-			results.persist.condition = () => {return true};
-			return results
-		},
-		onPassive: function()
-		{
-			//
-		}
+		return true
+	},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @returns {{At: vector3, Tt: bivector}} results
+	 */
+	onAction: function seekTarget(exp, entity) 
+	{
+		return entity._emote_seekTarget(exp);
+	},
+	onPassive: function()
+	{
+		//
 	}
-)
+}
+data.push(SEEK_TARGET);
+/** @type {emote_data} */
+const SCHEDULE = {
+	ID: MAGPIE.KEY.EMOTE.INDEX.SCHEDULE,
+	name: "SCHEDULE",
+	type: MAGPIE.KEY.EMOTE.TYPE.TRIGGER,
+	description: "",
+	condition: () => {return true},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @returns {{At: vector3, Tt: bivector}}
+	 */
+	onAction: function schedule(exp, entity) 
+	{
+		return entity._emote_schedule(exp)
+	},
+	onPassive: () => {}
+}
 module.exports = data; 

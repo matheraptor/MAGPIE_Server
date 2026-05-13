@@ -192,6 +192,7 @@ MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(r, C0, POVART0
 	try
 	{
 		const [lat,lon,ASL] = C0;
+		// return { clamped: false }
 		if(ASL >= 0.05) return { clamped: false };
 		const { P0, O0, V0 } = this.decomp_POVART(POVART0);
 		const up = this.normalizeVector(P0);
@@ -211,7 +212,7 @@ MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(r, C0, POVART0
 		const Og = this.rotorFromFrame(Tfwd, up);
 		// const Og = O0
 		// MAGPIE_SYSTEM._logging_debug(`Og: ${this._rotor_toHeadingAbs(Og, Pg)}`)
-		return { clamped: true, Pg, Vg, Og };
+		return { clamped: true, Pg, Vg, Og: O0 };
 	} 
 	catch(e)
 	{
@@ -596,6 +597,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0)
 	const a = this._calculateAgilityAlpha(STATS);
 	const a1 = this._get_agilityModifier(options.agility, a);
+	// MAGPIE_SYSTEM._logging_debug(`a1: ${a1}`)
 	const Tmax = this._getTmax(STATS, a1);
 	const Ot = this._getO1toP1(P0, P1);
 	const dR = this._getDeltaR(O0, Ot);
@@ -603,12 +605,24 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const { At, arrived, proximity, braking } = this
 		._getAt(P0, V0, P1, STATS, options);
 	const A1 = this.scaleVector(At, options.intensity)
-	const pR = proximity ? 1 : options?.pR || this._getATpR(Ot, P0, O0);
-	const newTt = this.scaleVector(Tt, (1 - pR));
-	// MAGPIE_SYSTEM._logging_debug(`At_mag: ${this.mag(At)}`)
+	const Vmax = STATS[MAGPIE.KEY.STATS.VMAX];
+	const Vcreep = Math.min(Vmax, options?.Vcreep || Vmax);
+	const pR = proximity 
+		? 1 
+		: options?.pR || this._getATpR(Ot, P0, O0);
+	const Asafe = () => {
+		if(pR > 0.5) return A1;
+		const S0 = this.mag(V0);
+		const unitV0 = this.scaleVector(V0, 1 / (S0 || 1));
+		return this.scaleVector(unitV0, -this.mag(A1));
+	}
+	const newTt = this.scaleVector(Tt, this.mag(V0) < Vcreep 
+		? (1 - pR)
+		: Math.max((1 - pR), 0.75));
+	// MAGPIE_SYSTEM._logging_debug(`At_mag: ${this.mag(Asafe())}`)
 	// MAGPIE_SYSTEM._logging_debug(`pR: ${pR}`)
 	return {
-		At: this.scaleVector(A1, pR),
+		At: this.scaleVector(Asafe(), pR),
 		Tt: newTt,
 		arrived, proximity, braking
 	}
@@ -802,11 +816,14 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		const K = MAGPIE.KEY.STATS;
 		const tolerance = options.tolerance * params[K.LENGTH];
 		const Vmax = params[K.VMAX];
-		const Vsafe = Math.min(Vmax, Vmax * options?.intensity || 1);
+		const Vsafe = Math.min(Vmax, options?.Vsafe || Vmax);
 		const Amax = params[K.AMAX];
-		const Asafe = Math.min(Amax, Amax * options?.intensity || 1);
+		const Asafe = Math.min(Amax, options?.Asafe || Amax);
 		const Bmax = params[K.BMAX];
-		const Bsafe = Math.min(Bmax, Bmax * options?.intensity || 1);
+		const Bsafe = Math.min(Bmax, options?.Bsafe|| Bmax);
+		const Vcruise = Math.min(Vmax, options?.Vcruise || Vmax);
+		// MAGPIE_SYSTEM._logging_debug(Vcruise)
+		const Vcreep = Math.min(Vmax, options?.Vcreep || Vmax);
 		const S0 = this.mag(V0);
 		if(options?.dumb)
 		{
@@ -859,12 +876,13 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		// ──────────────────────────────────────────────────────────────
         // PHASE 3: Transit — far enough, accelerate to cruise speed
         // ──────────────────────────────────────────────────────────────
-		const Vt = this.targetVelocity(P0, P1, Vsafe);
+		const Vt = this.targetVelocity(P0, P1, Vcruise);
 		const dV = this.subVectors(Vt, V0);
-		//@todo getAt cruise tolerance
-		const At = this.mag(dV) > options.tolerance 
+		// MAGPIE_SYSTEM._logging_debug(this.mag(dV))
+		const At = this.mag(dV) > options.tolerance * Amax
 			? this.vector_clamp_mag(dV, Asafe)
 			: [0,0,0]
+		// MAGPIE_SYSTEM._logging_debug(`VtHdg: ${this._get_V0_heading(P0, Vt)}`)
 		return {
 			At, arrived: false, proximity: false, braking: false
 		}
@@ -925,6 +943,12 @@ MAGPIE_PHYSICS._get_V0_heading = function _get_V0_heading(P0, V0)
 	const vHdgDeg = (this._U_rad_to_deg(vHdgRad) + 360) % 360;
 	return vHdgDeg
 }
+/**
+ * 
+ * @param {STATS} stats 
+ * @param {coefficient} a 
+ * @returns {alpha}
+ */
 MAGPIE_PHYSICS._getTmax = function _getTmax(stats, a)
 {
 	const ePrefix = "[PHYSICS].getTmax: ";

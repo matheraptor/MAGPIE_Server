@@ -64,20 +64,25 @@ const inspector = {
 				el.innerText = value;
 			}
 		};
-
+		const C0_lat = data.coords[0].toFixed(10);
+		const C0_lon = data.coords[1].toFixed(10);
+		const Ct_lat = data.targetCoords[0].toFixed(10);
+		const Ct_lon = data.targetCoords[1].toFixed(10);
 		update('val-id', data.entityID);
 		update('val-name', data.entityName);
-		update('val-lat', Number(data.coords[0].toFixed(10)));
-		update('val-lon', Number(data.coords[1].toFixed(10)));
+		update('val-C0', `${C0_lat}, ${C0_lon}`)
+		// update('val-lat', data.coords[0].toFixed(10));
+		// update('val-lon', data.coords[1].toFixed(10));
 		update('val-asl', Math.floor(data.coords[2]));
-		update('val-vspeed', Number(data.Vspeed.toFixed(3)));
+		update('val-vspeed', data.Vspeed.toFixed(3));
 		update('val-knots', Math.floor(data.Vknots));
-		update('val-accel', Number(data.Acceleration.toFixed(3)));
-		update('val-heading', Number(data.Heading.toFixed(1)));
+		update('val-accel', data.Acceleration.toFixed(3));
+		update('val-heading', data.Heading.toFixed(1));
 		update('val-body', data.CelestialBody);
 		update('val-meta', data.metadate);
-		update('val-tlat', data.targetCoords[0]);
-		update('val-tlon', data.targetCoords[1]);
+		update('val-Ct', `${Ct_lat}, ${Ct_lon}`)
+		// update('val-tlat', data.targetCoords[0].toFixed(10));
+		// update('val-tlon', data.targetCoords[1].toFixed(10));
 		update('val-dist', Math.floor(data.distanceTo));
 		update('val-eta', data.ETA);
 	}

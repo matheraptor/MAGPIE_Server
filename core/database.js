@@ -59,7 +59,7 @@ MAGPIE_DATABASE._pending = new Map();
 MAGPIE_DATABASE.sync = require("./database_worker");
 const { Worker } = require("worker_threads");
 const { MAGPIE_PLAYER } = require("./player.js");
-const { MAGPIE_EXP, MAGPIE_KEY } = require("./component.js");
+const { MAGPIE_EXP, MAGPIE_KEY, MAGPIE_SYMBOL } = require("./component.js");
 MAGPIE_DATABASE.worker = new Worker("./core/database_worker.js");
 MAGPIE_DATABASE.call = function call(method, ...args)
 {
@@ -555,8 +555,6 @@ MAGPIE_DATABASE.loadEntitySync = function loadEntitySync(entityID)
 	try
 	{
 		const entity = this.sync.loadWorldRow("MAGPIE_ENTITY", {ID: entityID});
-		if(!(entity instanceof MAGPIE_ENTITY))
-			throw new Error(`[ENTITY-${entityID}] not found`)
 		return entity
 	}
 	catch(e)
@@ -822,6 +820,69 @@ MAGPIE_DATABASE.deleteKeyLegacy = function deleteExpSync(expID)
 		const message = `deleted ${result.changes} key relations for [EXP-${expID}]`;
 		MAGPIE_SYSTEM.log(ePrefix + message, "console", true)
 		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Symbol
+//------------------------------------------------------------------------
+
+/**
+ * 
+ * @param {MAGPIE_SYMBOL} symbol 
+ * @returns {worker_result}
+ */
+MAGPIE_DATABASE.saveSymbolSync = function saveSymbolSync(symbol)
+{
+	const payload = MAGPIE_DATABASE.prepareSymbol(symbol);
+	return MAGPIE_DATABASE.sync.saveWorldRow("MAGPIE_SYMBOL", payload);
+}
+/**
+ * @typedef {import("./component.js").symbolID} symbolID
+ * @typedef {import("./component.js").symbol_type} symbol_type
+ * 
+ * @typedef {{
+ * ID: symbolID,
+ * type: symbol_type,
+ * requirementID: symbolID,
+ * compoundID: symbolID,
+ * data: MAGPIE_SYMBOL
+ * }} symbol_payload
+ * @param {MAGPIE_SYMBOL} symbol 
+ * @returns {symbol_payload}
+ */
+MAGPIE_DATABASE.prepareSymbol = function prepareSymbol(symbol)
+{
+	/** @type {symbol_payload} */
+	const payload = {
+		ID: symbol.ID,
+		type: symbol.type,
+		requirementID: symbol.requirementID || null,
+		compoundID: symbol.compoundID || null,
+		data: symbol
+	}
+	return payload
+}
+MAGPIE_DATABASE.loadSymbolSync = function loadSymbolSync(symbolID)
+{
+	const ePrefix = "[DATABASE].loadSymbol: ";
+	try
+	{
+		const symbol = MAGPIE_DATABASE.sync
+			.loadWorldRow("MAGPIE_SYMBOL", {ID: symbolID})
+		if(!symbol)
+			throw new Error(`error loading [SYMBOL-${symbolID}]`)
+		return symbol
 	}
 	catch(e)
 	{

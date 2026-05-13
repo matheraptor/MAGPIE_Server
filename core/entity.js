@@ -30,7 +30,8 @@ const {
 	MAGPIE_EXP,
 	MAGPIE_KEY: MAGPIE_KEY,
 	MAGPIE_CONTEXT,
-	MAGPIE_COMPONENT
+	MAGPIE_COMPONENT,
+	MAGPIE_SYMBOL
 } = require("./component");
 const STATE = require("../data/states")
 const { MAGPIE_PHYSICS } = require("./physics");
@@ -1240,7 +1241,6 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity)
 //------------------------------------------------------------------------
 // #region exp
 //------------------------------------------------------------------------
-
 /**
  * 
  * @param {Number} switchID 
@@ -1295,8 +1295,11 @@ MAGPIE_ENTITY.prototype.processEmote = function processEmote(switchID, dt, exp, 
 		if(key instanceof MAGPIE_KEY)
 			return this._eval_key(key.label, exp)
 		const emote = MAGPIE_EMOTE.INDEX.get(exp.emoteID);
-		if(!(emote instanceof MAGPIE_EMOTE)) 
-			throw new Error(`${exp.emoteID} is invalid MAGPIE_EMOTE`)
+		if(!emote) 
+		{
+			this.exps.push(exp.ID)
+			return {exp: exp}
+		}
 		const output = emote.onAction(exp, this);
 		if(!output?.exp)
 			throw new Error(`${output} is invalid emote output`);
@@ -1309,7 +1312,7 @@ MAGPIE_ENTITY.prototype.processEmote = function processEmote(switchID, dt, exp, 
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-		return exp
+		return {exp: exp}
 	}
 }
 // #endregion
@@ -1479,7 +1482,6 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		this._set_POVART({P1, O1, V1, A1, R1, T1 });
 		const dist = MAGPIE_PHYSICS.distanceTo(P0, this._get_P0());
 		// MAGPIE_SYSTEM._logging_debug(`dP: ${MAGPIE_PHYSICS.mag(dP)}, dist: ${dist}, dt: ${dt}`)
-		// MAGPIE_SYSTEM._logging_debug(MAGPIE_PHYSICS.mag(A1) / dt)
 		return output
 	}
 	catch(e)
@@ -1565,6 +1567,40 @@ MAGPIE_ENTITY.prototype.processKeys = function processKeys(exp)
  * 
  */
 //========================================================================
+// #region - SYMBOLS
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Getters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {MAGPIE_SYMBOL}
+ */
+MAGPIE_ENTITY.prototype._get_type = function getType()
+{
+	return MAGPIE_ENTITY._database_Sync("loadSymbolSync", this.type)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
 // #region - EMOTES
 //========================================================================
 /**
@@ -1585,15 +1621,20 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 	const ePrefix = `[ENTITY-${this.ID}]._emote_eval: `;
 	try
 	{
-		const eval = MAGPIE_ENTITY._hive_getEXPkeys(exp)
+		const key = MAGPIE_ENTITY._hive_getEXPkeys(exp)
 			.find(key => key.type === MAGPIE.KEY.TYPE.EVAL)
-		if(!eval) return
-		eval(`${eval.label.replace("$", exp.value)}`)
+		if(!key) return
+		eval(`${key.label.replace("$", exp.value)}`);
+		key.set("type", MAGPIE.KEY.TYPE.EXP)
 		return { At: [0,0,0], Tt: [0,0,0] }
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message,e)
+	}
+	finally
+	{
+		this.exps.push(exp)
 	}
 }
 // #endregion
@@ -1624,10 +1665,17 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		const tolerance = 1; //@todo dynamic seekTarget tolerance
 		const pR = 1; //@todo dynamic seekTarget priority ratio
 		const intensity = exp.value;
+		const keys = exp.getKeys();
+		const symbol = this._get_type();
+		const overrideVspeed = exp._key_mapVspeeds();
+		const Vspeeds = symbol?.getVspeeds();
 		const options = {
 			intensity: intensity,
 			fwd: MAGPIE.KEY.POVART.FWD,
-			agility: this.STATS[MAGPIE.KEY.STATS.DEX]
+			agility: this.STATS[MAGPIE.KEY.STATS.DEX],
+			Vcruise: overrideVspeed?.Vcruise || Vspeeds?.Vcruise,
+			Vsafe: overrideVspeed?.Vsafe || Vspeeds?.Vsafe,
+			Vcreep: overrideVspeed?.Vcreep || Vspeeds?.Vcreep
 		}
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, P1, this.STATS, options);
@@ -1673,14 +1721,14 @@ MAGPIE_ENTITY.prototype._emote_schedule = function _emote_schedule(exp)
     const ePrefix = `[ENTITY-${this.ID}].schedule: `;
 	try
 	{
-		const trigger = exp.keys.find(key => {
-			key === MAGPIE.KEY.TYPE.TRIGGER
-		})
+		const keys = MAGPIE_ENTITY._hive_getEXPkeys(exp);
+		const trigger = keys.find(key => key.type === MAGPIE.KEY.TYPE.TRIGGER)
 		if(!trigger) return
-		const triggered = Date.now() < trigger;
-		// MAGPIE_SYSTEM._logging_debug(triggered)
+		const triggered = Date.now() > trigger.ID;
+		MAGPIE_SYSTEM._logging_debug(triggered)
 		if(!triggered) return
-		trigger.type = MAGPIE.KEY.TYPE.EMOTE;
+		exp.removeKey(MAGPIE.KEY.EMOTE.INDEX.SCHEDULE);
+		const result = trigger.set("type", MAGPIE.KEY.TYPE.EMOTE);
 	}
 	catch(e)
 	{
@@ -1769,6 +1817,15 @@ MAGPIE_ENTITY._set_key = async function setKey(key)
 MAGPIE_ENTITY._get_key = function getKey(keyID)
 {
 	return MAGPIE_ENTITY._database_Sync("loadKeySync", keyID)
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {MAGPIE_KEY[]}
+ */
+MAGPIE_ENTITY.prototype._get_exp_keys = function getExpKeys(exp)
+{
+	return MAGPIE_ENTITY._hive_getEXPkeys(exp)
 }
 // #endregion
 //------------------------------------------------------------------------
