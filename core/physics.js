@@ -600,7 +600,8 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	// MAGPIE_SYSTEM._logging_debug(`a1: ${a1}`)
 	const Tmax = this._getTmax(STATS, a1);
 	const Ot = this._getO1toP1(P0, P1);
-	const dR = this._getDeltaR(O0, Ot);
+	const DeltaR = this._getDeltaR(O0, Ot);
+	const dR = options?.Rmax ? this.vector_clamp_mag(DeltaR, options.Rmax) : DeltaR
 	const Tt = this._getTt(dR, R0, Tmax, options?.pR);
 	const { At, arrived, proximity, braking } = this
 		._getAt(P0, V0, P1, STATS, options);
@@ -623,7 +624,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	// MAGPIE_SYSTEM._logging_debug(`pR: ${pR}`)
 	return {
 		At: this.scaleVector(Asafe(), pR),
-		Tt: newTt,
+		Tt: options?.Tmax ? this.vector_clamp_mag(newTt, options.Tmax) : newTt,
 		arrived, proximity, braking
 	}
 }
@@ -822,7 +823,7 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		const Bmax = params[K.BMAX];
 		const Bsafe = Math.min(Bmax, options?.Bsafe|| Bmax);
 		const Vcruise = Math.min(Vmax, options?.Vcruise || Vmax);
-		// MAGPIE_SYSTEM._logging_debug(Vcruise)
+		// MAGPIE_SYSTEM._logging_debug(options?.Vcruise)
 		const Vcreep = Math.min(Vmax, options?.Vcreep || Vmax);
 		const S0 = this.mag(V0);
 		if(options?.dumb)
@@ -878,7 +879,7 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
         // ──────────────────────────────────────────────────────────────
 		const Vt = this.targetVelocity(P0, P1, Vcruise);
 		const dV = this.subVectors(Vt, V0);
-		// MAGPIE_SYSTEM._logging_debug(this.mag(dV))
+		// MAGPIE_SYSTEM._logging_debug(this.mag(Vt))
 		const At = this.mag(dV) > options.tolerance * Amax
 			? this.vector_clamp_mag(dV, Asafe)
 			: [0,0,0]

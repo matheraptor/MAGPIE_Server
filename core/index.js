@@ -456,14 +456,48 @@ MAGPIE.KEY.INDEX.TARGET = MAGPIE.KEY.INDEX.OBJECT + 1;
 MAGPIE.KEY.INDEX.TRIVIAL = MAGPIE.KEY.INDEX.TARGET + 1;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TIME = MAGPIE.KEY.INDEX.TRIVIAL + 1;
+MAGPIE.KEY.INDEX.VSPEEDS = new Map();
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.VMAX = 3000;
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.VSAFE = MAGPIE.KEY.INDEX.VMAX + 1;
+MAGPIE.KEY.INDEX.VSAFE = 3001;
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.VCRUISE = MAGPIE.KEY.INDEX.VSAFE + 1;
+MAGPIE.KEY.INDEX.VCRUISE = 3002;
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.VCREEP = MAGPIE.KEY.INDEX.VCRUISE + 1;
+MAGPIE.KEY.INDEX.VCREEP = 3003;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.VDOCK = 3004;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RMAX = 4000;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RSAFE = 4001;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RCRUISE = 4002;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RCREEP = 4003;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RDOCK = 4004;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AMAX = 5000;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.ASAFE = 5001;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.ACRUISE = 5002;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.ACREEP = 5003;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.ADOCK = 5004;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TMAX = 6000;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TSAFE = 6001;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TCRUISE = 6002;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TCREEP = 6003;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TDOCK = 6004;
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -657,7 +691,7 @@ MAGPIE.KEY.PHYSICS = {};
  * @typedef {Number} volume in L
  * @typedef {Number} mass in kg
  * @typedef {Number} velocity in m/s
- * @typedef {Number} acceleration m/s²
+ * @typedef {Number} acceleration in m/s²
  * @typedef {Number} index
  * @typedef {[x<Number>, y<Number>, z<Number>]} vector3 3D vector [x,y,z]
  * @typedef {[yz<Number>, xz<Number>, xy<Number>]} bivector 3D bivector [yz, xz, xy]

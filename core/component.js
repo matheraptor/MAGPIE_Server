@@ -222,19 +222,19 @@ MAGPIE_EXP.prototype.getKeys = function getKeys()
 }
 /**
  * 
- * @param {MAGPIE_EXP} exp
+ * 
  * @returns {Promise<database_result>} 
  */
-MAGPIE_EXP.__save = async function save(exp)
+MAGPIE_EXP.prototype.set = async function save()
 {
 	//
 }
 /**
  * 
- * @param {MAGPIE_EXP} exp
+ * 
  * @returns {database_result} 
  */
-MAGPIE_EXP.__saveSync = function saveSync(exp)
+MAGPIE_EXP.prototype.setSync = function saveSync()
 {
 	//
 }
@@ -248,6 +248,35 @@ MAGPIE_EXP.prototype.removeKey = function removeKey(keyID)
 	this.keys.splice(index, 1);
 	MAGPIE_EXP.__saveSync(this);
 	return keyID
+}
+MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
+{
+	const ePrefix = `[EXP-${this.ID}].keyTargetNext`;
+	try
+	{
+		const key = this._get_key_target();
+		if(!key) return
+		const result = await key.removeOrigin();
+		if(!result) 
+			throw new Error(`unable to remove 'target' origin from [KEY-${key.ID}]`)
+		const next = this._get_key_target();
+		if(!next) return
+		this.targetID = Number(next.label);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_EXP.prototype._get_key_target = function getKeyTarget()
+{
+	return this.getKeys()?.find(key => {
+		key.originID === MAGPIE.KEY.INDEX.TARGET
+	});
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -343,6 +372,10 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
 /**
  * @typedef {import("./index").key_type} key_type
  * @typedef {String} key_label
+ * @typedef {import("./index").velocity} velocity in m/s
+ * @typedef {import("./index").acceleration} acceleration in m/s²
+ * @typedef {import("./index").omega} omega (ω) angular velocity in rad/s
+ * @typedef {import("./index").alpha} alpha (α) angular acceleration in rad/s²
  * 
  * @name 
  * @desc 
@@ -367,10 +400,46 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
  * @param {*} value 
  * @returns {database_result}
  */
-MAGPIE_KEY.prototype.set = function set(property, value)
+MAGPIE_KEY.prototype.setSync = function setSync(property, value)
 {
 	//
 }
+/**
+ * 
+ * @param {String} property 
+ * @param {*} value 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_KEY.prototype.set = async function set(property, value)
+{
+	//
+}
+/**
+ * 
+ * @param {String} property 
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_KEY.prototype.get = function get(property)
+{
+	//
+}
+/**
+ * 
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_KEY.prototype.getOrigin = function getOrigin()
+{
+	return this.get(this.originID)
+}
+MAGPIE_KEY.prototype.setOrigin = function setOrigin(keyID)
+{
+	//
+}
+MAGPIE_KEY.prototype.removeOrigin = function removeOrigin()
+{
+	//
+}
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -431,22 +500,44 @@ MAGPIE_SYMBOL.prototype.mapStats = function mapStats()
 }
 /**
  * 
- * @returns {{Vmax: Number, Vsafe: Number, Vcruise: Number, Vcreep: Number}}
+ * @returns {import("./entity").entity_speeds}
  */
 MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
 {
 	const K = MAGPIE.KEY.INDEX;
 	const keys = this.getKeys();
 	if(keys.length < 1) return
-	const Vmax = Number(keys.find(key => key.originID === K.VMAX)?.label);
-	const Vsafe = Number(keys.find(key => key.originID === K.VSAFE)?.label);
-	const Vcruise = Number(keys.find(key => key.originID === K.VCRUISE)?.label);
-	const Vcreep = Number(keys.find(key => key.originID === K.VCREEP)?.label);
-	return { Vmax, Vsafe, Vcruise, Vcreep }
+	const Vspeeds = {};
+	for(const key of keys)
+	{
+		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
+			Vspeeds[key.getOrigin()?.label] = Number(key.label)
+	}
+	return Vspeeds
 }
 /**
  * 
- * @returns {{Vmax: Number, Vsafe: Number, Vcruise: Number, Vcreep: Number }}
+ * @returns {{
+ * Vmax: velocity, 
+ * Vsafe: velocity, 
+ * Vcruise: velocity,
+ * Vcreep: velocity,
+ * Vdock: velocity,
+ * Rmax: omega,
+ * Rcruise: omega,
+ * Rcreep: omega,
+ * Rdock: omega,
+ * Amax: acceleration,
+ * Asafe: acceleration,
+ * Acruise: acceleration,
+ * Acreep: acceleration,
+ * Adock: acceleration,
+ * Tmax: alpha,
+ * Tsafe: alpha,
+ * Tcruise: alpha,
+ * Tcreep: alpha,
+ * Tdock: alpha
+ * }}
  */
 MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 {
@@ -456,7 +547,44 @@ MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 	const Vsafe = map[V.VSAFE];
 	const Vcruise = map[V.VCRUISE];
 	const Vcreep = map[V.VCREEP];
-	return { Vsafe, Vcruise, Vcreep }
+	const Vdock = map[V.VDOCK];
+	const Rmax = map[V.RMAX];
+	const Rsafe = map[V.RSAFE];
+	const Rcruise = map[V.RCRUISE];
+	const Rcreep = map[V.RCREEP];
+	const Rdock = map[V.RDOCK];
+	const Amax = map[V.AMAX];
+	const Asafe = map[V.ASAFE];
+	const Acruise = map[V.ACRUISE];
+	const Acreep = map[V.ACREEP];
+	const Adock = map[V.ADOCK];
+	const Tmax = map[V.TMAX];
+	const Tsafe = map[V.TSAFE];
+	const Tcruise = map[V.TCRUISE];
+	const Tcreep = map[V.TCREEP];
+	const Tdock = map[V.TDOCK];
+	return { 
+		Vmax,
+		Vsafe, 
+		Vcruise, 
+		Vcreep,
+		Vdock,
+		Rmax,
+		Rsafe,
+		Rcruise,
+		Rcreep,
+		Rdock,
+		Amax,
+		Asafe,
+		Acruise,
+		Acreep,
+		Adock,
+		Tmax,
+		Tsafe,
+		Tcruise,
+		Tcreep,
+		Tdock
+	}
 }
 // #endregion
 //------------------------------------------------------------------------

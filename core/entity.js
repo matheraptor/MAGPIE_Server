@@ -1038,6 +1038,60 @@ MAGPIE_ENTITY.prototype._set_T1 = function _set_T1(T1)
 	this.STATS[K.T_XZ] = xz;
 	this.STATS[K.T_XY] = xy;
 }
+/**
+ * 
+ * @typedef {{
+ * Vmax: velocity, 
+ * Vsafe: velocity, 
+ * Vcruise: velocity,
+ * Vcreep: velocity,
+ * Vdock: velocity,
+ * Rmax: omega,
+ * Rcruise: omega,
+ * Rcreep: omega,
+ * Rdock: omega,
+ * Amax: acceleration,
+ * Asafe: acceleration,
+ * Acruise: acceleration,
+ * Acreep: acceleration,
+ * Adock: acceleration,
+ * Tmax: alpha,
+ * Tsafe: alpha,
+ * Tcruise: alpha,
+ * Tcreep: alpha,
+ * Tdock: alpha
+ * }} entity_speeds
+ * @param {entity_speeds} overrideVspeed 
+ */
+MAGPIE_ENTITY.prototype._get_speeds = function getSpeed(overrideVspeed)
+{
+	const symbol = this._get_type()
+	const Vspeeds = symbol.getVspeeds();
+	/** @type {entity_speeds} */
+	const speeds = {
+		Vmax: overrideVspeed?.Vmax || Vspeeds?.Vmax,
+		Vcruise: overrideVspeed?.Vcruise || Vspeeds?.Vcruise,
+		Vsafe: overrideVspeed?.Vsafe || Vspeeds?.Vsafe,
+		Vcreep: overrideVspeed?.Vcreep || Vspeeds?.Vcreep,
+		Vdock: overrideVspeed?.Vdock || Vspeeds?.Vdock,
+		Amax: overrideVspeed?.Amax || Vspeeds?.Amax,
+		Asafe: overrideVspeed?.Asafe || Vspeeds?.Asafe,
+		Acruise: overrideVspeed?.Acruise || Vspeeds?.Acruise,
+		Acreep: overrideVspeed?.Acreep || Vspeeds?.Acreep,
+		Adock: overrideVspeed?.Adock || Vspeeds?.Adock,
+		Rmax: overrideVspeed?.Rmax || Vspeeds?.Rmax,
+		Rsafe: overrideVspeed?.Rsafe || Vspeeds?.Rsafe,
+		Rcruise: overrideVspeed?.Rcruise || Vspeeds?.Rcruise,
+		Rcreep: overrideVspeed?.Rcreep || Vspeeds?.Rcreep,
+		Rdock: overrideVspeed?.Rdock || Vspeeds?.Rdock,
+		Tmax: overrideVspeed?.Tmax || Vspeeds?.Tmax,
+		Tsafe: overrideVspeed?.Tsafe || Vspeeds?.Tsafe,
+		Tcruise: overrideVspeed?.Tcruise || Vspeeds?.Tcruise,
+		Tcreep: overrideVspeed?.Tcreep || Vspeeds?.Tcreep,
+		Tdock: overrideVspeed?.Tdock || Vspeeds?.Tdock
+	}
+	return speeds
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1158,6 +1212,71 @@ MAGPIE_ENTITY.prototype._M_importSTATS = function importMateriaSTATS(STATS)
 	this.STATS[K.COM] = COM;
 	this.STATS[K.COL] = COL;
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * @typedef {import("./physics").coords} coords
+ */
+//------------------------------------------------------------------------
+// #region > POVART
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {coords} C1 
+ * @param {distance} r 
+ */
+MAGPIE_ENTITY.prototype._set_C1 = function _set_C1(C1, r = null)
+{
+	this._set_P1(MAGPIE_PHYSICS.geodeticToCartesian(C1, r))
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Target
+//------------------------------------------------------------------------
+/**
+ * @param {String} method
+ * @param {[]} args
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_ENTITY.prototype._update = async function update(method = null, args = [])
+{
+	if(method)
+		this[method](...args);
+	return await MAGPIE_ENTITY._hive_setEntity(this)
+}
+/**
+ * 
+ * @param {String} method 
+ * @param {[]} args 
+ * @returns {database_result}
+ */
+MAGPIE_ENTITY.prototype._updateSync = function updateSync(method = null, args = [])
+{
+	if(method)
+		this[method](...args)
+	return MAGPIE_ENTITY._hive_setEntitySync(this)
+}
+/**
+ * 
+ * @param {String} method 
+ * @param {[]} args
+ * @returns {database_result} 
+ */
+MAGPIE_ENTITY.prototype._target_update = function _target_update(method = null, args = [])
+{
+	const target = this._get_target()
+	if(!target) return
+	return target._updateSync(method, args);
+}
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1666,32 +1785,24 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		const pR = 1; //@todo dynamic seekTarget priority ratio
 		const intensity = exp.value;
 		const keys = exp.getKeys();
-		const symbol = this._get_type();
-		const overrideVspeed = exp._key_mapVspeeds();
-		const Vspeeds = symbol?.getVspeeds();
 		const options = {
 			intensity: intensity,
 			fwd: MAGPIE.KEY.POVART.FWD,
-			agility: this.STATS[MAGPIE.KEY.STATS.DEX],
-			Vcruise: overrideVspeed?.Vcruise || Vspeeds?.Vcruise,
-			Vsafe: overrideVspeed?.Vsafe || Vspeeds?.Vsafe,
-			Vcreep: overrideVspeed?.Vcreep || Vspeeds?.Vcreep
+			agility: this.STATS[MAGPIE.KEY.STATS.DEX]
 		}
+		const overrideVspeed = exp._key_mapVspeeds();
+		const speeds = this._get_speeds(overrideVspeed);
+		Object.entries(speeds).forEach(entry => {
+			const key = entry[0];
+			const value = entry[1];
+			options[key] = value;
+		})
+		// MAGPIE_SYSTEM._logging_debug(options.Vcruise)
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, P1, this.STATS, options);
 		const { At, Tt, arrived, stopping, proximity, braking } = output;
 		if(arrived)
-		{
-			const targetKey = exp.keys.findIndex(key => key === MAGPIE.KEY.INDEX.TARGET);
-			exp.keys[targetKey] = MAGPIE.KEY.INDEX.TRIVIAL;
-			const saveExp = structuredClone(exp);
-			Object.setPrototypeOf(saveExp, MAGPIE_EXP.prototype);
-			saveExp.subjectID = this.ID;
-			saveExp.targetID = typeof exp.targetID === "number" 
-				? exp.targetID 
-				: exp.targetID[MAGPIE.KEY.POVART.E_ID];
-			MAGPIE_ENTITY._hive_setExpSync(saveExp)
-		}
+			exp._key_target_next()
 		this.exps.push(exp.ID)
 		return { At, Tt }
  	}
@@ -1712,7 +1823,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 // #region > schedule
 //------------------------------------------------------------------------
 /**
- * 
+ * @todo update _emote_schedule key handling to 0.23.0
  * @param {MAGPIE_EXP} exp 
  * @returns 
  */
@@ -1971,6 +2082,14 @@ MAGPIE_ENTITY.prototype._get_exp_target = function _get_exp_target(expID)
 		? exp.targetID
 		: exp.targetID[MAGPIE.KEY.POVART.E_ID]
 	return MAGPIE_ENTITY._hive_getEntitySync(targetID)
+}
+/**
+ * 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_ENTITY.prototype._get_target = function _get_target()
+{
+	return MAGPIE_ENTITY._hive_getEntitySync(this._get_exps()[0].targetID)
 }
 // #endregion
 //------------------------------------------------------------------------

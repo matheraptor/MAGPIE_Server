@@ -922,6 +922,15 @@ MAGPIE_ENTITY._hive_setEntity = async function _hive_setEntity(entity)
 }
 /**
  * 
+ * @param {MAGPIE_ENTITY} entity
+ * @returns {Boolean} 
+ */
+MAGPIE_ENTITY._hive_setEntitySync = function _hive_setEntitySync(entity)
+{
+	return MAGPIE_DATABASE.saveEntitySync(entity)
+}
+/**
+ * 
  * @param {MAGPIE_EXP} exp
  * @returns {Promise<database_result>} 
  */
@@ -1083,21 +1092,38 @@ MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
 /**
  * @name 
  * @desc 
- * 
+ * @typedef {import("./core/index").keyID} keyID
  */
 //------------------------------------------------------------------------
 // #region > Key
 //------------------------------------------------------------------------
+MAGPIE_SERVER.key = {};
 /**
  * 
- * @param {String} property 
- * @param {*} value
+ * @param {keyID} keyID 
  * @returns {database_result} 
  */
-MAGPIE_KEY.prototype.set = function set(property, value)
+MAGPIE_KEY.prototype.setSync = function setSync(keyID)
 {
-	this[property] = value;
 	return MAGPIE_DATABASE.saveKeySync(this);
+}
+/**
+ * 
+ * @param {keyID} keyID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_KEY.prototype.set = async function set(keyID)
+{
+	return await MAGPIE_DATABASE.saveKey(this);
+}
+/**
+ * 
+ * @param {} keyID 
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_KEY.prototype.get = function get(keyID)
+{
+	return MAGPIE_DATABASE.loadKeySync(keyID)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1111,21 +1137,19 @@ MAGPIE_KEY.prototype.set = function set(property, value)
 //------------------------------------------------------------------------
 /**
  * 
- * @param {MAGPIE_EXP} exp 
  * @returns {Promise<database_result>}
  */
-MAGPIE_EXP.__save = async function save(exp)
+MAGPIE_EXP.prototype.set = async function set()
 {
-	return await MAGPIE_DATABASE.saveExp(exp);
+	return await MAGPIE_DATABASE.saveExp(this);
 }
 /**
  * 
- * @param {MAGPIE_EXP} exp 
  * @returns {database_result}
  */
-MAGPIE_EXP.__saveSync = function saveSync(exp)
+MAGPIE_EXP.prototype.setSync = function setSync()
 {
-	return MAGPIE_DATABASE.saveExpSync(exp);
+	return MAGPIE_DATABASE.saveExpSync(this);
 }
 /**
  * @returns {MAGPIE_KEY[]}
