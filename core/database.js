@@ -260,7 +260,7 @@ MAGPIE_DATABASE.savePlayer = async function savePlayer(player)
 		const payload = this.preparePlayer(player);
 		if(!payload) 
 			throw new Error(`${payload} is invalid player payload`);
-		const result = await this.call("saveServerRow", ["MAGPIE_PLAYER", payload]);
+		const result = await this.call("saveServerRow", "MAGPIE_PLAYER", payload);
 		if(!result)
 			throw new Error(`unable to save [PLAYER-${player.ID}`)
 		return result
@@ -368,7 +368,7 @@ MAGPIE_DATABASE.saveExp = async function saveExp(exp)
 	try
 	{
 		const payload = this.prepareExp(exp);
-		const result = await this.call("saveWorldRow", ["MAGPIE_EXP", payload])
+		const result = await this.call("saveWorldRow", "MAGPIE_EXP", payload)
 		if(!result)
 			throw new Error(`unable to save [EXP-${exp.ID}]`)
 		return result
@@ -462,7 +462,7 @@ MAGPIE_DATABASE.saveKey = async function saveKey(key)
 	try
 	{
 		const payload = this.prepareKey(key);
-		const result = await this.call("saveWorldRow", ["MAGPIE_KEY", payload])
+		const result = await this.call("saveWorldRow", "MAGPIE_KEY", payload)
 		if(!result)
 			throw new Error(`unable to save [KEY-${key.ID}]`)
 		if(key.originID)
@@ -718,7 +718,7 @@ MAGPIE_DATABASE.loadKeySync = function loadKeySync(keyID)
 	const ePrefix = "[DATABASE].loadKeySync: ";
 	try
 	{
-		const key = this.sync.getRow("MAGPIE_KEY", {ID: keyID}, this.sync.world)[0];
+		const key = MAGPIE_DATABASE.sync.getRow("MAGPIE_KEY", {ID: keyID}, MAGPIE_DATABASE.sync.world)[0];
 		if(!key?.ID)
 			throw new Error(`[KEY-${keyID}] not in database`);
 		Object.setPrototypeOf(key, MAGPIE_KEY.prototype);
@@ -749,7 +749,28 @@ MAGPIE_DATABASE.deleteExp = async function deleteExp(expID)
 	const ePrefix = "[DATABASE].deleteExp: ";
 	try
 	{
-		const result = await this.call("deleteRow", ["MAGPIE_EXP", {ID: expID}])
+		const result = await this.call("deleteRow", "MAGPIE_EXP", {ID: expID})
+		if(!result)
+			throw new Error(`unable to delete [EXP-${expID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} expID 
+ * @returns {worker_result}
+ */
+MAGPIE_DATABASE.deleteExpSync = function deleteExpSync(expID)
+{
+	const ePrefix = "[DATABASE].deleteExp: ";
+	try
+	{
+		MAGPIE_DATABASE.deleteExpKeysSync(expID);
+		const result = MAGPIE_DATABASE.sync.deleteWorldRow("MAGPIE_EXP", {ID: expID});
 		if(!result)
 			throw new Error(`unable to delete [EXP-${expID}]`)
 		return result
@@ -764,9 +785,9 @@ MAGPIE_DATABASE.deleteExp = async function deleteExp(expID)
  * @param {Number} expID
  * @returns {worker_result} 
  */
-MAGPIE_DATABASE.deleteExpSync = function deleteExpSync(expID)
+MAGPIE_DATABASE.deleteExpKeysSync = function deleteExpKeysSync(expID)
 {
-	const ePrefix = "[DATABASE].deleteEXP: ";
+	const ePrefix = "[DATABASE].deleteExpKeys: ";
 	try
 	{
 		const result = this.sync.world.prepare(

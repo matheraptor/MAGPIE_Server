@@ -338,6 +338,7 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * 
  * 
  * @typedef {import("./system").database_result} database_result
+ * @typedef {import("./index").keyID} keyID
  * 
  * @param {entity_data} data
  * @returns {new MAGPIE_ENTITY}
@@ -365,7 +366,7 @@ MAGPIE_ENTITY.prototype.initialize = function initialize(data)
 	 * 
 	 **/
 	this.fitness = [];
-	/** @type {MAGPIE_EXP[]} */
+	/** @type {expID[]} */
 	this.exps = [];
 	setTimeout(() => {this.setup(data)}, 1000);
 }
@@ -538,6 +539,36 @@ MAGPIE_ENTITY.prototype.setupFitness = function setupFitness(data)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > I/O
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {String} method 
+ * @param  {*} argument 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_ENTITY._database = async function _database(method, argument)
+{
+	//
+}
+/**
+ * 
+ * @param {String} method 
+ * @param  {*} argument
+ * @returns {database_result} 
+ */
+MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
+{
+	//
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1542,6 +1573,37 @@ MAGPIE_ENTITY.prototype.processKeys = function processKeys(exp)
  * 
  */
 //------------------------------------------------------------------------
+// #region > Eval
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {() => {}}
+ */
+MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}]._emote_eval: `;
+	try
+	{
+		const eval = MAGPIE_ENTITY._hive_getEXPkeys(exp)
+			.find(key => key.type === MAGPIE.KEY.TYPE.EVAL)
+		if(!eval) return
+		eval(`${eval.label.replace("$", exp.value)}`)
+		return { At: [0,0,0], Tt: [0,0,0] }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message,e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
 // #region > Seek
 //------------------------------------------------------------------------
 /**
@@ -1589,6 +1651,124 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > schedule
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns 
+ */
+MAGPIE_ENTITY.prototype._emote_schedule = function _emote_schedule(exp)
+{
+    const ePrefix = `[ENTITY-${this.ID}].schedule: `;
+	try
+	{
+		const trigger = exp.keys.find(key => {
+			key === MAGPIE.KEY.TYPE.TRIGGER
+		})
+		if(!trigger) return
+		const triggered = Date.now() < trigger;
+		// MAGPIE_SYSTEM._logging_debug(triggered)
+		if(!triggered) return
+		trigger.type = MAGPIE.KEY.TYPE.EMOTE;
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+	finally
+	{
+		this.exps.push(exp.ID)
+		return { At: [0,0,0], Tt: [0,0,0] }
+	}
+}
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - KEYS
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Utilities
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {Number} keyIndex 
+ * @returns {keyID}
+ */
+MAGPIE_ENTITY.prototype._exp_keyPluck = function expKeyPluck(exp, keyIndex)
+{
+	const key = exp.keys[keyIndex];
+	exp.keys[keyIndex] = exp.keys[exp.keys.length - 1];
+	exp.keys.pop();
+	return key
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Setters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_KEY} key 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_ENTITY._set_key = async function setKey(key)
+{
+	return MAGPIE_ENTITY._database("saveKey", key);
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Getters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} keyID 
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_ENTITY._get_key = function getKey(keyID)
+{
+	return MAGPIE_ENTITY._database_Sync("loadKeySync", keyID)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1708,6 +1888,20 @@ MAGPIE_ENTITY.exp = {};
 //------------------------------------------------------------------------
 // #region > getters
 //------------------------------------------------------------------------
+/**
+ * 
+ * @returns {MAGPIE_EXP[]}
+ */
+MAGPIE_ENTITY.prototype._get_exps = function _get_exps()
+{
+	if(this.exps.length < 1) return
+	let exps = [];
+	for(const expID of this.exps)
+	{
+		exps.push(MAGPIE_ENTITY._hive_getEXP(expID))
+	}
+	return exps
+}
 /**
  * 
  * @param {Number} expID 

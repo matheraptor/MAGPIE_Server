@@ -50,7 +50,36 @@ function MAGPIE_TICKET(data)
 {
 	this.initialize(data);
 }
+/**
+ * 
+ * @param {{
+ * ID: keyID,
+ * type: key_type,
+ * label: key_label,
+ * originID: keyID,
+ * compoundID: keyID,
+ * symbolID: symbolID
+ * }} data 
+ * @returns {new MAGPIE_KEY}
+ */
 function MAGPIE_KEY(data)
+{
+	this.initialize(data)
+}
+/**
+ * 
+ * @param {{
+ * ID: symbolID,
+ * type: symbol_type,
+ * name: String,
+ * desc: String,
+ * requirementID: symbolID,
+ * compoundID: symbolID,
+ * STATS: Float64Array
+ * }} data 
+ * @returns {new MAGPIE_SYMBOL}
+ */
+function MAGPIE_SYMBOL(data)
 {
 	this.initialize(data)
 }
@@ -274,21 +303,66 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @typedef {import("./index").key_type} key_type
+ * @typedef {String} key_label
+ * 
  * @name 
  * @desc 
- * 
+ * @param {Object} data
+ * @returns {new MAGPIE_KEY}
  */
 //------------------------------------------------------------------------
 // #region > key
 //------------------------------------------------------------------------
 MAGPIE_KEY.prototype.initialize = function initialize(data)
 {
-	this.ID = Date.now();
-	this.type = data?.type || 0;
-	this.label = data?.label || "";
-	this.originID = data?.originID || 0;
-	this.compoundID = data?.compoundID || 0;
-	this.symbolID = data?.symbolID || 0;
+	this.ID = Number(data?.ID) || Date.now();
+	this.type = Number(data?.type) || 0;
+	this.label = String(data?.label) || "";
+	this.originID = Number(data?.originID) || 0;
+	this.compoundID = Number(data?.compoundID) || 0;
+	this.symbolID = Number(data?.symbolID) || 0;
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - SYMBOL
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Proto
+//------------------------------------------------------------------------
+/**
+ * @typedef {Number} symbolID
+ * @typedef {Number} symbol_type
+ * @param {Object} data 
+ */
+MAGPIE_SYMBOL.prototype.initialize = function initialize(data)
+{
+	this.ID = Number(data?.ID) || Date.now();
+	this.type = Number(data?.type) || 0;
+	this.name = String(data?.name) || "";
+	this.desc = String(data?.desc) || "";
+	this.requirementID = Number(data?.requirementID) || 0;
+	this.compoundID = Number(data?.compoundID) || 0;
+	this.STATS = new Float64Array(data?.STATS || 0);
 }
 // #endregion
 //------------------------------------------------------------------------

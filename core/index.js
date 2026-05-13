@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.21.11
+ * @version 0.22.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,9 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.22.0 2026 05 13
+ * - ADDED: basic methods and logic for exp/key manipulation
  * 
  * @version 0.21.11 2026 05 12
  * - ADDED: physics new method .rotorFromFrame and .rotorSlerp
@@ -339,9 +342,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 21, 11],
+			version: [0, 22, 0],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260512"
+			firmwareDate: "20260513"
 		};
 	}
 }
@@ -416,7 +419,13 @@ MAGPIE.KEY.TYPE.EXP = MAGPIE.KEY.TYPE.METACONTEXT + 1;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.EMOTE = MAGPIE.KEY.TYPE.EXP + 1;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METAEXP = MAGPIE.KEY.TYPE.EMOTE + 1;
+MAGPIE.KEY.TYPE.TRIGGER = MAGPIE.KEY.TYPE.EMOTE + 1;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.EVAL = MAGPIE.KEY.TYPE.TRIGGER + 1;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.TIME = MAGPIE.KEY.TYPE.EVAL + 1;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.METAEXP = MAGPIE.KEY.TYPE.TIME + 1;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.TICKET = MAGPIE.KEY.TYPE.METAEXP + 1;
 /** @type {key_type} */
@@ -442,6 +451,8 @@ MAGPIE.KEY.INDEX.OBJECT = MAGPIE.KEY.INDEX.SUBJECT + 1;
 MAGPIE.KEY.INDEX.TARGET = MAGPIE.KEY.INDEX.OBJECT + 1;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TRIVIAL = MAGPIE.KEY.INDEX.TARGET + 1;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TIME = MAGPIE.KEY.INDEX.TRIVIAL + 1;
 // #endregion
 //------------------------------------------------------------------------
 /**

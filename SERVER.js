@@ -60,6 +60,7 @@ MAGPIE_SERVER.registry = {
 	MAGPIE_RUNTIME,
 	MAGPIE_HIVE,
 	MAGPIE_METASTATE,
+	MAGPIE_DATE,
 	MAGPIE_PHYSICS,
 	MAGPIE_COMPONENT,
 	MAGPIE_EXP,
@@ -1047,6 +1048,26 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, POVART0,
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+/**
+ * 
+ * @param {String} method 
+ * @param  {*} argument 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_ENTITY._database = async function _database(method, argument)
+{
+	return await MAGPIE_DATABASE[method](argument)
+}
+/**
+ * 
+ * @param {String} method 
+ * @param  {*} argument
+ * @returns {*} 
+ */
+MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
+{
+	return MAGPIE_DATABASE[method](argument)
 }
 // #endregion
 //------------------------------------------------------------------------

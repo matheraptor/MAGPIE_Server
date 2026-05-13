@@ -3,6 +3,7 @@ _.env
 *.pub
 ssh-key.*
 ./start.sh
+./run_server.ps1
 
 # agent folders
 .agent

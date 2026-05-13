@@ -954,7 +954,6 @@ MAGPIE_DATE.prototype.getWeekDayName = function getWeekDayName()
  */
 MAGPIE_DATE.prototype.yearday = function yearday()
 {
-	if(this?._yearday) return this._yearday;
 	let yearday = 0;
 	yearday += this.day;
 	const monthdays = Object.values(this.getCalendar().months)
