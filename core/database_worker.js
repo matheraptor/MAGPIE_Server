@@ -65,12 +65,14 @@ worker.world = new Database(worldPath);
  * This allows your app to read and write at the same time, which 
  * is much lighter on the CPU and keeps your 150ms latency stable 
  * even during heavy database activity.
- */
+*/
 worker.world.pragma('journal_mode = WAL');
 worker.world.pragma('foreign_keys = ON');
+worker.world.pragma('cache_size = -64000');
 worker.server = new Database(serverPath);
 worker.server.pragma('journal_mode = WAL');
 worker.server.pragma('foreign_keys = ON');
+worker.server.pragma('cache_size = -64000');
 //
 /**
  * @typedef {import("better-sqlite3").Statement} worker_statement

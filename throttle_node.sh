@@ -2,7 +2,7 @@
 # throttle_node v5
 cd /home/hamedahastral/MAGPIE_Server
 
-CPU_LIMIT=30
+CPU_LIMIT=80
 
 echo "Passive MAGPIE Governor loaded. Waiting for manual node start..."
 

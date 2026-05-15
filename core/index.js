@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.22.6
+ * @version 0.22.7
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,9 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.22.6 2026 05 15
+ * @version 0.22.7 2026 05 15
+ * - ADDED: DATABASE.pragma cache_size -64000 to mitigate the 
+ * 		read flooding
  * - ADDED: DATABASE.helpers for symbol recipes/components
  * - ADDED: MAGPIE.KEYS for requirements, compounds, recipes, components, 
  * 		and stats 
@@ -362,7 +364,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 6],
+			version: [0, 22, 7],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260515"
 		};

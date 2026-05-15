@@ -42,3 +42,11 @@ while true; do ps -eo pid,%cpu,comm --sort=-%cpu | head -n 4; sleep 1; clear; do
 ```bash
 pkill -f node
 ```
+
+### GCLOUD SDK
+
+- monitor logs
+
+```powershell
+gcloud logging read "resource.type=\"gce_instance\" AND logName=\"projects/gen-lang-client-0650816059/logs/syslog\" AND textPayload:\"Invalid user\"" --limit=5 --format="table(timestamp, textPayload)"
+```
