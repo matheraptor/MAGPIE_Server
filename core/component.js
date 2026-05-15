@@ -17,8 +17,13 @@ function MAGPIE_STATE(data)
 	this.initialize(data)
 }
 /**
- * 
- * @param {exp_data} data 
+ * @class
+ * @param {{
+ * subject: entityID,
+ * target: entityID,
+ * emoteID: emoteID,
+ * keys: keyID[]
+ * }} data exp_data
  * @returns {new MAGPIE_EXP}
  */
 function MAGPIE_EXP(data = {})
@@ -85,6 +90,15 @@ function MAGPIE_SYMBOL(data)
 }
 /**
  * 
+ * @param {{}} data
+ * @returns {new MAGPIE_TRAIT} 
+ */
+function MAGPIE_TRAIT(data = {})
+{
+	this.initialize(data)
+}
+/**
+ * 
  * @desc back to {@link }
  *
  */
@@ -93,6 +107,7 @@ function MAGPIE_SYMBOL(data)
 //========================================================================
 /**
  * @typedef {import("./system").database_result} database_result
+ * @typedef {import("./index").index} index
  * 
  * @name COMPONENT
  * @desc 
@@ -119,11 +134,245 @@ MAGPIE_COMPONENT.prototype.initialize = function initialize(data)
 /**
  * @name 
  * @desc 
- * @typedef {Number} stateID
+ * 
  */
 //------------------------------------------------------------------------
-// #region > state
+// #region > getters
 //------------------------------------------------------------------------
+/**
+ * 
+ * @param {String} method 
+ * @param {*} value 
+ * @returns {MAGPIE_COMPONENT}
+ */
+MAGPIE_COMPONENT.__get = function get(method, value)
+{
+	//
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Setters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {String} method 
+ * @param {*} value
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_COMPONENT.__set = async function set(method, value)
+{
+	//
+} 
+/**
+ * 
+ * @param {String} method 
+ * @param {*} value
+ * @returns {database_result} 
+ */
+MAGPIE_COMPONENT.__setSync = function setSync(method, value)
+{
+	//
+} 
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - SYMBOL
+//========================================================================
+MAGPIE_SYMBOL.meta = "";
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Proto
+//------------------------------------------------------------------------
+/**
+ * @typedef {Number} symbolID
+ * @typedef {Number} symbol_type {@link MAGPIE.KEY.SYMBOL.TYPE.meta}
+ * @typedef {import("./index").STAT} STAT aka static parameter
+ * @typedef {{ID: symbolID,
+ * type: symbol_type,
+ * name: String,
+ * desc: String,
+ * requirementID: symbolID,
+ * compoundID: symbolID,
+ * STATS: Float64Array
+ * }} symbol_data
+ * @param {symbol_data} data 
+ */
+MAGPIE_SYMBOL.prototype.initialize = function initialize(data)
+{
+	this._firmware = "MAGPIE_SYMBOL";
+	this.ID = Number(data?.ID) || Date.now();
+	this.type = Number(data?.type) || 0;
+	this.name = String(data?.name) || "";
+	this.desc = String(data?.desc) || "";
+	this.requirementID = Number(data?.requirementID) || 0;
+	this.compoundID = Number(data?.compoundID) || 0;
+	this.STATS = new Float64Array(data?.STATS || 0).fill(0)
+}
+/**
+ * 
+ * @returns {{key: value}}
+ */
+MAGPIE_SYMBOL.prototype.mapStats = function mapStats()
+{
+	const ePrefix = `[SYMBOL-${this.ID}].mapStats: `;
+	try
+	{
+		const map = this.STATS;
+		const K = MAGPIE.KEY.INDEX;
+		const STATS = {};
+		map.forEach((keyID, index) => {
+			if(index % 2 === 0)
+			{
+				const key = this.getKey(keyID)?.label;
+				if(!key) 
+					throw new Error(`unable to find [KEY-${keyID}]`)
+				STATS[key] = map[index + 1];
+			}
+		})
+		return STATS
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > getters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {String}
+ */
+MAGPIE_SYMBOL.prototype.getTypeName = function getTypeName()
+{
+	return Object.keys(MAGPIE.KEY.SYMBOL.TYPE).find(key => {
+		key === MAGPIE.KEY.SYMBOL.TYPE[key]
+	})
+}
+/**
+ * 
+ * @param {keyID} keyID
+ * @returns {MAGPIE_KEY} 
+ */
+MAGPIE_SYMBOL.prototype.getKey = function getKey(keyID)
+{
+	return MAGPIE_COMPONENT.__get("loadKeySync", keyID);
+}
+/**
+ * @typedef {{
+ * Vmax: velocity, 
+ * Vsafe: velocity, 
+ * Vcruise: velocity,
+ * Vcreep: velocity,
+ * Vdock: velocity,
+ * Rmax: omega,
+ * Rcruise: omega,
+ * Rcreep: omega,
+ * Rdock: omega,
+ * Amax: acceleration,
+ * Asafe: acceleration,
+ * Acruise: acceleration,
+ * Acreep: acceleration,
+ * Adock: acceleration,
+ * Tmax: alpha,
+ * Tsafe: alpha,
+ * Tcruise: alpha,
+ * Tcreep: alpha,
+ * Tdock: alpha
+ * }} Vspeeds Object{key: value}
+ * @returns {Vspeeds} 
+ */
+MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
+{
+	const ePrefix = `[SYMBOL-${this.ID}].getVspeeds: `;
+	try
+	{
+		const map = this.STATS;
+		const K = MAGPIE.KEY.INDEX;
+		const keys = Object.values(K).slice(K.VMAX, K.TDOCK + 1);
+		const Vspeeds = {};
+		map.forEach((keyID, index) => {
+			if(index % 2 === 0 && keys.includes(keyID))
+			{
+				const key = this.getKey(keyID).label;
+				Vspeeds[key] = map[index + 1];
+			}
+		})
+		MAGPIE_SYSTEM._logging_debug(Object.entries(Vspeeds))
+		return Vspeeds
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Setters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_SYMBOL.prototype.set = async function set()
+{
+	return await MAGPIE_COMPONENT.__set("MAGPIE_SYMBOL", this);
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - STATE
+//========================================================================
 MAGPIE_STATE.meta = {};
 /** @type {Map<stateID, MAGPIE_STATE>} */
 MAGPIE_STATE.INDEX = new Map();
@@ -182,27 +431,35 @@ MAGPIE_STATE.validateChange = function validateChange(state)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
-// #endregion
-//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - STATE
+//========================================================================
 /**
  * @name 
  * @desc 
- * @param {exp_data} data
- * @returns {new MAGPIE_EXP}
- * 
+ * @typedef {Number} emoteID
+ * @typedef {import("./entity").entityID} entityID
+ * @typedef {import(".").keyID} keyID
+ */
+//========================================================================
+// #region - EXP
+//========================================================================
+/**
  * @typedef {{
  * subject: entityID,
  * target: entityID,
  * emoteID: emoteID,
  * keys: keyID[]
  * }} exp_data
- * @typedef {import(".").keyID} keyID
- * @typedef {Number} emoteID
- * @typedef {import("./entity").entityID} entityID
+ * 
+ * @param {exp_data} data 
+ * @returns {new MAGPIE_EXP}
  */
-//------------------------------------------------------------------------
-// #region > exp
-//------------------------------------------------------------------------
 MAGPIE_EXP.prototype.initialize = function initialize(data)
 {
 	this._firmware = "MAGPIE_EXP";
@@ -212,13 +469,6 @@ MAGPIE_EXP.prototype.initialize = function initialize(data)
 	this.emoteID = data?.emoteID || NaN;
 	this.value = data?.value || NaN;
 	this.keys = data?.keys || [NaN];
-}
-/**
- * @returns {MAGPIE_KEY[]}
- */
-MAGPIE_EXP.prototype.getKeys = function getKeys()
-{
-	//
 }
 /**
  * 
@@ -239,6 +489,45 @@ MAGPIE_EXP.prototype.setSync = function saveSync()
 	//
 }
 /**
+ * @param {keyID} keyID
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_EXP.prototype.getKey = function getKey(keyID)
+{
+	//
+}
+MAGPIE_EXP.__getKey = MAGPIE_EXP.prototype.getKey;
+/**
+ * 
+ * @returns {MAGPIE_KEY[]}
+ */
+MAGPIE_EXP.prototype.getKeys = function getKeys()
+{
+	let keys = [];
+	for(const keyID of this.keys)
+	{
+		keys.push(this.getKey(keyID))
+	}
+	return keys
+}
+/**
+ * 
+ * @returns {import("./entity").entity_speeds}
+ */
+MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
+{
+	const K = MAGPIE.KEY.INDEX;
+	const keys = this.getKeys();
+	if(keys.length < 1) return
+	const Vspeeds = {};
+	for(const key of keys)
+	{
+		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
+			Vspeeds[key.getOrigin()?.label] = Number(key.label)
+	}
+	return Vspeeds
+}
+/**
  * 
  * @param {keyID} keyID 
  */
@@ -249,6 +538,10 @@ MAGPIE_EXP.prototype.removeKey = function removeKey(keyID)
 	MAGPIE_EXP.__saveSync(this);
 	return keyID
 }
+/**
+ * 
+ * @returns {entityID} entityID
+ */
 MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 {
 	const ePrefix = `[EXP-${this.ID}].keyTargetNext`;
@@ -261,7 +554,7 @@ MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 			throw new Error(`unable to remove 'target' origin from [KEY-${key.ID}]`)
 		const next = this._get_key_target();
 		if(!next) return
-		this.targetID = Number(next.label);
+		return Number(next.label);
 	}
 	catch(e)
 	{
@@ -278,17 +571,51 @@ MAGPIE_EXP.prototype._get_key_target = function getKeyTarget()
 		key.originID === MAGPIE.KEY.INDEX.TARGET
 	});
 }
-// #endregion
-//------------------------------------------------------------------------
+/**
+ * 
+ * @param {keyID} keyID 
+ * @returns {Boolean}
+ */
+MAGPIE_EXP.prototype._get_hasKey = function hasKey(keyID)
+{
+	return this.keys.includes(keyID)
+}
+/**
+ * @returns {entityID} entityID
+ */
+MAGPIE_EXP.prototype._emote_onTarget = function _emote_onTarget()
+{
+	const ePrefix = `[EXP-${this.ID}].emoteArrived: `;
+	try
+	{
+		const next = this._key_target_next()
+		if(isNaN(next))
+			return
+		return this.targetID = next;
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
 /**
  * @name 
  * @desc 
  * 
  */
-//------------------------------------------------------------------------
-// #region > emote
-//------------------------------------------------------------------------
+//========================================================================
+// #region - EMOTE
+//========================================================================
 MAGPIE_EMOTE.meta = {};
+/** @type {Map<emoteID, MAGPIE_EMOTE>} */
 MAGPIE_EMOTE.INDEX = new Map();
 MAGPIE_EMOTE.setup = function()
 {
@@ -339,36 +666,54 @@ MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
 {
 	//
 }
-// #endregion
-//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - EMOTE
+//========================================================================
 /**
  * @name 
  * @desc 
  * 
  */
-//------------------------------------------------------------------------
-// #region > context
-//------------------------------------------------------------------------
+//========================================================================
+// #region - CONTEXT
+//========================================================================
 MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 {
 	//
 }
-// #endregion
-//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - CONTEXT
+//========================================================================
 /**
  * @name 
  * @desc 
  * 
  */
-//------------------------------------------------------------------------
-// #region > ticket
-//------------------------------------------------------------------------
+//========================================================================
+// #region - TICKET
+//========================================================================
 MAGPIE_TICKET.prototype.initialize = function initialize(data)
 {
 	//
 }
-// #endregion
-//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - TICKET
+//========================================================================
 /**
  * @typedef {import("./index").key_type} key_type
  * @typedef {String} key_label
@@ -382,9 +727,9 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
  * @param {Object} data
  * @returns {new MAGPIE_KEY}
  */
-//------------------------------------------------------------------------
-// #region > key
-//------------------------------------------------------------------------
+//========================================================================
+// #region - KEY
+//========================================================================
 MAGPIE_KEY.prototype.initialize = function initialize(data)
 {
 	this.ID = Number(data?.ID) || Date.now();
@@ -439,163 +784,15 @@ MAGPIE_KEY.prototype.removeOrigin = function removeOrigin()
 {
 	//
 }
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - KEY
+//========================================================================
 
-// #endregion
-//------------------------------------------------------------------------
-/**
- * 
- * @desc back to {@link }
- *
- */
-//========================================================================
-// #endregion - 
-//========================================================================
-/**
- * @name 
- * @desc 
- * 
- */
-//========================================================================
-// #region - SYMBOL
-//========================================================================
-MAGPIE_SYMBOL.meta = "";
-/**
- * @name 
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > Proto
-//------------------------------------------------------------------------
-/**
- * @typedef {Number} symbolID
- * @typedef {Number} symbol_type
- * @param {Object} data 
- */
-MAGPIE_SYMBOL.prototype.initialize = function initialize(data)
-{
-	this._firmware = "MAGPIE_SYMBOL";
-	this.ID = Number(data?.ID) || Date.now();
-	this.type = Number(data?.type) || 0;
-	this.name = String(data?.name) || "";
-	this.desc = String(data?.desc) || "";
-	this.requirementID = Number(data?.requirementID) || 0;
-	this.compoundID = Number(data?.compoundID) || 0;
-	this.STATS = new Float64Array(data?.STATS || 0);
-}
-/**
- * 
- * @returns {{ "Number": Number }}
- */
-MAGPIE_SYMBOL.prototype.mapStats = function mapStats()
-{
-	if(this.STATS.length < 1) return
-	const arr = this.STATS;
-	return Object.fromEntries(
-		arr.reduce((acc, curr, i) => {
-			if(i % 2 === 0) acc.push([curr, arr[i + 1]]);
-			return acc;
-		}, [])
-	)
-}
-/**
- * 
- * @returns {import("./entity").entity_speeds}
- */
-MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
-{
-	const K = MAGPIE.KEY.INDEX;
-	const keys = this.getKeys();
-	if(keys.length < 1) return
-	const Vspeeds = {};
-	for(const key of keys)
-	{
-		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
-			Vspeeds[key.getOrigin()?.label] = Number(key.label)
-	}
-	return Vspeeds
-}
-/**
- * 
- * @returns {{
- * Vmax: velocity, 
- * Vsafe: velocity, 
- * Vcruise: velocity,
- * Vcreep: velocity,
- * Vdock: velocity,
- * Rmax: omega,
- * Rcruise: omega,
- * Rcreep: omega,
- * Rdock: omega,
- * Amax: acceleration,
- * Asafe: acceleration,
- * Acruise: acceleration,
- * Acreep: acceleration,
- * Adock: acceleration,
- * Tmax: alpha,
- * Tsafe: alpha,
- * Tcruise: alpha,
- * Tcreep: alpha,
- * Tdock: alpha
- * }}
- */
-MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
-{
-	const map = this.mapStats();
-	const V = MAGPIE.KEY.INDEX;
-	const Vmax = map[V.VMAX];
-	const Vsafe = map[V.VSAFE];
-	const Vcruise = map[V.VCRUISE];
-	const Vcreep = map[V.VCREEP];
-	const Vdock = map[V.VDOCK];
-	const Rmax = map[V.RMAX];
-	const Rsafe = map[V.RSAFE];
-	const Rcruise = map[V.RCRUISE];
-	const Rcreep = map[V.RCREEP];
-	const Rdock = map[V.RDOCK];
-	const Amax = map[V.AMAX];
-	const Asafe = map[V.ASAFE];
-	const Acruise = map[V.ACRUISE];
-	const Acreep = map[V.ACREEP];
-	const Adock = map[V.ADOCK];
-	const Tmax = map[V.TMAX];
-	const Tsafe = map[V.TSAFE];
-	const Tcruise = map[V.TCRUISE];
-	const Tcreep = map[V.TCREEP];
-	const Tdock = map[V.TDOCK];
-	return { 
-		Vmax,
-		Vsafe, 
-		Vcruise, 
-		Vcreep,
-		Vdock,
-		Rmax,
-		Rsafe,
-		Rcruise,
-		Rcreep,
-		Rdock,
-		Amax,
-		Asafe,
-		Acruise,
-		Acreep,
-		Adock,
-		Tmax,
-		Tsafe,
-		Tcruise,
-		Tcreep,
-		Tdock
-	}
-}
-// #endregion
-//------------------------------------------------------------------------
-/**
- * 
- * @desc back to {@link }
- *
- */
-//========================================================================
-// #endregion - 
-//========================================================================
 module.exports = { 
 	MAGPIE_COMPONENT,
 	MAGPIE_STATE,

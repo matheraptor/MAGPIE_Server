@@ -11,6 +11,7 @@ const fs = require("fs");
 const path = require("path");
 const { performance } = require("node:perf_hooks");
 const { exec } = require("child_process");
+const { Worker } = require("worker_threads")
 function MAGPIE_SYSTEM()
 {
     this.initialize();
@@ -300,7 +301,17 @@ MAGPIE_SYSTEM.PS.playSound = function playSound(soundfile = "", options = {})
 // #region > Logging
 //------------------------------------------------------------------------
 MAGPIE_SYSTEM.logging = {};
-
+MAGPIE_SYSTEM.logging.worker = new Worker(path.resolve("./core/workers/logger.js"));
+MAGPIE_SYSTEM.logToWorker = function logToWorker(level, message, filename)
+{
+	const logEntry = JSON.stringify({
+		timestamp: MAGPIE_SYSTEM.Utility.CTZ(),
+		level,
+		message,
+		filename
+	})
+	MAGPIE_SYSTEM.logging.worker.postMessage(logEntry)
+}
 /**
  * 
  * @param {String} message 
@@ -1623,6 +1634,9 @@ MAGPIE_HIVE.save = async function save()
 {
 	//
 }
+/**
+ * @returns {Promise<Number>}
+ */
 MAGPIE_HIVE.saveEntities = async function saveEntities()
 {
 	//
@@ -1708,6 +1722,8 @@ MAGPIE_IO.prototype.initialize = function initialize()
 //------------------------------------------------------------------------
 // #region > FS
 //------------------------------------------------------------------------
+MAGPIE_IO.WORKER = new Worker("./core/workers/fsio.js");
+
 MAGPIE_IO.read = function read(filename)
 {
     try
@@ -1741,6 +1757,7 @@ MAGPIE_IO.append = function append(filename, content)
         return e
     }
 }
+
 // #endregion
 //------------------------------------------------------------------------
 /**

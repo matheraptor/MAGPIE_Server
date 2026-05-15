@@ -16,7 +16,7 @@ const {
 // #endregion
 //========================================================================
 r.context.diego = r.context.HIVE.getEntity(1773811141134)
-r.context.diego._get_target()._updateSync("_set_C1", [[29.657402401721072, 32.51553247503919,0]])
+r.context.diego._get_target()._updateSync("_set_C1", [[26.787187504774494, 34.904099758338745,0]])
 r.context.diego.exps.push(r.context.METASTATE.contents.exp)
 r.context.exp = r.context.DATABASE
     .loadExpSync(r.context.METASTATE.contents.exp)

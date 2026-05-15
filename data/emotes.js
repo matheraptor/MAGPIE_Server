@@ -5,6 +5,7 @@ const { INDEX } = require("./states")
  * @typedef {import("../core/component.js").MAGPIE_EXP} MAGPIE_EXP
  * @typedef {import("../core/index").vector3} vector3
  * @typedef {import("../SERVER.js").bivector} bivector
+ * @typedef {import("../core/entity.js").fitness_index} fitness_index
  */
 /** @type {import("../SERVER.js").exp_output} */
 const defaults = { exp: null, At: [0,0,0], Tt: [0,0,0], keys: [], persist: null };
@@ -39,11 +40,15 @@ const SEEK_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {fitness_index} traitIndex
 	 * @returns {{At: vector3, Tt: bivector}} results
 	 */
-	onAction: function seekTarget(exp, entity) 
+	onAction: function seekTarget(exp, entity, traitIndex) 
 	{
-		return entity._emote_seekTarget(exp);
+		const stateID = INDEX.SEEKING_TARGET;
+		const index = traitIndex ? traitIndex : entity._trait_blockState(stateID)
+		const state = [stateID, index]
+		return entity.addState(state);
 	},
 	onPassive: function()
 	{

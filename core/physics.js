@@ -848,7 +848,7 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 			const stopDistance = 0;
 			const At = this.getBrakingA(P0, P1, V0, Bmax, stopDistance);
 			const clamped = this.vector_clamp_mag(At, Bsafe);
-			const arrived = V0 === 0 ? true : false;
+			const arrived = this.mag(V0) === 0 ? true : false;
 			return {
 				At: clamped, arrived, proximity: true, braking: true
 			}

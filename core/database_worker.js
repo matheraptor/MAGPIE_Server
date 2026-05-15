@@ -83,8 +83,6 @@ worker.ping = function ping()
 	return "pong"
 }
 const { parentPort } = require("worker_threads");
-const { table } = require("console");
-const { stat } = require("fs");
 parentPort?.on("message", async ({ method, args, requestID }) => {
 	if(!parentPort) return
 	try

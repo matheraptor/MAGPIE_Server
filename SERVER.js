@@ -710,7 +710,8 @@ MAGPIE_HIVE.save = async function save()
 		const state = r.context.METASTATE;
 		const message = `${result}x entities saved at `
 			+ `[${state.meta.updated}-${state.date.printDate()}]`
-		MAGPIE_SERVER.log(ePrefix + message)
+		MAGPIE_SERVER.log(ePrefix + message, "console", false)
+		return result;
 	}
 	catch(e)
 	{
@@ -1092,6 +1093,46 @@ MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
 /**
  * @name 
  * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Compon.
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {String} method 
+ * @param {*} value
+ * @returns {MAGPIE_COMPONENT} 
+ */
+MAGPIE_COMPONENT.__get = function get(method, value)
+{
+	return MAGPIE_DATABASE[method](value)
+}
+/**
+ * 
+ * @param {String} method 
+ * @param {*} value
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_COMPONENT.__set = async function set(method, value)
+{
+	return await MAGPIE_DATABASE[method](value);
+} 
+/**
+ * 
+ * @param {String} method 
+ * @param {*} value
+ * @returns {database_result} 
+ */
+MAGPIE_COMPONENT.__setSync = function setSync(method, value)
+{
+	return MAGPIE_DATABASE[method](value)
+} 
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
  * @typedef {import("./core/index").keyID} keyID
  */
 //------------------------------------------------------------------------
@@ -1152,16 +1193,13 @@ MAGPIE_EXP.prototype.setSync = function setSync()
 	return MAGPIE_DATABASE.saveExpSync(this);
 }
 /**
- * @returns {MAGPIE_KEY[]}
+ * @param {keyID} keyID
+ * @returns {MAGPIE_KEY}
+ * {@link MAGPIE_EXP.__getKey}
  */
-MAGPIE_EXP.prototype.getKeys = function getKeys()
+MAGPIE_EXP.prototype.getKey = function getKey(keyID)
 {
-	let keys = [];
-	for(const ID of this.keys)
-	{
-		keys.push(MAGPIE_DATABASE.loadKeySync(ID));
-	}
-	return keys
+	return MAGPIE_DATABASE.loadKeySync(keyID)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1601,22 +1639,24 @@ MAGPIE_SERVER.BOOT.shutdown = async function shutdown(signal = 0)
 	const message = "[BOOT].shutdown: ";
 	MAGPIE_SERVER.CLI._createLoadBar();
 	MAGPIE_SERVER.CLI._updateLoadBar();
-	MAGPIE_SERVER.log(message + `[SIGNAL-${signal}] received: initiating shutdown sequence...`);
+	MAGPIE_SERVER.log(message + `[SIGNAL-${signal}] received: initiating shutdown sequence...`, null, true);
 	if(io)
 	{
+		await MAGPIE_HIVE.save();
+		MAGPIE_SERVER.CLI._incrementLoadBar(10);
 		await io.close((err) => {
 			if(err) MAGPIE_SERVER.log(message + "[io] " + err.message);
 			MAGPIE_SERVER.log("Socket.io server closed.", false);
 			MAGPIE_SERVER.CLI._incrementLoadBar(10);
 			MAGPIE_SERVER.SERVER.close((err) => {
-				if(err) MAGPIE_SERVER.log(message + "[express] ", err.message);
+				if(err) MAGPIE_SERVER.log(message + "[express] ", "console", true);
 				MAGPIE_SERVER.log("HTTP server closed.", false);
 				MAGPIE_SERVER.CLI._incrementLoadBar(10);
 				MAGPIE_SERVER.CLI._updateLoadBar(100);
 				MAGPIE_SERVER.log(message + "sequence complete. Exiting...\n" + 
-					"----------------------------------\n\n"
-				)
+					"----------------------------------\n\n", null, true)
 				MAGPIE_SERVER.CLI._stop();
+				r.displayPrompt();
 				return process.exit(signal);
 			})
 		});
@@ -1670,6 +1710,7 @@ MAGPIE_DATABASE.setup = function setup()
 	const integerKey = "INTEGER PRIMARY KEY";
 	const foreignKey = " FOREIGN KEY";
 	const blob = "JSON NOT NULL";
+	const textNullable = "TEXT";
 	const text = "TEXT NOT NULL";
 	const textKey = "TEXT PRIMARY KEY";
 	/** @type {Map<String, database_result[]>} */
@@ -1742,7 +1783,7 @@ MAGPIE_DATABASE.setup = function setup()
 		const keys = this.sync.createWorldTable("MAGPIE_KEY", {
 			ID: integerKey,
 			type: integer,
-			label: text,
+			label: textNullable,
 			originID: integerNullable,
 			compoundID: integerNullable,
 			symbolID: integerNullable,
@@ -1787,7 +1828,7 @@ MAGPIE_DATABASE.setup = function setup()
 		const symbols = this.sync.createWorldTable("MAGPIE_SYMBOL", {
 			ID: integerKey,
 			type: integer,
-			name: text,
+			name: textNullable,
 			requirementID: integerNullable,
 			compoundID: integerNullable,
 			data: blob,

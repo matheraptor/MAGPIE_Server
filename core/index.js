@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.22.2
+ * @version 0.22.4
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,14 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.22.4 2026 05 14
+ * - ADDED: MAGPIE_IO.WORKER for fsio and logging
+ * - ADDED: MAGPIE_SYMBOL_fts [FTS5 indexing](../../HASTRAL/03_MEMORY/wiki/better-sqlite3/fts5-search.md)
+ * - ADDED: MAGPIE_SYMBOL name search
+ * - TWEAKED: MAGPIE_SYMBOL.STATS back to Float64Array key/value pairs
+ * - TWEAKED: [HIVE].save() logToConsole: true => false
+ * - FIXED: [BOOT].shutdown logPath incorrectly set to err.message 
  * 
  * @version 0.22.2 2026 05 13
  * - ADDED: basic methods and logic for exp/key manipulation
@@ -345,9 +353,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 2],
+			version: [0, 22, 4],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260513"
+			firmwareDate: "20260514"
 		};
 	}
 }
@@ -376,7 +384,7 @@ MAGPIE.KEY = {};
 // #region > Config
 //------------------------------------------------------------------------
 MAGPIE.config = require("./config");
-
+MAGPIE.KEY.NODE_ENV = MAGPIE.config.NODE_ENV;
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -416,7 +424,7 @@ MAGPIE.KEY.TYPE.SEMANTIC = 3;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.CONTEXT = 4;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METACONTEXT = 5;
+MAGPIE.KEY.TYPE.VACANT_1 = 5;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.EXP = 6;
 /** @type {key_type} */
@@ -428,19 +436,23 @@ MAGPIE.KEY.TYPE.EVAL = 9;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.TIME = 10;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METAEXP = 11;
+MAGPIE.KEY.TYPE.STATE = 11;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.TICKET = 12;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.METATICKET = 13;
+MAGPIE.KEY.TYPE.METAEXP = 20;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERKEY = 14;
+MAGPIE.KEY.TYPE.METATICKET = 21;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERCONTEXT = 15;
+MAGPIE.KEY.TYPE.METACONTEXT = 22;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTEREXP = 16;
+MAGPIE.KEY.TYPE.MASTERKEY = 30;
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERTICKET = 17;
+MAGPIE.KEY.TYPE.MASTERCONTEXT = 31;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.MASTEREXP = 32;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.MASTERTICKET = 33;
 /** @typedef {Enumerator<Number>} key_index */
 MAGPIE.KEY.INDEX = {};
 MAGPIE.KEY.INDEX.meta = "";
@@ -456,6 +468,14 @@ MAGPIE.KEY.INDEX.TARGET = MAGPIE.KEY.INDEX.OBJECT + 1;
 MAGPIE.KEY.INDEX.TRIVIAL = MAGPIE.KEY.INDEX.TARGET + 1;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TIME = MAGPIE.KEY.INDEX.TRIVIAL + 1;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LENGTH = 2010;
+MAGPIE.KEY.INDEX.HEIGHT = 2011;
+MAGPIE.KEY.INDEX.WIDTH = 2012;
+MAGPIE.KEY.INDEX.MASSKG = 2013;
+MAGPIE.KEY.INDEX.DENSITY = 2014;
+MAGPIE.KEY.INDEX.AREA = 2020;
+MAGPIE.KEY.INDEX.VOLUME = 2021;
 MAGPIE.KEY.INDEX.VSPEEDS = new Map();
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.VMAX = 3000;
@@ -1356,11 +1376,15 @@ MAGPIE.KEY.SYMBOL.TYPE.MATERIAL = 3;
 /** @type {symbol_type} */
 MAGPIE.KEY.SYMBOL.TYPE.PRODUCT = 4;
 /** @type {symbol_type} */
-MAGPIE.KEY.SYMBOL.TYPE.SERVICE = 5;
+MAGPIE.KEY.SYMBOL.TYPE.COMPONENT = 5;
 /** @type {symbol_type} */
-MAGPIE.KEY.SYMBOL.TYPE.INTERACTION = 6;
+MAGPIE.KEY.SYMBOL.TYPE.UNIT = 6;
 /** @type {symbol_type} */
-MAGPIE.KEY.SYMBOL.TYPE.CONCEPT = 7;
+MAGPIE.KEY.SYMBOL.TYPE.SERVICE = 7;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.INTERACTION = 8;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.CONCEPT = 9;
 MAGPIE.KEY.SYMBOL.INDEX = {};
 // #endregion
 //------------------------------------------------------------------------

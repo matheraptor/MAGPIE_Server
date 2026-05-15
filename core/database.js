@@ -59,7 +59,11 @@ MAGPIE_DATABASE._pending = new Map();
 MAGPIE_DATABASE.sync = require("./database_worker");
 const { Worker } = require("worker_threads");
 const { MAGPIE_PLAYER } = require("./player.js");
-const { MAGPIE_EXP, MAGPIE_KEY, MAGPIE_SYMBOL } = require("./component.js");
+const { 
+	MAGPIE_EXP, 
+	MAGPIE_KEY, 
+	MAGPIE_SYMBOL 
+} = require("./component.js");
 MAGPIE_DATABASE.worker = new Worker("./core/database_worker.js");
 MAGPIE_DATABASE.call = function call(method, ...args)
 {
@@ -867,6 +871,7 @@ MAGPIE_DATABASE.prepareSymbol = function prepareSymbol(symbol)
 	const payload = {
 		ID: symbol.ID,
 		type: symbol.type,
+		name: symbol.name,
 		requirementID: symbol.requirementID || null,
 		compoundID: symbol.compoundID || null,
 		data: symbol
@@ -888,6 +893,27 @@ MAGPIE_DATABASE.loadSymbolSync = function loadSymbolSync(symbolID)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+/**
+ * 
+ * @param {String} tableName 
+ * @param {String} name 
+ * @returns {*}
+ */
+MAGPIE_DATABASE.loadWorldRowByName = function loadWorldRowByName(tableName, name)
+{
+	const cleanName = name.trim();
+	if(!cleanName) return [];
+	const ftsQuery = cleanName
+		.split(/\s+/)
+		.map(word => `"${word.replace(/"/g, '""')}"*`)
+		.join(" ");
+	const statement = MAGPIE_DATABASE.sync.world
+		.prepare(`SELECT m.* FROM ${tableName} m
+			JOIN ${tableName}_fts f ON m.ID = f.id
+			WHERE f.name MATCH ?`);
+	return MAGPIE_DATABASE.sync
+		.resultsLoader(statement.all(ftsQuery));
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1055,6 +1081,104 @@ MAGPIE_DATABASE.loadEquipsSync = function loadEquipsSync(hostID)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - SETUP
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Symbol
+//------------------------------------------------------------------------
+/**
+ * Ensures the prototype tables, FTS5 indexes, and self-maintaining triggers
+ * exist and are correctly configured on server boot.
+ * @param {Database} db - The active better-sqlite3 database instance (MAGPIE_DATABASE.sync.world)
+ */
+MAGPIE_DATABASE.initializeSymbolSchema = function initializeSymbolSchema(db) 
+{
+    // Wrap the entire boot setup in a transaction for maximum speed and safety
+    db.transaction(() => {
+        // 1. Ensure the core prototype table exists
+        db.exec(`
+            CREATE TABLE IF NOT EXISTS MAGPIE_SYMBOL (
+                ID INTEGER PRIMARY KEY,
+                type INTEGER,
+                requirementID INTEGER,
+                compoundID INTEGER,
+                data TEXT,
+                name TEXT
+            );
+        `);
+
+        // 2. Ensure a standard index exists on the name column for standard lookups
+        db.exec(`
+            CREATE INDEX IF NOT EXISTS idx_magpie_symbol_name 
+            ON MAGPIE_SYMBOL(name);
+        `);
+
+        // 3. Create the permanent FTS5 search index table
+        db.exec(`
+            CREATE VIRTUAL TABLE IF NOT EXISTS MAGPIE_SYMBOL_fts 
+            USING fts5(id UNINDEXED, name, tokenize="porter");
+        `);
+
+        // 4. TRIGGER: Automated Sync on Insertion
+        db.exec(`
+            CREATE TRIGGER IF NOT EXISTS ts_symbol_insert 
+            AFTER INSERT ON MAGPIE_SYMBOL
+            BEGIN
+                INSERT INTO MAGPIE_SYMBOL_fts(id, name) VALUES (new.ID, new.name);
+            END;
+        `);
+
+        // 5. TRIGGER: Automated Sync on Updates
+        db.exec(`
+            CREATE TRIGGER IF NOT EXISTS ts_symbol_update 
+            AFTER UPDATE OF name ON MAGPIE_SYMBOL
+            BEGIN
+                UPDATE MAGPIE_SYMBOL_fts SET name = new.name WHERE id = old.ID;
+            END;
+        `);
+
+        // 6. TRIGGER: Automated Sync on Deletions
+        db.exec(`
+            CREATE TRIGGER IF NOT EXISTS ts_symbol_delete 
+            AFTER DELETE ON MAGPIE_SYMBOL
+            BEGIN
+                DELETE FROM MAGPIE_SYMBOL_fts WHERE id = old.ID;
+            END;
+        `);
+
+        // 7. Safety Backfill: Catch up the FTS index if rows were inserted offline
+        db.exec(`
+            INSERT INTO MAGPIE_SYMBOL_fts(id, name) 
+            SELECT ID, name FROM MAGPIE_SYMBOL 
+            WHERE ID NOT IN (SELECT id FROM MAGPIE_SYMBOL_fts) 
+              AND name IS NOT NULL;
+        `);
+    })(); // Execute the transaction instantly
+    
+    console.log("MAGPIE_SYMBOL table, FTS5 index, and sync triggers verified successfully.");
+};
+
 // #endregion
 //------------------------------------------------------------------------
 /**

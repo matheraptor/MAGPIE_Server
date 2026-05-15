@@ -7,5 +7,6 @@ module.exports = {
     instance_name: process.env.instance_name,
     instance_ip: process.env.instance_ip,
     instance_zone: process.env.instance_zone,
-    devMode: process.env.devMode
+    devMode: process.env.devMode,
+    NODE_ENV: process.env.isProduction ? true : false
 }

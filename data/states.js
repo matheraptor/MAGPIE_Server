@@ -179,14 +179,14 @@ const SEEKING_TARGET = {
 		{
 			if(exp?.keys || exp?.targetPOVART) 
 				throw new Error(`${exp} is invalid MAGPIE_EXP`);
-			if(!exp.keys.find(key => key === MAGPIE.KEY.INDEX.TARGET))
+			if(!exp.keys.find(key => key.originID === MAGPIE.KEY.INDEX.TARGET))
 				return
 			if(!entity?.ID || isNaN(entity.ID))
 				throw new Error(`${entity} is invalid MAGPIE_ENTITY`);
 			const POVART0 = exp.subjectID.slice(0,30);
 			const P1 = exp.targetID.slice(0,3);
 			const STATS = exp.subjectID;
-			const toler = exp.keys.find(key => key === MAGPIE.KEY.INDEX.PROXIMITY) ? 1 : 0;
+			const toler = exp.keys.find(key => key.originID === MAGPIE.KEY.INDEX.PROXIMITY) ? 1 : 0;
 			const options = {intensity: exp.value, tolerance: toler}
 			const output = entity._emote_seekTarget(exp);
 			const purge = true;
@@ -228,7 +228,7 @@ const APPROACHING_TARGET = {
 	stack: 1,
 	onApply: () => {},
 	onUpdate: (exp, entity) => {
-		if(!exp.keys.find(key => key === MAGPIE.KEY.INDEX.TARGET))
+		if(!exp.keys.find(key => key.originID === MAGPIE.KEY.INDEX.TARGET))
 			return console.log(`state302: skip`)
 		const purge = true;
 		const output = entity._seekTarget(exp);
