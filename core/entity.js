@@ -111,8 +111,26 @@ MAGPIE_ENTITY._stats_destructure = function statsDestructure(entity_stats)
 	const STATS = entity_stats.slice(K.ARRAY + 1)
 	return { POVART, STATS }
 }
-
-
+/**
+ * 
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_ENTITY.__hive = async function __hive(method, arguments)
+{
+	//
+}
+/**
+ * 
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {*} 
+ */
+MAGPIE_ENTITY.__hiveSync = function __hiveSync(method, arguments)
+{
+	//
+}
 /**
  * 
  * @param {MAGPIE_ENTITY} entity
@@ -120,7 +138,7 @@ MAGPIE_ENTITY._stats_destructure = function statsDestructure(entity_stats)
  */
 MAGPIE_ENTITY._hive_setEntitySync = function _hive_setEntitySync(entity)
 {
-	return MAGPIE_ENTITY.__hive_setSync("_set_entitySync", entity)
+	return MAGPIE_ENTITY.__hiveSync("_set_entitySync", [entity])
 }
 /**
  * 
@@ -129,7 +147,7 @@ MAGPIE_ENTITY._hive_setEntitySync = function _hive_setEntitySync(entity)
  */
 MAGPIE_ENTITY._hive_setEntity = async function _hive_setEntity(entity)
 {
-	return await MAGPIE_ENTITY.__hive_set("_set_entity", entity);
+	return await MAGPIE_ENTITY.__hive("_set_entity", [entity]);
 }
 /**
  * 
@@ -138,7 +156,7 @@ MAGPIE_ENTITY._hive_setEntity = async function _hive_setEntity(entity)
  */
 MAGPIE_ENTITY._hive_setExp = async function _hive_setExp(exp)
 {
-	return await MAGPIE_ENTITY.__hive_set("_set_exp", exp)
+	return await MAGPIE_ENTITY.__hive("_set_exp", [exp])
 }
 /**
  * 
@@ -147,7 +165,7 @@ MAGPIE_ENTITY._hive_setExp = async function _hive_setExp(exp)
  */
 MAGPIE_ENTITY._hive_setExpSync = function _hive_setExpSync(exp)
 {
-	return MAGPIE_ENTITY.__hive_setSync("_set_expSync", exp)
+	return MAGPIE_ENTITY.__hiveSync("_set_expSync", [exp])
 }
 /**
  * 
@@ -215,7 +233,7 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
 	let list = [];
 	for(const ID of property)
 	{	
-		const entity = await MAGPIE_ENTITY.__hive_get("_get_entity", ID);
+		const entity = await MAGPIE_ENTITY.__hive("_get_entity", ID);
 		if(entity instanceof MAGPIE_ENTITY) list.push(entity);
 	}
 	if(list.length < property.length)
@@ -586,31 +604,12 @@ MAGPIE_ENTITY._get_decomp_POVART = function getDecompPOVART(POVART)
 	return MAGPIE_PHYSICS.decomp_POVART(POVART);
 }
 /**
- * 
- * @param {entityID} entityID
- * @returns {Promise<MAGPIE_ENTITY>} 
- */
-MAGPIE_ENTITY.__hive_get = async function __hive_get(entityID)
-{
-	//
-}
-/**
- * 
- * @param {String} method 
- * @param {*} value
- * @returns {*} 
- */
-MAGPIE_ENTITY.__hive_getSync = function __hive_getSync(method, value)
-{
-	//
-}
-/**
  * @returns {MAGPIE_ENTITY}
  */
 MAGPIE_ENTITY.prototype._get_celestial = function _get_celestial()
 {
 	const celestialID = this.STATS[MAGPIE.KEY.POVART.P_C];
-	return MAGPIE_ENTITY.__hive_getSync("_get_celestial", celestialID)
+	return MAGPIE_ENTITY.__hiveSync("_get_celestial", [celestialID])
 }
 /**
  * 
@@ -726,7 +725,7 @@ MAGPIE_ENTITY.prototype._get_fatLevel = function _get_fatLevel()
  */
 MAGPIE_ENTITY._hive_getExp = function _hive_getExp(expID)
 {
-	return MAGPIE_ENTITY.__hive_getSync("_get_Exp", expID)
+	return MAGPIE_ENTITY.__hiveSync("_get_databaseSync", ["loadExpSync", [expID]])
 }
 /**
  * 
@@ -735,7 +734,7 @@ MAGPIE_ENTITY._hive_getExp = function _hive_getExp(expID)
  */
 MAGPIE_ENTITY._hive_getExpKeys = function _hive_getExpKeys(exp)
 {
-	return MAGPIE_ENTITY.__hive_getSync("_get_ExpKeys", exp)
+	return MAGPIE_ENTITY.__hiveSync("_get_databaseSync", ["getExpKeys", [exp]])
 }
 /**
  * 
@@ -746,7 +745,7 @@ MAGPIE_ENTITY._hive_getExpKeys = function _hive_getExpKeys(exp)
  */
 MAGPIE_ENTITY._hive_getRelatives = async function _hive_getRelatives(rT, pK, fK)
 {
-	return await MAGPIE_ENTITY.__hive_get("_get_relatives", rT, pK, fK)
+	return await MAGPIE_ENTITY.__hive("_get_relatives", rT, pK, fK)
 }
 /**
  * 
@@ -755,7 +754,7 @@ MAGPIE_ENTITY._hive_getRelatives = async function _hive_getRelatives(rT, pK, fK)
 MAGPIE_ENTITY.prototype.getMother = function getMother()
 {
 	const motherID = this.STATS[MAGPIE.KEY.STATS.MOTHER];
-	return MAGPIE_ENTITY.__hive_getSync("_get_entitySync", motherID);
+	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [motherID]);
 }
 /**
  * 
@@ -764,7 +763,7 @@ MAGPIE_ENTITY.prototype.getMother = function getMother()
 MAGPIE_ENTITY.prototype.getFather = function getFather()
 {
 	const fatherID = this.STATS[MAGPIE.KEY.STATS.FATHER];
-	return MAGPIE_ENTITY.__hive_getSync("_get_entitySync", fatherID);
+	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [fatherID]);
 }
 /**
  * 
@@ -773,7 +772,7 @@ MAGPIE_ENTITY.prototype.getFather = function getFather()
 MAGPIE_ENTITY.prototype.getCompound = function getCompound()
 {
 	const compoundID = this.STATS[MAGPIE.KEY.STATS.COMPOUND];
-	return MAGPIE_ENTITY.__hive_getSync("_get_entitySync", compoundID);
+	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [compoundID]);
 }
 /**
  * 
@@ -782,7 +781,7 @@ MAGPIE_ENTITY.prototype.getCompound = function getCompound()
 MAGPIE_ENTITY.prototype.getHost = function getHost()
 {
 	const hostID = this.STATS[MAGPIE.KEY.STATS.HOST];
-	return MAGPIE_ENTITY.__hive_getSync("_get_entitySync", hostID);
+	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [hostID]);
 }
 /**
  * @returns {Promise<MAGPIE_ENTITY[]>}
@@ -886,7 +885,7 @@ MAGPIE_ENTITY.prototype._get_orbit = function getOrbit()
  */
 MAGPIE_ENTITY._set_relation = async function _set_relation(payload)
 {
-	return await MAGPIE_ENTITY.__hive_set("_set_relation", payload)
+	return await MAGPIE_ENTITY.__hive("_set_relation", payload)
 }
 /**
  * 
@@ -1401,7 +1400,7 @@ MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt)
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error(`${exp} is invalid EXP`);
 		exp.subjectID = this.STATS;
-		exp.targetID = MAGPIE_ENTITY.__hive_getSync("_get_entitySync", exp.targetID)?.STATS;
+		exp.targetID = MAGPIE_ENTITY.__hiveSync("_get_entity", [exp.targetID])?.STATS;
 		return exp
 	}
 	catch(e)
@@ -1839,7 +1838,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		const target = typeof exp.targetID === "number" 
 			? exp.targetID 
 			: exp.targetID[MAGPIE.KEY.POVART.E_ID]
-		const entity = MAGPIE_ENTITY.__hive_getSync("_get_entitySync", target);
+		const entity = MAGPIE_ENTITY.__hiveSync("_get_entitySync", [target]);
 		const P1 = entity._get_P0();
 		const tolerance = 1; //@todo dynamic seekTarget tolerance
 		const pR = 1; //@todo dynamic seekTarget priority ratio
@@ -2056,7 +2055,7 @@ MAGPIE_ENTITY.prototype.addState = function addState(state)
 		if(!valid) return
 		const [stateID, index] = valid;
 		const slot = this.fitness[index];
-		if(!isNaN(slot)) 
+		if(slot) 
 			throw new Error(`fitness[${index}] is occupied by [STATE-${slot}]`)
 		this.fitness[index] = stateID
 		return true
@@ -2148,11 +2147,13 @@ MAGPIE_ENTITY.exp = {};
  */
 MAGPIE_ENTITY.prototype._get_exps = function _get_exps()
 {
-	if(this.exps.length < 1) return
+	if(this.exps.length < 1) return []
 	let exps = [];
 	for(const expID of this.exps)
 	{
-		exps.push(MAGPIE_ENTITY._hive_getExp(expID))
+		const exp = MAGPIE_ENTITY._hive_getExp(expID);
+		if(exp instanceof MAGPIE_EXP)
+			exps.push(exp)
 	}
 	return exps
 }
@@ -2167,7 +2168,7 @@ MAGPIE_ENTITY.prototype._get_exp_target = function _get_exp_target(expID)
 	const targetID = typeof exp.targetID === "number" 
 		? exp.targetID
 		: exp.targetID[MAGPIE.KEY.POVART.E_ID]
-	return MAGPIE_ENTITY.__hive_getSync("_get_entitySync", targetID)
+	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [targetID])
 }
 /**
  * 
@@ -2175,7 +2176,7 @@ MAGPIE_ENTITY.prototype._get_exp_target = function _get_exp_target(expID)
  */
 MAGPIE_ENTITY.prototype._get_target = function _get_target()
 {
-	return MAGPIE_ENTITY.__hive_getSync("_get_entitySync", this._get_exps()[0].targetID)
+	return MAGPIE_ENTITY.__hiveSync("_get_entity", [this._get_exps()[0].targetID])
 }
 // #endregion
 //------------------------------------------------------------------------

@@ -1694,9 +1694,9 @@ MAGPIE_HIVE.getSlot = function getSlot(slot, layerID)
  */
 MAGPIE_HIVE._get_celestial = function __get_celestial(celestialID)
 {
-	const slot = this._registry.get(celestialID)?.slot
+	const slot = MAGPIE_HIVE._registry.get(celestialID)?.slot
 	const layerStandard = 2
-	return this.getSlot(slot, layerStandard)
+	return MAGPIE_HIVE.getSlot(slot, layerStandard)
 }
 MAGPIE_HIVE.kick = function kick(entityID)
 {

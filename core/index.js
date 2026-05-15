@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.22.10
+ * @version 0.22.11
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,7 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.22.10 2026 05 15
+ * @version 0.22.11 2026 05 15
  * - ADDED: DATABASE.pragma cache_size -64000 to mitigate the 
  * 		read flooding
  * - ADDED: DATABASE.helpers for symbol recipes/components
@@ -28,8 +28,10 @@
  * 		and stats 
  * - ADDED: RUNTIME.refresh clamp catch-up loop to prevent execution spikes
  * 		if(this._base > 100) this._base = 100;
+ * - ADDED: MAGPIE_KEY.setup routine to index the axiom keys
  * - TWEAKED: MAGPIE_SYMBOL.STATS now includes requirements/compounds
  * - TWEAKED: MAGPIE_SYMBOL .requirementID and .compoundID deprecated
+ * - TWEAKED: DATABASE.getExpKeys using more efficient sql
  * - FIXED: DATABASE.saveSymbolSync iterating through inexistent symbol's
  * 		.requirements and .compounds 
  * - FIXED: DATABASE.getRow passing floats instead of integers, causing
@@ -40,6 +42,10 @@
  * - FIXED: RUNTIME.refresh not async preventing safe database execution
  * - FIXED: DATABASE.saveSymbol typo
  * - FIXED: SYMBOL.STATS inconsistent key/value pair
+ * - FIXED: MAGPIE.KEY.INDEX.VSPEEDS incorrectly initializing, causing
+ * 		SYMBOL.getVspeeds to fail
+ * - FIXED: SERVER.BOOT.shutdown hanging on incorrectly defined async 
+ * 		behavior
  * 
  * @version 0.22.4 2026 05 14
  * - ADDED: MAGPIE_IO.WORKER for fsio and logging
@@ -374,7 +380,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 10],
+			version: [0, 22, 11],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260515"
 		};
@@ -474,7 +480,14 @@ MAGPIE.KEY.TYPE.MASTERCONTEXT = 31;
 MAGPIE.KEY.TYPE.MASTEREXP = 32;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.MASTERTICKET = 33;
-/** @typedef {Enumerator<Number>} key_index */
+/**
+ * 
+ * @typedef {Enumerator<Number>} key_index
+ * @typedef {import("./component").key_label} key_label
+ */
+/** 
+ * 
+ */
 MAGPIE.KEY.INDEX = {};
 MAGPIE.KEY.INDEX.meta = "";
 /** @type {key_index} */
@@ -513,7 +526,7 @@ MAGPIE.KEY.INDEX.DENSITY = 2014;
 MAGPIE.KEY.INDEX.AREA = 2020;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.VOLUME = 2021;
-/** @type {key_index} */
+/** @type {Map<key_index, key_label>} */
 MAGPIE.KEY.INDEX.VSPEEDS = new Map();
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.VMAX = 3000;
@@ -555,7 +568,8 @@ MAGPIE.KEY.INDEX.TCRUISE = 6002;
 MAGPIE.KEY.INDEX.TCREEP = 6003;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TDOCK = 6004;
-
+MAGPIE.KEY.INDEX.VSPEEDS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("VMAX"));
+MAGPIE.KEY.INDEX.VSPEEDS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("TDOCK"));
 // #endregion
 //------------------------------------------------------------------------
 /**

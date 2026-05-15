@@ -1056,6 +1056,8 @@ MAGPIE_PHYSICS.distanceTo = function distanceTo(P0, P1)
 	try
 	{
 		const diff = this.subVectors(P1, P0);
+		if(!this.isValidVector(diff))
+			throw new Error(`${diff} is invalid vector`)
 		return this.mag(diff);
 	}
 	catch(e)

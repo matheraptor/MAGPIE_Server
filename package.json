@@ -15,6 +15,7 @@
   "type": "commonjs",
   "dependencies": {
     "@express-rate-limit/tsconfig": "^1.0.2",
+    "@socket.io/admin-ui": "^0.5.1",
     "better-sqlite3": "^12.9.0",
     "cli-progress": "^3.12.0",
     "cli-spinner": "^0.2.10",

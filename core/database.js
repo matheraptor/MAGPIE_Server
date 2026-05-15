@@ -680,7 +680,7 @@ MAGPIE_DATABASE.loadExpSync = function loadExpSync(expID)
 	const ePrefix = "[DATABASE].loadExp: ";
 	try
 	{
-		const exp = this.sync.loadWorldRow("MAGPIE_EXP", {ID: expID})
+		const exp = MAGPIE_DATABASE.sync.loadWorldRow("MAGPIE_EXP", {ID: expID})
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error(`[EXP-${expID}] is not in database`);
 		return exp
@@ -1133,6 +1133,43 @@ MAGPIE_DATABASE.loadEquipsSync = function loadEquipsSync(hostID)
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Exp
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {MAGPIE_KEY[]} 
+ */
+MAGPIE_DATABASE.getExpKeys = function getExpKeys(exp)
+{
+	const ePrefix = "[DATABASE].getExpKeys: ";
+	try
+	{
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`${exp} is invalid MAGPIE_EXP`)
+		const keys = exp.keys;
+		if(!Array.isArray(keys) || keys.length < 1) return [];
+		const db = MAGPIE_DATABASE.sync.world;
+		const placeholders = keys.map(() => "?").join(", ")
+		const sql = `SELECT * FROM MAGPIE_KEY WHERE ID IN (${placeholders})`;
+		const rows = db.prepare(sql).all(keys);
+		const rowMap = new Map(rows.map(row => [row.ID, row]))
+		return keys.map(id => rowMap.get(id)).filter(Boolean)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return []
 	}
 }
 // #endregion

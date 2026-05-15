@@ -238,20 +238,20 @@ MAGPIE_SYMBOL.prototype._get_requirements = function getRequirements()
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.REQUIREMENTS);
 	const end = this.STATS.indexOf(K.COMPOUNDS);
-	return this.STATS.slice(start + 2, end);
+	return this.STATS.slice(start + 1, end);
 }
 MAGPIE_SYMBOL.prototype._get_compounds = function getCompounds()
 {
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.COMPOUNDS);
 	const end = this.STATS.indexOf(K.STATS);
-	return this.STATS.slice(start + 2, end);
+	return this.STATS.slice(start + 1, end);
 }
 MAGPIE_SYMBOL.prototype._get_STATS = function getSTATS()
 {
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.STATS);
-	return this.STATS.slice(start + 2)
+	return this.STATS.slice(start + 1)
 }
 /**
  * 
@@ -340,13 +340,14 @@ MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 	const ePrefix = `[SYMBOL-${this.ID}].getVspeeds: `;
 	try
 	{
-		const map = this.STATS;
+		const map = this._get_STATS();
 		const K = MAGPIE.KEY.INDEX;
-		const arr =  Object.values(K);
-		const keys = arr.slice(arr.indexOf(K.VMAX), arr.indexOf(K.TDOCK) + 1);
+		const keys = Array.from(K.VSPEEDS.keys())
+		const values = Array.from(K.VSPEEDS.values());
 		const Vspeeds = {};
-		keys.forEach(keyID => {
-			const value = map.get(keyID)
+		map.forEach((keyID, index) => {
+			if(index % 2 === 0 && values.includes(keyID))
+				Vspeeds[K.VSPEEDS.get(keyID)] = map[index + 1]
 		})
 		// MAGPIE_SYSTEM._logging_debug(Object.entries(Vspeeds))
 		return Vspeeds
@@ -380,7 +381,7 @@ MAGPIE_SYMBOL.prototype.set = async function set()
  */
 MAGPIE_SYMBOL.prototype.setSync = function setSync()
 {
-	return MAGPIE_COMPONENT.__setSync("saveSymbolSync", this);
+	return MAGPIE_COMPONENT.__setSync("saveSymbolSync", [this]);
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -644,7 +645,7 @@ MAGPIE_EXP.prototype._emote_onTarget = function _emote_onTarget()
 MAGPIE_EMOTE.meta = {};
 /** @type {Map<emoteID, MAGPIE_EMOTE>} */
 MAGPIE_EMOTE.INDEX = new Map();
-MAGPIE_EMOTE.setup = function()
+MAGPIE_EMOTE.setup = async function()
 {
 	const data = require("../data/emotes");
 	for(const emote_data of data)
@@ -766,6 +767,13 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
 	this.originID = Number(data?.originID) || 0;
 	this.compoundID = Number(data?.compoundID) || 0;
 	this.symbolID = Number(data?.symbolID) || 0;
+}
+/**
+ * @returns {Promise<Boolean>}
+ */
+MAGPIE_KEY.setup = async function setup()
+{
+	//
 }
 /**
  * 
