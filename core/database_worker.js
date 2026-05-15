@@ -274,7 +274,10 @@ worker.getRow = function getRow(tableName, criteria = {}, db)
 	const statement = this.getStatement(`GET:${tableName}:${whereClause}`, sql, db);
 	const values = columns.map(col => {
 		const entry = criteria[col];
-		return (entry && entry.op !== undefined) ? entry.val : entry;
+		const rawValue = (entry && entry.op !== undefined) ? entry.val : entry;
+		if(typeof rawValue === 'number' && Number.isInteger(rawValue))
+			return Math.floor(rawValue)
+		return rawValue
 	})
 	const result = statement.all(...values);
 	return result;

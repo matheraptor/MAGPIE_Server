@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.22.7
+ * @version 0.22.8
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,7 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.22.7 2026 05 15
+ * @version 0.22.8 2026 05 15
  * - ADDED: DATABASE.pragma cache_size -64000 to mitigate the 
  * 		read flooding
  * - ADDED: DATABASE.helpers for symbol recipes/components
@@ -30,6 +30,8 @@
  * - TWEAKED: MAGPIE_SYMBOL .requirementID and .compoundID deprecated
  * - FIXED: DATABASE.saveSymbolSync iterating through inexistent symbol's
  * 		.requirements and .compounds 
+ * - FIXED: DATABASE.getRow passing floats instead of integers, causing
+ * 		unnecessary read overhead
  * 
  * @version 0.22.4 2026 05 14
  * - ADDED: MAGPIE_IO.WORKER for fsio and logging
@@ -364,7 +366,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 7],
+			version: [0, 22, 8],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260515"
 		};
