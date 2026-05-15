@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.22.8
+ * @version 0.22.9
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,18 +20,24 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.22.8 2026 05 15
+ * @version 0.22.9 2026 05 15
  * - ADDED: DATABASE.pragma cache_size -64000 to mitigate the 
  * 		read flooding
  * - ADDED: DATABASE.helpers for symbol recipes/components
  * - ADDED: MAGPIE.KEYS for requirements, compounds, recipes, components, 
  * 		and stats 
+ * - ADDED: RUNTIME.refresh clamp catch-up loop to prevent execution spikes
+ * 		if(this._base > 100) this._base = 100;
  * - TWEAKED: MAGPIE_SYMBOL.STATS now includes requirements/compounds
  * - TWEAKED: MAGPIE_SYMBOL .requirementID and .compoundID deprecated
  * - FIXED: DATABASE.saveSymbolSync iterating through inexistent symbol's
  * 		.requirements and .compounds 
  * - FIXED: DATABASE.getRow passing floats instead of integers, causing
  * 		unnecessary read overhead
+ * - FIXED: catastrophic bug "return" within for loop in HIVE .tick_buffer 
+ * 		and .tick_remote causing subsequent entities in loop to be dropped
+ * - FIXED: RUNTIME.refresh while(this._base > 1) race condition
+ * - FIXED: RUNTIME.refresh not async preventing safe database execution
  * 
  * @version 0.22.4 2026 05 14
  * - ADDED: MAGPIE_IO.WORKER for fsio and logging
@@ -366,7 +372,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 8],
+			version: [0, 22, 9],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260515"
 		};
@@ -571,6 +577,22 @@ MAGPIE.KEY.RUNTIME.LAYER.set(2, { name: "_GuestsStandard", delta: 1, slots: 5000
 MAGPIE.KEY.RUNTIME.LAYER.set(3, { name: "_GuestsSuper", delta: 60, slots: 10000 });
 MAGPIE.KEY.RUNTIME.LAYER.set(4, { name: "_GuestsMega", delta: 60 ** 2, slots: 50000 });
 MAGPIE.KEY.RUNTIME.LAYER.set(5, { name: "_GuestsUltra", delta: 60 ** 2 * 24, slots: 100000 });
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Hive
+//------------------------------------------------------------------------
+MAGPIE.KEY.HIVE = {};
+MAGPIE.KEY.HIVE.meta = "";
+/** @type {Enumerator<Number>} amount of HIVE buffer layers */
+MAGPIE.KEY.HIVE.BUFFER_SIZE = 3;
+/** @type {Enumerator<Number>} amount of HIVE remote layers */
+MAGPIE.KEY.HIVE.REMOTE_SIZE = 3;
 // #endregion
 //------------------------------------------------------------------------
 /**

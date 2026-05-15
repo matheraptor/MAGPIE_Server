@@ -394,6 +394,13 @@ MAGPIE_HIVE.refresh = async function refresh(runtimeID, switchID)
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 	}
 }
+/**
+ * 
+ * @param {String} layerName 
+ * @param {Number} layerID 
+ * @param {Number} switchID 
+ * @param {duration} dt 
+ */
 MAGPIE_HIVE.tick_buffer = async function tick_buffer(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_buffer: ";
@@ -406,9 +413,9 @@ MAGPIE_HIVE.tick_buffer = async function tick_buffer(layerName, layerID, switchI
 			const slot = i;
 			/** @type {MAGPIE_ENTITY} */
 			const entry = this.getSlot(slot, layerID)
-			if(!entry) return
-			const entity = layerID < 3 ? entry : this.loadEntitySync(entry);
-			if(entity.type < 1) return
+			if(!entry) continue
+			const entity = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? entry : this.loadEntitySync(entry);
+			if(entity.type < 1) continue
 			const pass = await entity.refresh(switchID, dt)
 			if(!pass) this.kick(entity.ID, layerID);
 		}
@@ -418,7 +425,13 @@ MAGPIE_HIVE.tick_buffer = async function tick_buffer(layerName, layerID, switchI
 		}
 	}
 }
-
+/**
+ * 
+ * @param {String} layerName 
+ * @param {Number} layerID 
+ * @param {Number} switchID 
+ * @param {duration} dt 
+ */
 MAGPIE_HIVE.tick_remote = async function tick_remote(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_remote: ";
@@ -429,7 +442,7 @@ MAGPIE_HIVE.tick_remote = async function tick_remote(layerName, layerID, switchI
 		{
 			if(isNaN(entityID))
 				this[layerName][i] = 0;
-			if(!entityID) return
+			if(!entityID) continue
 			const entity = this.loadEntitySync(entityID);
 			if(!entity instanceof MAGPIE_ENTITY)
 				throw new Error(`[ENTITY-${entityID}] is invalid entity`)
@@ -439,12 +452,12 @@ MAGPIE_HIVE.tick_remote = async function tick_remote(layerName, layerID, switchI
 			const save = this.saveEntitySync(entity);
 			if(!save)
 				throw new Error(`unable to update [ENTITY-${this.ID}]`)
-			return true
 		}
 		catch(e)
 		{
 			MAGPIE_SERVER.error(ePrefix + e.message, e)
 			this.kick(entityID, layerID);
+			continue
 		}
 	}
 }
@@ -471,7 +484,7 @@ MAGPIE_HIVE.getSlot = function getSlot(slot, layerID)
 	{
 		const layerName = MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name;
 		const entity = this[layerName][slot]
-		const valid = layerID < 3 ? (entity instanceof MAGPIE_ENTITY) : !isNaN(entity);
+		const valid = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? (entity instanceof MAGPIE_ENTITY) : !isNaN(entity);
 		if(!valid)
 			throw new Error(`[LAYER-${layerID}][${slot}] is invalid entity slot`)
 		return entity
@@ -543,7 +556,7 @@ MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID)
 		const slot = this.nextSlot(layerID);
 		if(isNaN(slot))
 			throw new Error(`[LAYER-${layerID}] is full`);
-		this[layerName][slot] = layerID < 3 ? entity : entity.ID;
+		this[layerName][slot] = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? entity : entity.ID;
 		this._registry.set(entity.ID, {
 			layerID: layerID,
 			slot: slot,  
@@ -581,7 +594,7 @@ MAGPIE_HIVE.kick = function kick(entityID, reason = "dev")
 		const nextSlot = layerRecord.nextSlot - 1;
 		const entity = this[layerName][index];
 		this[layerName][index] = this[layerName][lastSlot];
-		this[layerName][lastSlot] = layerID < 3 ? new MAGPIE_ENTITY() : 0;
+		this[layerName][lastSlot] = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? new MAGPIE_ENTITY() : 0;
 		layerRecord.nextSlot = nextSlot;
 		this._registry.delete(entityID);
 		this._registry.set(layerID, layerRecord);
@@ -688,7 +701,7 @@ MAGPIE_HIVE.awake = async function awake()
 			const slot = record.slot;
 			const target = record.target;
 			const layerName = layer.get(layerID).name;
-			this[layerName][slot] = layerID < 3 ? this.loadEntitySync(entityID) : entityID;
+			this[layerName][slot] = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? this.loadEntitySync(entityID) : entityID;
 		})
 		MAGPIE_SERVER.log(ePrefix + `loaded ${list.length}x entities`)
 	}

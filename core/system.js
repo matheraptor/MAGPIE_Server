@@ -1246,29 +1246,32 @@ MAGPIE_RUNTIME.prototype._memoryUsage = function memoryUsage(logToFile = false)
 // #region > TICK
 //------------------------------------------------------------------------
 MAGPIE_RUNTIME.tick = {};
-MAGPIE_RUNTIME.prototype.refresh = function refresh()
+MAGPIE_RUNTIME.prototype.refresh = async function refresh()
 {
-	if(!this.isActive) return
+	if(!this.isActive || this._isTicking) return
+	this._isTicking = true;
 	const dt = Date.now() - this._now;
-	this._now += dt;
+	this._now = Date.now();
 	this._base += dt;
 	this._game += dt;
 	this._standard += dt;
+	if(this._base > 100) this._base = 100;
 	while(this._base > 1)
 	{
 		this.TICK_base();
 		this._base--;
 	}
-	if(this._game > 16)
+	if(this._game >= 16.67)
 	{
-		this.TICK_game();
-		this._game -= 16;
+		await this.TICK_game();
+		this._game -= 16.67;
 	}
 	if(this._standard > 1000)
 	{
 		this.TICK_standard();
 		this._standard -= 1000;
 	}
+	this._isTicking = false;
 }
 MAGPIE_RUNTIME.prototype.TICK_base = async function TICK_base()
 {
