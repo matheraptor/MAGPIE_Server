@@ -2,6 +2,20 @@
 
 [TOC]
 
+## ADMIN
+
+- reboot gracefully:
+
+    ```bash
+    sudo reboot
+    ```
+
+- hard reboot:
+
+    ```bash
+    sudo reboot -f
+    ```
+
 ## MONITORS
 
 ### AUTH.LOG
@@ -16,6 +30,12 @@ sudo tail -n 50 /var/log/auth.log | grep -E "Failed|Invalid"
 while true; do ps -eo pid,%cpu,comm --sort=-%cpu | head -n 4; sleep 1; clear; done
 
 ```
+
+- process check:
+
+    ```bash
+    ps aux | grep -E "throttle_node|cpulimit|node"
+    ```
 
 ### TASK MANAGER
 

@@ -1,27 +1,23 @@
 #!/bin/bash
-# throttle_node v4
+# throttle_node v5
 cd /home/hamedahastral/MAGPIE_Server
 
 CPU_LIMIT=30
 
+echo "Passive MAGPIE Governor loaded. Waiting for manual node start..."
+
 while true; do
-    # 1. Start Node in the background
-    node SERVER.js &
-    NODE_PID=$!
+    # 1. Look for any active node process running SERVER.js
+    NODE_PID=$(pgrep -f "node SERVER.js")
     
-    # 2. Critical: Wait 1 second for the OS to fully register the process ID
-    sleep 1
-    
-    # 3. Attach cpulimit directly to the registered PID
-    if ps -p $NODE_PID > /dev/null; then
-        cpulimit -p $NODE_PID -l $CPU_LIMIT -b
+    if [ ! -z "$NODE_PID" ]; then
+        # 2. Check if cpulimit is already attached to this specific PID
+        if ! ps aux | grep "cpulimit" | grep -q " -p $NODE_PID"; then
+            echo "Manual Node process detected (PID: $NODE_PID). Applying 30% CPU throttle..."
+            cpulimit -p $NODE_PID -l $CPU_LIMIT -b
+        fi
     fi
     
-    # 4. Stay active until this specific Node process finishes or exits
-    wait $NODE_PID
-    exitCode=$?
-    
-    if [ "$exitCode" -eq 0 ]; then
-        break
-    fi
+    # 3. Rest quietly for 2 seconds before checking again to use 0% idle CPU
+    sleep 2
 done
