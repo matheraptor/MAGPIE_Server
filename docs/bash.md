@@ -14,4 +14,11 @@ sudo tail -n 50 /var/log/auth.log | grep -E "Failed|Invalid"
 
 ```bash
 while true; do ps -eo pid,%cpu,comm --sort=-%cpu | head -n 4; sleep 1; clear; done
+
+```
+
+### TASK MANAGER
+
+```bash
+pkill -f node
 ```
