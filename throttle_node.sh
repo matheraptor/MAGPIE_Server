@@ -1,25 +1,27 @@
 #!/bin/bash
-# throttle_node v3
+# throttle_node v4
 cd /home/hamedahastral/MAGPIE_Server
 
 CPU_LIMIT=30
 
 while true; do
-    echo "Launching MAGPIE Server Core with native throttling..."
+    # 1. Start Node in the background
+    node SERVER.js &
+    NODE_PID=$!
     
-    # Launch node directly INSIDE cpulimit. 
-    # This guarantees it is throttled from the exact millisecond it boots.
-    cpulimit -l $CPU_LIMIT -- node SERVER.js
+    # 2. Critical: Wait 1 second for the OS to fully register the process ID
+    sleep 1
+    
+    # 3. Attach cpulimit directly to the registered PID
+    if ps -p $NODE_PID > /dev/null; then
+        cpulimit -p $NODE_PID -l $CPU_LIMIT -b
+    fi
+    
+    # 4. Stay active until this specific Node process finishes or exits
+    wait $NODE_PID
     exitCode=$?
     
-    # Evaluate exit codes smoothly
-    if [ "$exitCode" -eq 2 ]; then
-        echo "Restart signal received CODE[2]: rebooting..."
-    elif [ "$exitCode" -eq 0 ]; then
-        echo "Normal shutdown. Exiting."
+    if [ "$exitCode" -eq 0 ]; then
         break
-    else
-        echo "Server crashed with CODE[$exitCode]. Pausing before restart..."
-        sleep 2
     fi
 done
