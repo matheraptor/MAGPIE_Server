@@ -2,6 +2,8 @@
 
 [TOC]
 
+---
+
 ## ADMIN
 
 ### reboot gracefully
@@ -29,6 +31,8 @@ throttle_node.sh >/dev/null 2>&1 &
 home
 ```
 
+---
+
 ## MONITORS
 
 ### AUTH.LOG
@@ -36,6 +40,8 @@ home
 ```bash
 sudo tail -n 50 /var/log/auth.log | grep -E "Failed|Invalid"
 ```
+
+---
 
 ### CPU MONITOR
 
@@ -48,6 +54,8 @@ while true; do ps -eo pid,%cpu,comm --sort=-%cpu | head -n 4; sleep 1; clear; do
 ```bash
 ps aux | grep -E "throttle_node|cpulimit|node"
 ```
+
+---
 
 ### TASK MANAGER
 
@@ -69,6 +77,8 @@ pkill -f node
 /home/hamedahastral/MAGPIE_Server/throttle_node.sh >/dev/null 2>&1 &
 ```
 
+---
+
 ### GIT
 
 ### pull latest from repo
@@ -76,6 +86,30 @@ pkill -f node
 ```bash
 git pull
 ```
+
+### set VSCode as default editor
+
+```powershell
+git config --global core.editor "code --wait"
+```
+
+### git commit
+
+```powershell
+git add .
+```
+
+```powershell
+git commit
+```
+
+```powershell
+git commit -m "title" \ 
+-m "line2" \
+-m "line3" \
+```
+
+---
 
 ### GCLOUD SDK
 
@@ -130,3 +164,5 @@ gcloud logging read "textPayload:\"[PROCESSES CPU]\" OR textPayload:\"[SYSTEMD E
 ```powershell
 gcloud logging read "resource.type=gce_instance AND textPayload:\"apt-get\"" --limit=30 --format="table(timestamp.date(tz=LOCAL), textPayload)"
 ```
+
+---
