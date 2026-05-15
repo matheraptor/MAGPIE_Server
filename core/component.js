@@ -227,9 +227,31 @@ MAGPIE_SYMBOL.prototype.initialize = function initialize(data)
 	this.type = Number(data?.type) || 0;
 	this.name = String(data?.name) || "";
 	this.desc = String(data?.desc) || "";
-	this.requirementID = Number(data?.requirementID) || 0;
-	this.compoundID = Number(data?.compoundID) || 0;
-	this.STATS = new Float64Array(data?.STATS || 0).fill(0)
+	const K = MAGPIE.KEY.INDEX;
+	const reqs = K.REQUIREMENTS;
+	const comps = K.COMPOUNDS;
+	const stats = K.STATS;
+	this.STATS = new Float64Array(data?.STATS || [reqs,comps,stats])
+}
+MAGPIE_SYMBOL.prototype._get_requirements = function getRequirements()
+{
+	const K = MAGPIE.KEY.INDEX;
+	const start = this.STATS.indexOf(K.REQUIREMENTS);
+	const end = this.STATS.indexOf(K.COMPOUNDS);
+	return this.STATS.slice(start + 1, end);
+}
+MAGPIE_SYMBOL.prototype._get_compounds = function getCompounds()
+{
+	const K = MAGPIE.KEY.INDEX;
+	const start = this.STATS.indexOf(K.COMPOUNDS);
+	const end = this.STATS.indexOf(K.STATS);
+	return this.STATS.slice(start + 1, end);
+}
+MAGPIE_SYMBOL.prototype._get_STATS = function getSTATS()
+{
+	const K = MAGPIE.KEY.INDEX;
+	const start = this.STATS.indexOf(K.STATS);
+	return this.STATS.slice(start + 1)
 }
 /**
  * 
@@ -320,7 +342,8 @@ MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 	{
 		const map = this.STATS;
 		const K = MAGPIE.KEY.INDEX;
-		const keys = Object.values(K).slice(K.VMAX, K.TDOCK + 1);
+		const arr =  Object.values(K);
+		const keys = arr.slice(arr.indexOf(K.VMAX), arr.indexOf(K.TDOCK) + 1);
 		const Vspeeds = {};
 		map.forEach((keyID, index) => {
 			if(index % 2 === 0 && keys.includes(keyID))
@@ -329,7 +352,7 @@ MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 				Vspeeds[key] = map[index + 1];
 			}
 		})
-		MAGPIE_SYSTEM._logging_debug(Object.entries(Vspeeds))
+		// MAGPIE_SYSTEM._logging_debug(Object.entries(Vspeeds))
 		return Vspeeds
 	}
 	catch(e)
@@ -353,7 +376,15 @@ MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
  */
 MAGPIE_SYMBOL.prototype.set = async function set()
 {
-	return await MAGPIE_COMPONENT.__set("MAGPIE_SYMBOL", this);
+	return await MAGPIE_COMPONENT.__set("saveSymbol", this);
+}
+/**
+ * 
+ * @returns {database_result}
+ */
+MAGPIE_SYMBOL.prototype.setSync = function setSync()
+{
+	return MAGPIE_COMPONENT.__setSync("saveSymbolSync", this);
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -721,6 +752,7 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
  * @typedef {import("./index").acceleration} acceleration in m/s²
  * @typedef {import("./index").omega} omega (ω) angular velocity in rad/s
  * @typedef {import("./index").alpha} alpha (α) angular acceleration in rad/s²
+ * @typedef {import("./index").key_data} key_data
  * 
  * @name 
  * @desc 
@@ -738,6 +770,16 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
 	this.originID = Number(data?.originID) || 0;
 	this.compoundID = Number(data?.compoundID) || 0;
 	this.symbolID = Number(data?.symbolID) || 0;
+}
+/**
+ * 
+ * @param {key_data} data 
+ * @returns {database_result: new MAGPIE_KEY}
+ */
+MAGPIE_KEY._newKey = function newKey(data)
+{
+	const key = new MAGPIE_KEY(data);
+	return key.setSync()
 }
 /**
  * 

@@ -848,8 +848,59 @@ MAGPIE_DATABASE.deleteKeyLegacy = function deleteExpSync(expID)
  */
 MAGPIE_DATABASE.saveSymbolSync = function saveSymbolSync(symbol)
 {
-	const payload = MAGPIE_DATABASE.prepareSymbol(symbol);
-	return MAGPIE_DATABASE.sync.saveWorldRow("MAGPIE_SYMBOL", payload);
+	const ePrefix = "[DATABASE].saveSymbolSync: ";
+	try
+	{
+		symbol._get_requirements().forEach(ID => {
+			MAGPIE_DATABASE.saveWorldRow("symbol_recipes", {
+				requirementID: ID,
+				recipeID: symbol.ID
+			})
+		})
+		symbol._get_compounds().forEach(ID => {
+			MAGPIE_DATABASE.saveWorldRow("symbol_components", {
+				compoundID: ID,
+				componentID: symbol.ID
+			})
+		})
+		const payload = MAGPIE_DATABASE.prepareSymbol(symbol);
+		return MAGPIE_DATABASE.sync.saveWorldRow("MAGPIE_SYMBOL", payload);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {symbolID} requirementID 
+ * @param {symbolID} recipeID 
+ * @returns {worker_result}
+ */
+MAGPIE_DATABASE.saveSymbolRecipe = function saveSymbolRecipe(requirementID, recipeID)
+{
+	return MAGPIE_DATABASE.sync.saveWorldRow("symbol_recipes", {
+		requirementID: requirementID,
+		recipeID: recipeID
+	})
+}
+/**
+ * 
+ * @param {symbolID} compoundID 
+ * @param {symbolID} componentID 
+ * @returns {worker_result}
+ */
+MAGPIE_DATABASE.saveSymbolComponents = function saveSymbolComponents(compoundID, componentID)
+{
+	return MAGPIE_DATABASE.sync.saveWorldRow("symbol_components", {
+		compoundID: compoundID,
+		componentID: componentID
+	})
+}
+MAGPIE_DATABASE.deleteSymbolSync = function deleteSymbolSync(symbolID)
+{
+	const symbol = MAGPIE_DATABASE.loadSymbolSync(symbolID);
+	symbol.requirements
 }
 /**
  * @typedef {import("./component.js").symbolID} symbolID
@@ -872,12 +923,15 @@ MAGPIE_DATABASE.prepareSymbol = function prepareSymbol(symbol)
 		ID: symbol.ID,
 		type: symbol.type,
 		name: symbol.name,
-		requirementID: symbol.requirementID || null,
-		compoundID: symbol.compoundID || null,
 		data: symbol
 	}
 	return payload
 }
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {MAGPIE_SYMBOL}
+ */
 MAGPIE_DATABASE.loadSymbolSync = function loadSymbolSync(symbolID)
 {
 	const ePrefix = "[DATABASE].loadSymbol: ";

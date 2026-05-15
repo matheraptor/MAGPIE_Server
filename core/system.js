@@ -301,7 +301,7 @@ MAGPIE_SYSTEM.PS.playSound = function playSound(soundfile = "", options = {})
 // #region > Logging
 //------------------------------------------------------------------------
 MAGPIE_SYSTEM.logging = {};
-MAGPIE_SYSTEM.logging.worker = new Worker(path.resolve("./core/workers/logger.js"));
+MAGPIE_SYSTEM.logging.worker = new Worker(path.resolve("./core/workers/fsio.js"));
 MAGPIE_SYSTEM.logToWorker = function logToWorker(level, message, filename)
 {
 	const logEntry = JSON.stringify({

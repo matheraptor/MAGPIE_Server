@@ -1829,11 +1829,7 @@ MAGPIE_DATABASE.setup = function setup()
 			ID: integerKey,
 			type: integer,
 			name: textNullable,
-			requirementID: integerNullable,
-			compoundID: integerNullable,
 			data: blob,
-			fk1: "FOREIGN KEY (requirementID) REFERENCES MAGPIE_SYMBOL(ID)",
-			fk2: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_SYMBOL(ID)"
 		});
 		tables.set("symbols", symbols);
 		const symbol_recipes = this.sync.createWorldTable("symbol_recipes", {

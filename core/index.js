@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.22.4
+ * @version 0.22.6
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,15 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.22.6 2026 05 15
+ * - ADDED: DATABASE.helpers for symbol recipes/components
+ * - ADDED: MAGPIE.KEYS for requirements, compounds, recipes, components, 
+ * 		and stats 
+ * - TWEAKED: MAGPIE_SYMBOL.STATS now includes requirements/compounds
+ * - TWEAKED: MAGPIE_SYMBOL .requirementID and .compoundID deprecated
+ * - FIXED: DATABASE.saveSymbolSync iterating through inexistent symbol's
+ * 		.requirements and .compounds 
  * 
  * @version 0.22.4 2026 05 14
  * - ADDED: MAGPIE_IO.WORKER for fsio and logging
@@ -353,9 +362,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 4],
+			version: [0, 22, 6],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260514"
+			firmwareDate: "20260515"
 		};
 	}
 }
@@ -461,21 +470,38 @@ MAGPIE.KEY.INDEX.TEMPLATE = 0;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.SUBJECT = 10;
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.OBJECT = MAGPIE.KEY.INDEX.SUBJECT + 1;
+MAGPIE.KEY.INDEX.OBJECT = 11;
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.TARGET = MAGPIE.KEY.INDEX.OBJECT + 1;
+MAGPIE.KEY.INDEX.TARGET = 12;
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.TRIVIAL = MAGPIE.KEY.INDEX.TARGET + 1;
+MAGPIE.KEY.INDEX.TRIVIAL = 13;
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.TIME = MAGPIE.KEY.INDEX.TRIVIAL + 1;
+MAGPIE.KEY.INDEX.TIME = 14;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.REQUIREMENTS = 1001;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.COMPOUNDS = 1002;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RECIPES = 1003;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.COMPONENTS = 1004;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STATS = 1005;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.LENGTH = 2010;
+/** @type {key_index} */
 MAGPIE.KEY.INDEX.HEIGHT = 2011;
+/** @type {key_index} */
 MAGPIE.KEY.INDEX.WIDTH = 2012;
+/** @type {key_index} */
 MAGPIE.KEY.INDEX.MASSKG = 2013;
+/** @type {key_index} */
 MAGPIE.KEY.INDEX.DENSITY = 2014;
+/** @type {key_index} */
 MAGPIE.KEY.INDEX.AREA = 2020;
+/** @type {key_index} */
 MAGPIE.KEY.INDEX.VOLUME = 2021;
+/** @type {key_index} */
 MAGPIE.KEY.INDEX.VSPEEDS = new Map();
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.VMAX = 3000;
