@@ -55,7 +55,7 @@ const Database = require("better-sqlite3");
 const path = require("path");
 const worldPath = path.join(__dirname, "..", "db", "world.db");
 const serverPath = path.join(__dirname, "..", "db", "server.db")
-worker.world = new Database(worldPath);
+worker.world = new Database(worldPath, {verbose: console.log});
 /**
  * @desc Why this is a "must" for your VM:
  * - Default Mode (DELETE): Every time you write data, SQLite locks 

@@ -11,7 +11,8 @@ const fs = require("fs");
 const path = require("path");
 const { performance } = require("node:perf_hooks");
 const { exec } = require("child_process");
-const { Worker } = require("worker_threads")
+const { Worker } = require("worker_threads");
+const data = require("../data/emotes");
 function MAGPIE_SYSTEM()
 {
     this.initialize();
@@ -112,11 +113,14 @@ MAGPIE_SYSTEM.meta = {};
 /**
  * @name prototype
  * @desc 
- * 
+ * @typedef {import("./index").index} index
  */
 //------------------------------------------------------------------------
 // #region > proto
 //------------------------------------------------------------------------
+/**
+ * 
+ */
 MAGPIE_SYSTEM.prototype.initialize = function initialize()
 {
 	this.meta = {
@@ -1246,12 +1250,11 @@ MAGPIE_RUNTIME.prototype._memoryUsage = function memoryUsage(logToFile = false)
 // #region > TICK
 //------------------------------------------------------------------------
 MAGPIE_RUNTIME.tick = {};
-MAGPIE_RUNTIME.prototype.refresh = async function refresh()
+MAGPIE_RUNTIME.prototype.refresh = function refresh()
 {
-	if(!this.isActive || this._isTicking) return
-	this._isTicking = true;
+	if(!this.isActive) return
 	const dt = Date.now() - this._now;
-	this._now = Date.now();
+	this._now += dt;
 	this._base += dt;
 	this._game += dt;
 	this._standard += dt;
@@ -1263,7 +1266,7 @@ MAGPIE_RUNTIME.prototype.refresh = async function refresh()
 	}
 	if(this._game >= 16.67)
 	{
-		await this.TICK_game();
+		this.TICK_game();
 		this._game -= 16.67;
 	}
 	if(this._standard > 1000)
@@ -1271,23 +1274,22 @@ MAGPIE_RUNTIME.prototype.refresh = async function refresh()
 		this.TICK_standard();
 		this._standard -= 1000;
 	}
-	this._isTicking = false;
 }
-MAGPIE_RUNTIME.prototype.TICK_base = async function TICK_base()
+MAGPIE_RUNTIME.prototype.TICK_base = function TICK_base()
 {
 	const layerBase = 0;
 	const switchBase = 0;
-	await this.tick_layer(layerBase, switchBase);
+	this.tick_layer(layerBase, switchBase);
 }
-MAGPIE_RUNTIME.prototype.TICK_game = async function TICK_game()
+MAGPIE_RUNTIME.prototype.TICK_game = function TICK_game()
 {
 	const layerBase = 0;
 	const layerGame = 1;
 	const switchGame = 1;
-	await this.tick_layer(layerBase, switchGame);
-	await this.tick_layer(layerGame, switchGame);
+	this.tick_layer(layerBase, switchGame);
+	this.tick_layer(layerGame, switchGame);
 }
-MAGPIE_RUNTIME.prototype.TICK_standard = async function TICK_standard()
+MAGPIE_RUNTIME.prototype.TICK_standard = function TICK_standard()
 {
 	this._now = Date.now();
 	const secondsInMinute = 60;
@@ -1298,11 +1300,11 @@ MAGPIE_RUNTIME.prototype.TICK_standard = async function TICK_standard()
 	const switchStandard = 2;
 	const layerBase = 0;
 	const layerGame = 1;
-	await this.tick_layer(layerBase, switchStandard);
-	await this.tick_layer(layerGame, switchStandard);
+	this.tick_layer(layerBase, switchStandard);
+	this.tick_layer(layerGame, switchStandard);
 	this.tick_layer(layerStandard, switchStandard);
 }
-MAGPIE_RUNTIME.prototype.TICK_super = async function TICK_super()
+MAGPIE_RUNTIME.prototype.TICK_super = function TICK_super()
 {
 	this._TICK = 0;
 	const minutesInHour = 60;
@@ -1314,12 +1316,12 @@ MAGPIE_RUNTIME.prototype.TICK_super = async function TICK_super()
 	const layerBase = 0;
 	const layerGame = 1;
 	const layerStandard = 2;
-	await this.tick_layer(layerBase, switchSuper);
-	await this.tick_layer(layerGame, switchSuper)
-	await this.tick_layer(layerStandard, switchSuper);
+	this.tick_layer(layerBase, switchSuper);
+	this.tick_layer(layerGame, switchSuper)
+	this.tick_layer(layerStandard, switchSuper);
 	this.tick_layer(layerSuper, switchSuper);
 }
-MAGPIE_RUNTIME.prototype.TICK_mega = async function TICK_mega()
+MAGPIE_RUNTIME.prototype.TICK_mega = function TICK_mega()
 {
 	// console.log("TICK_mega");
 	this._TICKsuper = 0;
@@ -1333,13 +1335,13 @@ MAGPIE_RUNTIME.prototype.TICK_mega = async function TICK_mega()
 	const layerGame = 1;
 	const layerStandard = 2;
 	const layerSuper = 3;
-	await this.tick_layer(layerBase, switchMega);
-	await this.tick_layer(layerGame, switchMega);
-	await this.tick_layer(layerStandard, switchMega);
-	await this.tick_layer(layerSuper, switchMega);
+	this.tick_layer(layerBase, switchMega);
+	this.tick_layer(layerGame, switchMega);
+	this.tick_layer(layerStandard, switchMega);
+	this.tick_layer(layerSuper, switchMega);
 	this.tick_layer(layerMega, switchMega);
 }
-MAGPIE_RUNTIME.prototype.TICK_ultra = async function TICK_ultra()
+MAGPIE_RUNTIME.prototype.TICK_ultra = function TICK_ultra()
 {
 	// console.log("TICK_ultra");
 	this._TICKmega = 0;
@@ -1351,11 +1353,11 @@ MAGPIE_RUNTIME.prototype.TICK_ultra = async function TICK_ultra()
 	const layerStandard = 2;
 	const layerSuper = 3;
 	const layerMega = 4;
-	await this.tick_layer(layerBase, switchUltra);
-	await this.tick_layer(layerGame, switchUltra);
-	await this.tick_layer(layerStandard, switchUltra);
-	await this.tick_layer(layerSuper, switchUltra);
-	await this.tick_layer(layerMega, switchUltra);
+	this.tick_layer(layerBase, switchUltra);
+	this.tick_layer(layerGame, switchUltra);
+	this.tick_layer(layerStandard, switchUltra);
+	this.tick_layer(layerSuper, switchUltra);
+	this.tick_layer(layerMega, switchUltra);
 	this.tick_layer(layerUltra, switchUltra);
 }
 /**
@@ -1363,7 +1365,7 @@ MAGPIE_RUNTIME.prototype.TICK_ultra = async function TICK_ultra()
  * @param {Number} layerID 
  * @param {Number} switchID
  */
-MAGPIE_RUNTIME.prototype.tick_layer = async function tick_layer(layerID, switchID)
+MAGPIE_RUNTIME.prototype.tick_layer = function tick_layer(layerID, switchID)
 {
 	const ePrefix = "[RUNTIME].tick_layer: ";
 	try
@@ -1373,7 +1375,7 @@ MAGPIE_RUNTIME.prototype.tick_layer = async function tick_layer(layerID, switchI
 			throw new Error(`${layerID} is invalid layer index`)
 		for(const guest of this[layer])
 		{
-			await this.guestRefresh(guest, layerID, switchID);
+			this.guestRefresh(guest, layerID, switchID);
 		}
 	}
 	catch(e)
@@ -1443,7 +1445,7 @@ MAGPIE_RUNTIME.prototype.kick = function kick(guestFirmwareName, layerID)
  * @param {*} guest 
  * @param {*} layer 
  */
-MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layerID, switchID)
+MAGPIE_RUNTIME.prototype.guestRefresh = function guestRefresh(guest, layerID, switchID)
 {
 	//
 }
@@ -1562,37 +1564,41 @@ MAGPIE_HIVE.pause = function pause()
 //------------------------------------------------------------------------
 /**
  * 
- * @param {entityID} entityID
- * @returns {MAGPIE_ENTITY} 
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {Promise<*>} 
  */
-MAGPIE_HIVE.loadEntitySync = function loadEntitySync(entityID)
+MAGPIE_HIVE._get_database = async function _get_database(method, arguments)
 {
 	//
 }
 /**
  * 
- * @param {entityID} entityID
- * @returns {Promise<MAGPIE_ENTITY>} 
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {*} 
  */
-MAGPIE_HIVE.loadEntity = async function loadEntity(entityID)
+MAGPIE_HIVE._get_databaseSync = function _get_databaseSync(method, arguments)
 {
 	//
 }
 /**
  * 
- * @param {MAGPIE_ENTITY} entity 
- * @returns {Promise<database_result>}
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {Promise<database_result>} 
  */
-MAGPIE_HIVE.saveEntity = async function saveEntity(entity)
+MAGPIE_HIVE._set_database = async function _set_database(method, arguments)
 {
 	//
 }
 /**
  * 
- * @param {MAGPIE_ENTITY} entity
- * @returns {database_result}
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {database_result} 
  */
-MAGPIE_HIVE.saveEntitySync = function saveEntitySync(entity)
+MAGPIE_HIVE._set_databaseSync = function _set_databaseSync(method, arguments)
 {
 	//
 }
@@ -1621,15 +1627,15 @@ MAGPIE_HIVE.loadEntities = function loadEntities(entityIDarray)
  * @param {Number} switchID
  * @returns {Promise<Boolean>} 
  */
-MAGPIE_HIVE.refresh = async function refresh(layerID, switchID)
+MAGPIE_HIVE.refresh = function refresh(layerID, switchID)
 {
 	//
 }
-MAGPIE_HIVE.tick_buffer = async function tick_buffer(layerName, layerID, switchID, dt)
+MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt)
 {
 	//
 }
-MAGPIE_HIVE.tick_remote = async function tick_remote(layerName, layerID, switchID, dt)
+MAGPIE_HIVE.tick_remote = function tick_remote(layerName, layerID, switchID, dt)
 {
 	//
 }
@@ -1673,12 +1679,24 @@ MAGPIE_HIVE.nextSlot = function nextSlot(layerID)
 }
 /**
  * 
- * @param {entityID} entityID
+ * @param {index} slot
+ * @param {Number} layerID
  * @returns {MAGPIE_ENTITY} 
  */
-MAGPIE_HIVE.getSlot = function getSlot(entityID)
+MAGPIE_HIVE.getSlot = function getSlot(slot, layerID)
 {
 	//
+}
+/**
+ * 
+ * @param {entityID} celestialID
+ * @returns {MAGPIE_ENTITY} 
+ */
+MAGPIE_HIVE._get_celestial = function __get_celestial(celestialID)
+{
+	const slot = this._registry.get(celestialID)?.slot
+	const layerStandard = 2
+	return this.getSlot(slot, layerStandard)
 }
 MAGPIE_HIVE.kick = function kick(entityID)
 {

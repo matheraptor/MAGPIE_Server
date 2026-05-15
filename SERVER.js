@@ -259,7 +259,7 @@ MAGPIE_SERVER.HANDLER = fs.readdirSync(MAGPIE_SERVER.SYS._handlersPath)
  * 
  * @desc {@link }
  */
-MAGPIE_RUNTIME.prototype.guestRefresh = async function guestRefresh(guest, layerID, switchID)
+MAGPIE_RUNTIME.prototype.guestRefresh = function guestRefresh(guest, layerID, switchID)
 {
 	const system = r.context[guest];
 	if(!system || isNaN(layerID)) return
@@ -332,7 +332,7 @@ MAGPIE_HIVE.__server = {};
  * 
  * @returns {Promise<Boolean>} 
  */
-MAGPIE_HIVE.refresh = async function refresh(runtimeID, switchID)
+MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID)
 {
 	const ePrefix = "[HIVE].refresh: ";
 	try
@@ -351,43 +351,44 @@ MAGPIE_HIVE.refresh = async function refresh(runtimeID, switchID)
 		const layerMega = layer.get(Mega);
 		const layerUltra = layer.get(Ultra);
 		if(switchID === 0)
-			await this.tick_buffer(layerBase.name, Base, Base, layerBase.delta);
+			this.tick_buffer(layerBase.name, Base, Base, layerBase.delta);
 		if(switchID === 1)
 		{
-			await this.tick_buffer(layerBase.name, Base, Game, layerBase.delta);
-			await this.tick_buffer(layerGame.name, Game, Game, layerGame.delta);
+			this.tick_buffer(layerBase.name, Base, Game, layerBase.delta);
+			this.tick_buffer(layerGame.name, Game, Game, layerGame.delta);
 		}
 		if(switchID === 2)
 		{
-			await this.tick_buffer(layerBase.name, Base, TICK, layerBase.delta);
-			await this.tick_buffer(layerGame.name, Game, TICK, layerBase.delta);
-			await this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.delta);
+			this.tick_buffer(layerBase.name, Base, TICK, layerBase.delta);
+			this.tick_buffer(layerGame.name, Game, TICK, layerBase.delta);
+			this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.delta);
 		}
 		if(switchID === 3)
 		{
-			await this.tick_buffer(layerBase.name, Base, Super, layerBase.delta);
-			await this.tick_buffer(layerGame.name, Game, Super, layerBase.delta);
-			await this.tick_buffer(layerTICK.name, TICK, Super, layerBase.delta);
-			await this.tick_remote(layerSuper.name, Super, Super, layerSuper.delta);
-			await this.save()
+			this.tick_buffer(layerBase.name, Base, Super, layerBase.delta);
+			this.tick_buffer(layerGame.name, Game, Super, layerBase.delta);
+			this.tick_buffer(layerTICK.name, TICK, Super, layerBase.delta);
+			this.tick_remote(layerSuper.name, Super, Super, layerSuper.delta);
+			this.save()
 		}
 		if(switchID === 4)
 		{
-			await this.tick_buffer(layerBase.name, Base, Mega, layerBase.delta);
-			await this.tick_buffer(layerGame.name, Game, Mega, layerBase.delta);
-			await this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.delta);
-			await this.tick_remote(layerSuper.name, Super, Mega, layerBase.delta);
-			await this.tick_remote(layerMega.name, Mega, Mega, layerMega.delta);
+			this.tick_buffer(layerBase.name, Base, Mega, layerBase.delta);
+			this.tick_buffer(layerGame.name, Game, Mega, layerBase.delta);
+			this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.delta);
+			this.tick_remote(layerSuper.name, Super, Mega, layerBase.delta);
+			this.tick_remote(layerMega.name, Mega, Mega, layerMega.delta);
 		}
 		if(switchID === 5)
 		{
-			await this.tick_buffer(layerBase.name, Base, Ultra, layerBase.delta);
-			await this.tick_buffer(layerGame.name, Game, Ultra, layerBase.delta);
-			await this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.delta);
-			await this.tick_remote(layerSuper.name, Super, Ultra, layerBase.delta);
-			await this.tick_remote(layerMega.name, Mega, Ultra, layerBase.delta);
-			await this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.delta);
+			this.tick_buffer(layerBase.name, Base, Ultra, layerBase.delta);
+			this.tick_buffer(layerGame.name, Game, Ultra, layerBase.delta);
+			this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.delta);
+			this.tick_remote(layerSuper.name, Super, Ultra, layerBase.delta);
+			this.tick_remote(layerMega.name, Mega, Ultra, layerBase.delta);
+			this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.delta);
 		}
+		return true
 	}
 	catch(e)
 	{
@@ -401,23 +402,28 @@ MAGPIE_HIVE.refresh = async function refresh(runtimeID, switchID)
  * @param {Number} switchID 
  * @param {duration} dt 
  */
-MAGPIE_HIVE.tick_buffer = async function tick_buffer(layerName, layerID, switchID, dt)
+MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_buffer: ";
 	const layer = this[layerName];
 	const slots = MAGPIE.KEY.RUNTIME.LAYER.get(layerID).slots;
+	const now = Date.now();
 	for(let i = 0; i < slots; i++)
 	{
 		try
 		{
 			const slot = i;
 			/** @type {MAGPIE_ENTITY} */
-			const entry = this.getSlot(slot, layerID)
-			if(!entry) continue
-			const entity = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? entry : this.loadEntitySync(entry);
+			const entity = this.getSlot(slot, layerID)
+			if(!entity) continue
+			if(!(entity instanceof MAGPIE_ENTITY)) 
+				throw new Error(`${entity} is invalid MAGPIE_ENTITY`)
 			if(entity.type < 1) continue
-			const pass = await entity.refresh(switchID, dt)
-			if(!pass) this.kick(entity.ID, layerID);
+			// if((now - entity.updated) > dt * 3000)
+			// 	this.kick(entity.ID, `timed-out`)
+			const pass = entity.refresh(switchID, dt);
+			// if(!pass) 
+			// 	this.kick(entity.ID, "failed update")
 		}
 		catch(e)
 		{
@@ -432,7 +438,7 @@ MAGPIE_HIVE.tick_buffer = async function tick_buffer(layerName, layerID, switchI
  * @param {Number} switchID 
  * @param {duration} dt 
  */
-MAGPIE_HIVE.tick_remote = async function tick_remote(layerName, layerID, switchID, dt)
+MAGPIE_HIVE.tick_remote = function tick_remote(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_remote: ";
 	for(let i = 0; i < this[layerName].length; i++)
@@ -446,7 +452,7 @@ MAGPIE_HIVE.tick_remote = async function tick_remote(layerName, layerID, switchI
 			const entity = this.loadEntitySync(entityID);
 			if(!entity instanceof MAGPIE_ENTITY)
 				throw new Error(`[ENTITY-${entityID}] is invalid entity`)
-			const pass = await entity.refresh(switchID, dt);
+			const pass = entity.refresh(switchID, dt);
 			if(!pass) 
 				throw new Error(`[ENTITY-${entityID}] has failed to refresh`)
 			const save = this.saveEntitySync(entity);
@@ -484,7 +490,9 @@ MAGPIE_HIVE.getSlot = function getSlot(slot, layerID)
 	{
 		const layerName = MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name;
 		const entity = this[layerName][slot]
-		const valid = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? (entity instanceof MAGPIE_ENTITY) : !isNaN(entity);
+		const valid = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE 
+			? (entity instanceof MAGPIE_ENTITY) 
+			: !isNaN(entity);
 		if(!valid)
 			throw new Error(`[LAYER-${layerID}][${slot}] is invalid entity slot`)
 		return entity
@@ -496,36 +504,108 @@ MAGPIE_HIVE.getSlot = function getSlot(slot, layerID)
 }
 /**
  * 
- * @param {expID} expID
- * @returns {MAGPIE_EXP} 
- */
-MAGPIE_HIVE.getEXP = function getEXP(expID)
-{
-	const entry = this._registry.get(expID);
-	const index = entry?.index;
-	return this._expBuffer[index];
-}
-/**
- * 
  * @param {entityID} entityID 
  * @returns {MAGPIE_ENTITY}
  */
-MAGPIE_HIVE.getEntity = function getEntity(entityID)
+MAGPIE_HIVE._get_entity = function _get_entity(entityID)
 {
-	const ePrefix = "[HIVE].getEntity: ";
+	const ePrefix = "[HIVE]._get_entity: ";
 	try
 	{
 		const entry = this._registry.get(entityID);
-		if(!entry || entry?.layerID >= 3) 
+		if(!entry || entry?.layerID >= MAGPIE.KEY.HIVE.BUFFER_SIZE) 
 			return MAGPIE_DATABASE.loadEntitySync(entityID);
 		const index = entry.slot;
-		const layer = MAGPIE.KEY.RUNTIME.LAYER.get(entry.layerID);
-		return this[layer.name][index];
+		return this.getSlot(index, entry.layerID)
 	}
 	catch(e)
 	{
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 	}
+}
+/**
+ * 
+ * @param {String} rT name of relatives table
+ * @param {String} pK name of parent foreign key
+ * @param {String} fK name of child foreign key
+ * @returns {Promise<MAGPIE_ENTITY[]>}
+ */
+MAGPIE_HIVE._get_relatives = async function _get_relatives(rT, pK, fK)
+{
+	const ePrefix = `[ENTITY-${this.ID}].getRelatives: `;
+	try
+	{
+		const payload = [this.ID, pK, fK, rT, "MAGPIE_ENTITY"]
+		const result = await MAGPIE_DATABASE.call("getWorldRelatedRows", payload);
+		if(!result || result?.length < 1)
+			throw new Error(`unable to fetch ${rT}`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {MAGPIE_KEY[]}
+ */
+MAGPIE_HIVE._get_expKeys = function _get_expKeys(exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}].getEXPkeys: `;
+	try
+	{
+		// if(exp.keys.every(key => key < 100000))
+		// 	return
+		const keys = []
+		exp.keys.forEach(keyID => {
+			keys.push(MAGPIE_DATABASE.loadKeySync(keyID))
+		})
+		return keys
+		// const recall = MAGPIE_DATABASE.sync.world.prepare(
+		// 	`SELECT TARGET.* FROM MAGPIE_EXP target 
+		// 	JOIN exp_keys rel ON target.ID = rel.keyID
+		// 	WHERE rel.expID = ?`
+		// ).all(exp);
+		// if(!recall || recall?.length < 1)
+		// 	throw new Error(`unable to fetch keys for [EXP-${exp.ID}]`)
+		// return recall
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Setters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_HIVE._set_database = async function _set_database(method, arguments)
+{
+	return await MAGPIE_DATABASE[method](...arguments);
+}
+/**
+ * 
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {database_result} 
+ */
+MAGPIE_HIVE._set_databaseSync = function _set_database(method, arguments)
+{
+	return MAGPIE_DATABASE[method](...arguments)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -888,147 +968,32 @@ MAGPIE_PHYSICS._geod_checkCollisions = function _geod_checkCollisions(data)
 //------------------------------------------------------------------------
 /**
  * 
- * @param {[String, ...args]} payload 
- * @returns {Promise<database_result>}
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {*} 
  */
-MAGPIE_ENTITY._set_relation = async function _set_relation(payload)
+MAGPIE_ENTITY.__hive_getSync = function __hive_getSync(method, arguments)
 {
-	return await MAGPIE_DATABASE.call("saveWorldRow", payload)
-}
-/**
- * @desc {@link MAGPIE_ENTITY.__getEXP}
- * @typedef {import("./data/entity_types").expID} expID
- * @param {expID} expID 
- * 
- */
-MAGPIE_ENTITY._hive_getEXP = function _hive_getEXP(expID)
-{
-	const regEXP = MAGPIE_SERVER.HIVE.getEXP(expID);
-	if(regEXP instanceof MAGPIE_EXP) return regEXP;
-	return MAGPIE_DATABASE.loadExpSync(expID);
+	return MAGPIE_HIVE[method](...arguments);
 }
 /**
  * 
- * @param {entityID} entityID
- * @returns {MAGPIE_ENTITY} 
+ * @param {String} method 
+ * @param {*} arguments
+ * @returns {Promise<*>} 
  */
-MAGPIE_ENTITY._hive_getEntitySync = function _hive_getEntitySync(entityID)
+MAGPIE_ENTITY.__hive_get = async function __hive_get(method, arguments)
 {
-	return r.context.HIVE.getEntity(entityID);
+	return MAGPIE_HIVE[method](...arguments)
 }
-/**
- *
- * @param {entityID} entityID 
- * @returns {Promise<MAGPIE_ENTITY>}
- */
-MAGPIE_ENTITY._hive_getEntity = async function _hive_getEntity(entityID)
-{
-	return await MAGPIE_DATABASE.loadEntity(entityID);
-}
-/**
- * 
- * @param {MAGPIE_ENTITY} entity 
- * @returns {Promise<database_result>}
- */
-MAGPIE_ENTITY._hive_setEntity = async function _hive_setEntity(entity)
-{
-	return await MAGPIE_DATABASE.saveEntity(entity);
-}
-/**
- * 
- * @param {MAGPIE_ENTITY} entity
- * @returns {Boolean} 
- */
-MAGPIE_ENTITY._hive_setEntitySync = function _hive_setEntitySync(entity)
-{
-	return MAGPIE_DATABASE.saveEntitySync(entity)
-}
-/**
- * 
- * @param {MAGPIE_EXP} exp
- * @returns {Promise<database_result>} 
- */
-MAGPIE_ENTITY._hive_setExp = async function _hive_setExp(exp)
-{
-	return await MAGPIE_DATABASE.saveExp(exp);
-}
-/**
- * 
- * @param {MAGPIE_EXP} exp 
- * @returns {database_result}
- */
-MAGPIE_ENTITY._hive_setExpSync = function _hive_setExpSync(exp)
-{
-	return MAGPIE_DATABASE.saveExpSync(exp);
-}
-/**
- * 
- * @param {String} rT name of relatives table
- * @param {String} pK name of parent foreign key
- * @param {String} fK name of child foreign key
- * @returns {Promise<MAGPIE_ENTITY[]>}
- */
-MAGPIE_ENTITY._hive_getRelatives = async function _hive_getRelatives(rT, pK, fK)
-{
-	const ePrefix = `[ENTITY-${this.ID}].getRelatives: `;
-	try
-	{
-		const payload = [this.ID, pK, fK, rT, "MAGPIE_ENTITY"]
-		const result = await MAGPIE_DATABASE.call("getWorldRelatedRows", payload);
-		if(!result || result?.length < 1)
-			throw new Error(`unable to fetch ${rT}`)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SERVER.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {MAGPIE_EXP} exp
- * @returns {MAGPIE_KEY[]}
- */
-MAGPIE_ENTITY._hive_getEXPkeys = function _hive_getEXPkeys(exp)
-{
-	const ePrefix = `[ENTITY-${this.ID}].getEXPkeys: `;
-	try
-	{
-		// if(exp.keys.every(key => key < 100000))
-		// 	return
-		const keys = []
-		exp.keys.forEach(keyID => {
-			keys.push(MAGPIE_DATABASE.loadKeySync(keyID))
-		})
-		return keys
-		// const recall = MAGPIE_DATABASE.sync.world.prepare(
-		// 	`SELECT TARGET.* FROM MAGPIE_EXP target 
-		// 	JOIN exp_keys rel ON target.ID = rel.keyID
-		// 	WHERE rel.expID = ?`
-		// ).all(exp);
-		// if(!recall || recall?.length < 1)
-		// 	throw new Error(`unable to fetch keys for [EXP-${exp.ID}]`)
-		// return recall
-	}
-	catch(e)
-	{
-		MAGPIE_SERVER.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number[]} output 
- * @param {MAGPIE_EXP} exp
- * @param {MAGPIE_ENTITY} entity
- */
-MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, POVART0, dt)
+MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POVART1, dt)
 {
 	const ePrefix = `[ENTITY-${entity.ID}].socketEmit: `;
 	try
 	{
-		const { P0, V0, A0 } = MAGPIE_PHYSICS.decomp_POVART(POVART0)
+		const { P0, V0, A0 } = MAGPIE_PHYSICS.decomp_POVART(POVART1)
 		const Kp = MAGPIE.KEY.POVART;
-		const C = entity._get_celestial();
+		const C = P_C;
 		const P1 = entity._get_P0();
 		const O1 = entity._get_O0();
 		const V1 = entity._get_V0();
@@ -1073,7 +1038,6 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, POVART0,
 		if(!MAGPIE_ENTITY?._delta)
 			MAGPIE_ENTITY._delta = Date.now();
 		MAGPIE_ENTITY._delta += dt * 1000;
-		const dP = MAGPIE_PHYSICS.distanceTo(P0, P1);
 		io.to(`entity_${entity.ID}`).emit("entity_update", data);
 	}
 	catch(e)
@@ -1114,32 +1078,32 @@ MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
 /**
  * 
  * @param {String} method 
- * @param {*} value
+ * @param {*} arguments
  * @returns {MAGPIE_COMPONENT} 
  */
-MAGPIE_COMPONENT.__get = function get(method, value)
+MAGPIE_COMPONENT.__get = function get(method, arguments)
 {
-	return MAGPIE_DATABASE[method](value)
+	return MAGPIE_DATABASE.sync[method](...arguments)
 }
 /**
  * 
  * @param {String} method 
- * @param {*} value
+ * @param {*} arguments
  * @returns {Promise<database_result>} 
  */
-MAGPIE_COMPONENT.__set = async function set(method, value)
+MAGPIE_COMPONENT.__set = async function set(method, arguments)
 {
-	return await MAGPIE_DATABASE[method](value);
+	return await MAGPIE_DATABASE.call(method, ...arguments);
 } 
 /**
  * 
  * @param {String} method 
- * @param {*} value
+ * @param {*} arguments
  * @returns {database_result} 
  */
-MAGPIE_COMPONENT.__setSync = function setSync(method, value)
+MAGPIE_COMPONENT.__setSync = function setSync(method, arguments)
 {
-	return MAGPIE_DATABASE[method](value)
+	return MAGPIE_DATABASE.sync[method](...arguments)
 } 
 // #endregion
 //------------------------------------------------------------------------

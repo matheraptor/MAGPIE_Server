@@ -238,20 +238,20 @@ MAGPIE_SYMBOL.prototype._get_requirements = function getRequirements()
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.REQUIREMENTS);
 	const end = this.STATS.indexOf(K.COMPOUNDS);
-	return this.STATS.slice(start + 1, end);
+	return this.STATS.slice(start + 2, end);
 }
 MAGPIE_SYMBOL.prototype._get_compounds = function getCompounds()
 {
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.COMPOUNDS);
 	const end = this.STATS.indexOf(K.STATS);
-	return this.STATS.slice(start + 1, end);
+	return this.STATS.slice(start + 2, end);
 }
 MAGPIE_SYMBOL.prototype._get_STATS = function getSTATS()
 {
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.STATS);
-	return this.STATS.slice(start + 1)
+	return this.STATS.slice(start + 2)
 }
 /**
  * 
@@ -309,7 +309,7 @@ MAGPIE_SYMBOL.prototype.getTypeName = function getTypeName()
  */
 MAGPIE_SYMBOL.prototype.getKey = function getKey(keyID)
 {
-	return MAGPIE_COMPONENT.__get("loadKeySync", keyID);
+	return MAGPIE_COMPONENT.__get("loadKeySync", [keyID]);
 }
 /**
  * @typedef {{
@@ -345,12 +345,8 @@ MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 		const arr =  Object.values(K);
 		const keys = arr.slice(arr.indexOf(K.VMAX), arr.indexOf(K.TDOCK) + 1);
 		const Vspeeds = {};
-		map.forEach((keyID, index) => {
-			if(index % 2 === 0 && keys.includes(keyID))
-			{
-				const key = this.getKey(keyID).label;
-				Vspeeds[key] = map[index + 1];
-			}
+		keys.forEach(keyID => {
+			const value = map.get(keyID)
 		})
 		// MAGPIE_SYSTEM._logging_debug(Object.entries(Vspeeds))
 		return Vspeeds

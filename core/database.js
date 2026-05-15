@@ -852,13 +852,13 @@ MAGPIE_DATABASE.saveSymbolSync = function saveSymbolSync(symbol)
 	try
 	{
 		symbol._get_requirements().forEach(ID => {
-			MAGPIE_DATABASE.saveWorldRow("symbol_recipes", {
+			MAGPIE_DATABASE.sync.saveWorldRow("symbol_recipes", {
 				requirementID: ID,
 				recipeID: symbol.ID
 			})
 		})
 		symbol._get_compounds().forEach(ID => {
-			MAGPIE_DATABASE.saveWorldRow("symbol_components", {
+			MAGPIE_DATABASE.sync.saveWorldRow("symbol_components", {
 				compoundID: ID,
 				componentID: symbol.ID
 			})

@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence CC
  * 
- * @version 0.22.9
+ * @version 0.22.10
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,7 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.22.9 2026 05 15
+ * @version 0.22.10 2026 05 15
  * - ADDED: DATABASE.pragma cache_size -64000 to mitigate the 
  * 		read flooding
  * - ADDED: DATABASE.helpers for symbol recipes/components
@@ -38,6 +38,8 @@
  * 		and .tick_remote causing subsequent entities in loop to be dropped
  * - FIXED: RUNTIME.refresh while(this._base > 1) race condition
  * - FIXED: RUNTIME.refresh not async preventing safe database execution
+ * - FIXED: DATABASE.saveSymbol typo
+ * - FIXED: SYMBOL.STATS inconsistent key/value pair
  * 
  * @version 0.22.4 2026 05 14
  * - ADDED: MAGPIE_IO.WORKER for fsio and logging
@@ -372,7 +374,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 9],
+			version: [0, 22, 10],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260515"
 		};
