@@ -24,6 +24,11 @@
  * - ADDED: server instance background logger
  * - ADDED: Termius SSH ID
  * - ADDED: nGix inverse proxy and npm extension
+ * - TWEAKED: improved RUNTIME.refresh ticking allows for layer-specific
+ * 		frame-count
+ * - TWEAKED: wrapped entity exp handling to isolate future improvements
+ * - TWEAKED: changing exp array handling from a dynamic/shift-push (O(n)) to 
+ * 		static/index_accumulator (O(1)) 
  * - FIXED: MAGPIE_KEY.setup incorrectly indexing VSpeeds
  * - FIXED: MAGPIE_SYMBOL.getVspeeds incorrectly mapping Vspeeds
  * 
@@ -387,9 +392,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 11],
+			version: [0, 22, 12],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260515"
+			firmwareDate: "20260516"
 		};
 	}
 }

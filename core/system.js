@@ -134,6 +134,10 @@ MAGPIE_SYSTEM.prototype.initialize = function initialize()
 	this.isInit = true;
 	this.isActive = false;
 }
+MAGPIE_SYSTEM.refresh = function refresh()
+{
+	//
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1162,9 +1166,9 @@ MAGPIE_RUNTIME.prototype.initialize = function initialize()
     this.meta.desc = "Provides a 'heartbeat' to the process" +
 		" and orchestrates the systems."
     this.meta.firmwareName = "MAGPIE_RUNTIME";
+	this._lag = 0;
 	this._base = 0;
 	this._game = 0;
-	this._standard = 0;
     this._TICK = 0;
     this._TICKsuper = 0;
     this._TICKmega = 0;
@@ -1252,46 +1256,42 @@ MAGPIE_RUNTIME.prototype._memoryUsage = function memoryUsage(logToFile = false)
 MAGPIE_RUNTIME.tick = {};
 MAGPIE_RUNTIME.prototype.refresh = function refresh()
 {
+	MAGPIE_SYSTEM.refresh.call(this)
 	if(!this.isActive) return
 	const dt = Date.now() - this._now;
 	this._now += dt;
-	this._base += dt;
-	this._game += dt;
-	this._standard += dt;
-	if(this._base > 100) this._base = 100;
-	while(this._base > 1)
-	{
+	this._lag++;
+	this._base++;
+	if(this._lag > 100) this._lag = 100;
+	while(this._lag > 1)
 		this.TICK_base();
-		this._base--;
-	}
-	if(this._game >= 16.67)
-	{
-		this.TICK_game();
-		this._game -= 16.67;
-	}
-	if(this._standard > 1000)
-	{
-		this.TICK_standard();
-		this._standard -= 1000;
-	}
 }
 MAGPIE_RUNTIME.prototype.TICK_base = function TICK_base()
 {
+	this._lag--;
+	if(this._base >= 16.67)
+		this.TICK_game();
+	if(this._base >= 1000)
+		this.TICK_standard();
 	const layerBase = 0;
 	const switchBase = 0;
-	this.tick_layer(layerBase, switchBase);
+	const baseFrame = this._base;
+	this.tick_layer(layerBase, switchBase, baseFrame);
 }
 MAGPIE_RUNTIME.prototype.TICK_game = function TICK_game()
 {
+	this._game++;
 	const layerBase = 0;
 	const layerGame = 1;
 	const switchGame = 1;
-	this.tick_layer(layerBase, switchGame);
-	this.tick_layer(layerGame, switchGame);
+	const gameFrame = this._game;
+	this.tick_layer(layerBase, switchGame, gameFrame);
+	this.tick_layer(layerGame, switchGame, gameFrame);
 }
 MAGPIE_RUNTIME.prototype.TICK_standard = function TICK_standard()
 {
-	this._now = Date.now();
+	this._base = 0;
+	this._game = 0;
 	const secondsInMinute = 60;
 	if(this._TICK >= secondsInMinute - 1) 
 		return this.TICK_super();
@@ -1300,9 +1300,10 @@ MAGPIE_RUNTIME.prototype.TICK_standard = function TICK_standard()
 	const switchStandard = 2;
 	const layerBase = 0;
 	const layerGame = 1;
-	this.tick_layer(layerBase, switchStandard);
-	this.tick_layer(layerGame, switchStandard);
-	this.tick_layer(layerStandard, switchStandard);
+	const standardFrame = this._TICK;
+	this.tick_layer(layerBase, switchStandard, standardFrame);
+	this.tick_layer(layerGame, switchStandard, standardFrame);
+	this.tick_layer(layerStandard, switchStandard, standardFrame);
 }
 MAGPIE_RUNTIME.prototype.TICK_super = function TICK_super()
 {
@@ -1316,10 +1317,11 @@ MAGPIE_RUNTIME.prototype.TICK_super = function TICK_super()
 	const layerBase = 0;
 	const layerGame = 1;
 	const layerStandard = 2;
-	this.tick_layer(layerBase, switchSuper);
-	this.tick_layer(layerGame, switchSuper)
-	this.tick_layer(layerStandard, switchSuper);
-	this.tick_layer(layerSuper, switchSuper);
+	const superFrame = this._TICKsuper;
+	this.tick_layer(layerBase, switchSuper, superFrame);
+	this.tick_layer(layerGame, switchSuper, superFrame)
+	this.tick_layer(layerStandard, switchSuper, superFrame);
+	this.tick_layer(layerSuper, switchSuper, superFrame);
 }
 MAGPIE_RUNTIME.prototype.TICK_mega = function TICK_mega()
 {
@@ -1335,11 +1337,12 @@ MAGPIE_RUNTIME.prototype.TICK_mega = function TICK_mega()
 	const layerGame = 1;
 	const layerStandard = 2;
 	const layerSuper = 3;
-	this.tick_layer(layerBase, switchMega);
-	this.tick_layer(layerGame, switchMega);
-	this.tick_layer(layerStandard, switchMega);
-	this.tick_layer(layerSuper, switchMega);
-	this.tick_layer(layerMega, switchMega);
+	const megaFrame = this._TICKmega;
+	this.tick_layer(layerBase, switchMega, megaFrame);
+	this.tick_layer(layerGame, switchMega, megaFrame);
+	this.tick_layer(layerStandard, switchMega, megaFrame);
+	this.tick_layer(layerSuper, switchMega, megaFrame);
+	this.tick_layer(layerMega, switchMega, megaFrame);
 }
 MAGPIE_RUNTIME.prototype.TICK_ultra = function TICK_ultra()
 {
@@ -1353,29 +1356,40 @@ MAGPIE_RUNTIME.prototype.TICK_ultra = function TICK_ultra()
 	const layerStandard = 2;
 	const layerSuper = 3;
 	const layerMega = 4;
-	this.tick_layer(layerBase, switchUltra);
-	this.tick_layer(layerGame, switchUltra);
-	this.tick_layer(layerStandard, switchUltra);
-	this.tick_layer(layerSuper, switchUltra);
-	this.tick_layer(layerMega, switchUltra);
-	this.tick_layer(layerUltra, switchUltra);
+	const ultraFrame = this._TICKultra;
+	this.tick_layer(layerBase, switchUltra, ultraFrame);
+	this.tick_layer(layerGame, switchUltra, ultraFrame);
+	this.tick_layer(layerStandard, switchUltra, ultraFrame);
+	this.tick_layer(layerSuper, switchUltra, ultraFrame);
+	this.tick_layer(layerMega, switchUltra, ultraFrame);
+	this.tick_layer(layerUltra, switchUltra, ultraFrame);
 }
 /**
  * 
  * @param {Number} layerID 
  * @param {Number} switchID
+ * @param {Number} index_frame
  */
-MAGPIE_RUNTIME.prototype.tick_layer = function tick_layer(layerID, switchID)
+MAGPIE_RUNTIME.prototype.tick_layer = function tick_layer(layerID, switchID, index_frame)
 {
 	const ePrefix = "[RUNTIME].tick_layer: ";
 	try
 	{
-		const layer = MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name;
-		if(!this[layer]) 
+		const layerName = MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name;
+		/** @type {String[]} */
+		const layer = this[layerName];
+		if(!Array.isArray(layer)) 
 			throw new Error(`${layerID} is invalid layer index`)
-		for(const guest of this[layer])
+		for(const guest of layer)
 		{
-			this.guestRefresh(guest, layerID, switchID);
+			try
+			{
+				this.guestRefresh(guest, layerID, switchID, index_frame);
+			}
+			catch(e)
+			{
+				MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+			}
 		}
 	}
 	catch(e)
@@ -1442,10 +1456,12 @@ MAGPIE_RUNTIME.prototype.kick = function kick(guestFirmwareName, layerID)
 }
 /**
  * 
- * @param {*} guest 
- * @param {*} layer 
+ * @param {String} guest 
+ * @param {Number} layerID
+ * @param {Number} switchID
+ * @param {Number} index_frame
  */
-MAGPIE_RUNTIME.prototype.guestRefresh = function guestRefresh(guest, layerID, switchID)
+MAGPIE_RUNTIME.prototype.guestRefresh = function guestRefresh(guest, layerID, switchID, index_frame)
 {
 	//
 }
@@ -1631,11 +1647,27 @@ MAGPIE_HIVE.refresh = function refresh(layerID, switchID)
 {
 	//
 }
-MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt)
+/**
+ * 
+ * @param {String} layerName 
+ * @param {Number} layerID 
+ * @param {Number} switchID 
+ * @param {Number} dt
+ * @param {Number} layer_frame 
+ */
+MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt, layer_frame)
 {
 	//
 }
-MAGPIE_HIVE.tick_remote = function tick_remote(layerName, layerID, switchID, dt)
+/**
+ * 
+ * @param {String} layerName 
+ * @param {Number} layerID 
+ * @param {Number} switchID 
+ * @param {Number} dt
+ * @param {Number} layer_frame 
+ */
+MAGPIE_HIVE.tick_remote = function tick_remote(layerName, layerID, switchID, dt, layer_frame)
 {
 	//
 }

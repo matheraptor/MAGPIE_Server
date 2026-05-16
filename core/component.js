@@ -500,6 +500,16 @@ MAGPIE_EXP.prototype.initialize = function initialize(data)
 }
 /**
  * 
+ * @param {String} method 
+ * @param {[]} arguments
+ * @returns {*} 
+ */
+MAGPIE_EXP.__hiveSync = function __hiveSync(method, arguments)
+{
+	//
+}
+/**
+ * 
  * 
  * @returns {Promise<database_result>} 
  */
@@ -525,6 +535,22 @@ MAGPIE_EXP.prototype.getKey = function getKey(keyID)
 	//
 }
 MAGPIE_EXP.__getKey = MAGPIE_EXP.prototype.getKey;
+/**
+ * 
+ * @returns {STATS}
+ */
+MAGPIE_EXP.prototype._get_subjectSTATS = function _get_subjectSTATS()
+{
+	return MAGPIE_EXP.__hiveSync("_get_entity", [this.subjectID])?.STATS
+}
+/**
+ * 
+ * @returns {STATS}
+ */
+MAGPIE_EXP.prototype._get_targetSTATS = function _get_targetSTATS()
+{
+	return MAGPIE_EXP.__hiveSync("_get_entity", [this.targetID])?.STATS
+}
 /**
  * 
  * @returns {MAGPIE_KEY[]}

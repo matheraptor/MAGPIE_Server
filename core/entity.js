@@ -1318,9 +1318,10 @@ MAGPIE_ENTITY.prototype._target_update = function _target_update(method = null, 
  * @todo how to switch between POVART/orbital?
  * @param {Number} switchID 
  * @param {duration} dt in s
+ * @param {Number} layer_frame
  * @returns {Boolean}
  */
-MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt)
+MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 {
 	const ePrefix = `[ENTITY-${this.ID}].refresh: `;
 	try
@@ -1333,7 +1334,7 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt)
 		this.updated = Date.now();
 		if(this.type < MAGPIE.KEY.ENTITY.TYPE.get("MATERIA").type)
 			return true
-		const input = this.processExp(switchID, dt);
+		const input = this.processExp(switchID, dt, layer_frame);
 		const key = this.processKeys(input);
 		const emote = this.processEmote(switchID, dt, input, key);
 		const { exp: state, target } = this.processStates(switchID, dt, emote?.exp || input);
@@ -1388,25 +1389,40 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
  * 
  * @param {Number} switchID 
  * @param {duration} dt 
+ * @param {Number} layer_frame
  * @returns {MAGPIE_EXP}
  */
-MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt)
+MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt, layer_frame)
 {
 	const ePrefix = `[ENTITY-${this.ID}].processExp: `;
-	if(this.exps.length < 1) return
+	const exps = this.exps;
+	if(exps < 1) return
 	try
 	{
-		const exp = MAGPIE_ENTITY._hive_getExp(this.exps.shift())
+		const exp = MAGPIE_ENTITY._hive_getExp(this._get_nextExpID(layer_frame))
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error(`${exp} is invalid EXP`);
-		exp.subjectID = this.STATS;
-		exp.targetID = MAGPIE_ENTITY.__hiveSync("_get_entity", [exp.targetID])?.STATS;
 		return exp
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+/**
+ * @returns {expID[]}
+ */
+MAGPIE_ENTITY.prototype._get_array_expID = function getArrayExpID()
+{
+	return this.exps;
+}
+/**
+ * @param {Number} layer_frame
+ * @returns {expID}
+ */
+MAGPIE_ENTITY.prototype._get_nextExpID = function getNextExpID(layer_frame)
+{
+	return this._get_array_expID()[layer_frame];
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1440,7 +1456,6 @@ MAGPIE_ENTITY.prototype.processEmote = function processEmote(switchID, dt, exp, 
 		const emote = MAGPIE_EMOTE.INDEX.get(exp.emoteID);
 		if(!emote) 
 		{
-			this.exps.push(exp.ID)
 			return {exp: exp}
 		}
 		const output = emote.onAction(exp, this);
@@ -1810,10 +1825,6 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message,e)
 	}
-	finally
-	{
-		this.exps.push(exp)
-	}
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1825,6 +1836,7 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 //------------------------------------------------------------------------
 // #region > Seek
 //------------------------------------------------------------------------
+
 /**
  * 
  * @param {MAGPIE_EXP} exp 
@@ -1832,14 +1844,24 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 {
 	const ePrefix = `[ENTITY-${this.ID}]._emote_seekTarget: `;
+	const output = { At: [0,0,0], Tt: [0,0,0] }
 	try
 	{
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`${exp} is invalid EXP`)
 		const POVART0 = this._get_POVART();
-		const target = typeof exp.targetID === "number" 
-			? exp.targetID 
-			: exp.targetID[MAGPIE.KEY.POVART.E_ID]
-		const entity = MAGPIE_ENTITY.__hiveSync("_get_entitySync", [target]);
-		const P1 = entity._get_P0();
+		const { P0 } = MAGPIE_ENTITY._get_decomp_POVART(POVART0)
+		const targetID = exp.targetID
+		if(isNaN(targetID))
+			throw new Error(`${targetID} is invalid targetID`)
+		const target = MAGPIE_ENTITY.__hiveSync("_get_entity", [targetID]);
+		if(!target)
+			throw new Error(`${target} is invalid target`)
+		const Pt = target._get_P0();
+		const dist = this._target_getDistance(P0, Pt)
+		const contact = this._target_isSensed(target, dist);
+		if(!contact)
+			return 
 		const tolerance = 1; //@todo dynamic seekTarget tolerance
 		const pR = 1; //@todo dynamic seekTarget priority ratio
 		const intensity = exp.value;
@@ -1847,7 +1869,8 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		const options = {
 			intensity: intensity,
 			fwd: MAGPIE.KEY.POVART.FWD,
-			agility: this.STATS[MAGPIE.KEY.STATS.DEX]
+			agility: this.STATS[MAGPIE.KEY.STATS.DEX],
+			tolerance: tolerance
 		}
 		const overrideVspeed = exp._key_mapVspeeds();
 		const speeds = this._get_speeds(overrideVspeed);
@@ -1858,16 +1881,24 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		})
 		// MAGPIE_SYSTEM._logging_debug(options.Vcruise)
 		const output = MAGPIE_PHYSICS
-			._emote_seekTarget(POVART0, P1, this.STATS, options);
-		const { At, Tt, arrived, stopping, proximity, braking } = output;
+			._emote_seekTarget(POVART0, Pt, this.STATS, options);
+		const { At, Tt, arrived, proximity, braking } = output;
 		if(arrived)
-			this._emote_onTarget(exp)
-		this.exps.push(exp.ID)
-		return { At, Tt }
+			return this._emote_onTarget(exp)
+		if(proximity)
+			return this._emote_reachTarget(exp)
+		if(braking)
+			return this._emote_approachTarget(exp)
+		output.At = At;
+		output.Tt = Tt;		
  	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+	finally
+	{
+		return output
 	}
 }
 /**
@@ -1932,7 +1963,6 @@ MAGPIE_ENTITY.prototype._emote_schedule = function _emote_schedule(exp)
 	}
 	finally
 	{
-		this.exps.push(exp.ID)
 		return { At: [0,0,0], Tt: [0,0,0] }
 	}
 }
@@ -2147,9 +2177,10 @@ MAGPIE_ENTITY.exp = {};
  */
 MAGPIE_ENTITY.prototype._get_exps = function _get_exps()
 {
-	if(this.exps.length < 1) return []
+	const exps = this._get_array_expID();
+	if(exps.length < 1) return []
 	let exps = [];
-	for(const expID of this.exps)
+	for(const expID of exps)
 	{
 		const exp = MAGPIE_ENTITY._hive_getExp(expID);
 		if(exp instanceof MAGPIE_EXP)
@@ -2253,6 +2284,62 @@ MAGPIE_ENTITY.prototype._act_emote = function _act_emote(emoteID, exp)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - TARGET
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Get
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {vector3} P0 
+ * @param {vector3} Pt 
+ * @returns {distance}
+ */
+MAGPIE_ENTITY.prototype._target_getDistance = function getDistanceToTarget(P0, Pt)
+{
+	return MAGPIE_PHYSICS.distanceTo(P0, Pt);
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Check
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_ENTITY} target 
+ * @param {distance} dist 
+ * @returns {Boolean}
+ */
+MAGPIE_ENTITY.prototype._target_isSensed = function isTargetSensed(target, dist)
+{
+	return true
+}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * 
  * @desc back to {@link }

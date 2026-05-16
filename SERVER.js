@@ -253,18 +253,18 @@ MAGPIE_SERVER.HANDLER = fs.readdirSync(MAGPIE_SERVER.SYS._handlersPath)
 //------------------------------------------------------------------------
 /**
  * 
- * @param {*} guest 
+ * @param {MAGPIE_SYSTEM} guest 
  * @param {Number} layerID 
  * @param {Number} switchID
- * @returns 
+ * @param {Number} layer_frame
  * 
- * @desc {@link }
  */
-MAGPIE_RUNTIME.prototype.guestRefresh = function guestRefresh(guest, layerID, switchID)
+MAGPIE_RUNTIME.prototype.guestRefresh = function guestRefresh(guest, layerID, switchID, layer_frame)
 {
+	/** @type {MAGPIE_SYSTEM} */
 	const system = r.context[guest];
 	if(!system || isNaN(layerID)) return
-	const pass = system.refresh(layerID, switchID)
+	const pass = system.refresh(layerID, switchID, layer_frame)
 	if(!pass) this.kick(guest, layerID);
 }
 MAGPIE_SERVER.SYS._runtime_guestRefresh = MAGPIE_RUNTIME.__guestRefresh;
@@ -327,17 +327,18 @@ MAGPIE_HIVE.__server = {};
 //------------------------------------------------------------------------
 /**
  * 
- * @desc {@link MAGPIE_HIVE.__refresh}
  * @param {Number} layerID
  * @param {Number} runtimeID
+ * @param {Number} layer_frame
  * 
  * @returns {Promise<Boolean>} 
  */
-MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID)
+MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID, layer_frame)
 {
 	const ePrefix = "[HIVE].refresh: ";
 	try
 	{
+		MAGPIE_SYSTEM.refresh.call(this)
 		const layer = MAGPIE.KEY.RUNTIME.LAYER;
 		const Base = 0;
 		const Game = 1;
@@ -351,43 +352,44 @@ MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID)
 		const layerSuper = layer.get(Super);
 		const layerMega = layer.get(Mega);
 		const layerUltra = layer.get(Ultra);
+		const f = layer_frame
 		if(switchID === 0)
-			this.tick_buffer(layerBase.name, Base, Base, layerBase.delta);
+			this.tick_buffer(layerBase.name, Base, Base, layerBase.delta, f);
 		if(switchID === 1)
 		{
-			this.tick_buffer(layerBase.name, Base, Game, layerBase.delta);
-			this.tick_buffer(layerGame.name, Game, Game, layerGame.delta);
+			this.tick_buffer(layerBase.name, Base, Game, layerBase.delta, f);
+			this.tick_buffer(layerGame.name, Game, Game, layerGame.delta, f);
 		}
 		if(switchID === 2)
 		{
-			this.tick_buffer(layerBase.name, Base, TICK, layerBase.delta);
-			this.tick_buffer(layerGame.name, Game, TICK, layerBase.delta);
-			this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.delta);
+			this.tick_buffer(layerBase.name, Base, TICK, layerBase.delta, f);
+			this.tick_buffer(layerGame.name, Game, TICK, layerBase.delta, f);
+			this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.delta, f);
 		}
 		if(switchID === 3)
 		{
-			this.tick_buffer(layerBase.name, Base, Super, layerBase.delta);
-			this.tick_buffer(layerGame.name, Game, Super, layerBase.delta);
-			this.tick_buffer(layerTICK.name, TICK, Super, layerBase.delta);
-			this.tick_remote(layerSuper.name, Super, Super, layerSuper.delta);
+			this.tick_buffer(layerBase.name, Base, Super, layerBase.delta, f);
+			this.tick_buffer(layerGame.name, Game, Super, layerBase.delta, f);
+			this.tick_buffer(layerTICK.name, TICK, Super, layerBase.delta, f);
+			this.tick_remote(layerSuper.name, Super, Super, layerSuper.delta, f);
 			this.save()
 		}
 		if(switchID === 4)
 		{
-			this.tick_buffer(layerBase.name, Base, Mega, layerBase.delta);
-			this.tick_buffer(layerGame.name, Game, Mega, layerBase.delta);
-			this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.delta);
-			this.tick_remote(layerSuper.name, Super, Mega, layerBase.delta);
-			this.tick_remote(layerMega.name, Mega, Mega, layerMega.delta);
+			this.tick_buffer(layerBase.name, Base, Mega, layerBase.delta, f);
+			this.tick_buffer(layerGame.name, Game, Mega, layerBase.delta, f);
+			this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.delta, f);
+			this.tick_remote(layerSuper.name, Super, Mega, layerBase.delta, f);
+			this.tick_remote(layerMega.name, Mega, Mega, layerMega.delta, f);
 		}
 		if(switchID === 5)
 		{
-			this.tick_buffer(layerBase.name, Base, Ultra, layerBase.delta);
-			this.tick_buffer(layerGame.name, Game, Ultra, layerBase.delta);
-			this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.delta);
-			this.tick_remote(layerSuper.name, Super, Ultra, layerBase.delta);
-			this.tick_remote(layerMega.name, Mega, Ultra, layerBase.delta);
-			this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.delta);
+			this.tick_buffer(layerBase.name, Base, Ultra, layerBase.delta, f);
+			this.tick_buffer(layerGame.name, Game, Ultra, layerBase.delta, f);
+			this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.delta, f);
+			this.tick_remote(layerSuper.name, Super, Ultra, layerBase.delta, f);
+			this.tick_remote(layerMega.name, Mega, Ultra, layerBase.delta, f);
+			this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.delta, f);
 		}
 		return true
 	}
@@ -396,14 +398,7 @@ MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID)
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 	}
 }
-/**
- * 
- * @param {String} layerName 
- * @param {Number} layerID 
- * @param {Number} switchID 
- * @param {duration} dt 
- */
-MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt)
+MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt, layer_frame)
 {
 	const ePrefix = "[HIVE].tick_buffer: ";
 	const layer = this[layerName];
@@ -422,7 +417,7 @@ MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt)
 			if(entity.type < 1) continue
 			// if((now - entity.updated) > dt * 3000)
 			// 	this.kick(entity.ID, `timed-out`)
-			const pass = entity.refresh(switchID, dt);
+			const pass = entity.refresh(switchID, dt, layer_frame);
 			// if(!pass) 
 			// 	this.kick(entity.ID, "failed update")
 		}
@@ -1239,6 +1234,11 @@ MAGPIE_KEY.prototype.get = function get(keyID)
 //------------------------------------------------------------------------
 // #region > Exp
 //------------------------------------------------------------------------
+MAGPIE_EXP.__hiveSync = function __hiveSync(method, arguments)
+{
+	const callback = MAGPIE_HIVE[method];
+	return callback(...arguments)
+}
 /**
  * 
  * @returns {Promise<database_result>}
