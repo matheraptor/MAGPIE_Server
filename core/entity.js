@@ -1422,7 +1422,13 @@ MAGPIE_ENTITY.prototype._get_array_expID = function getArrayExpID()
  */
 MAGPIE_ENTITY.prototype._get_nextExpID = function getNextExpID(layer_frame)
 {
-	return this._get_array_expID()[layer_frame];
+	const exps = this._get_array_expID();
+	if(layer_frame >= exps.length)
+		layer_frame = layer_frame % exps.length
+	const expID = exps[layer_frame];
+	if(isNaN(expID))
+		throw new Error(`[ENTITY-${this.ID}].getNextExpID: ${expID} is invalid expID`)
+	return expID;
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -2179,14 +2185,14 @@ MAGPIE_ENTITY.prototype._get_exps = function _get_exps()
 {
 	const exps = this._get_array_expID();
 	if(exps.length < 1) return []
-	let exps = [];
+	let list = [];
 	for(const expID of exps)
 	{
 		const exp = MAGPIE_ENTITY._hive_getExp(expID);
 		if(exp instanceof MAGPIE_EXP)
 			exps.push(exp)
 	}
-	return exps
+	return list
 }
 /**
  * 

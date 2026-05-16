@@ -5,8 +5,9 @@ ssh-key.*
 ./start.sh
 ./run_server.ps1
 
-# admin folders
+# admin 
 .admin/
+scratchpad.js
 
 # tmp folders
 .tmp/
