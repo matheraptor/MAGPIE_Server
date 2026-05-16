@@ -21,7 +21,7 @@ echo [Checking for logs... System errors are being written to debug_output.txt]
 echo.
 
 :: The 2^>^&1 below forces all hidden console execution errors to save into the file
-gcloud logging read "resource.type=gce_instance AND (logName=projects/%MY_PROJECT%/logs/syslog OR logName=projects/%MY_PROJECT%/logs/custom_server_activity)" --limit=15 --format="table(timestamp.date(tz=LOCAL):label=TIME, textPayload:label=LOG_ENTRY)" >> debug_output.txt 2>&1
+gcloud logging read "resource.type=gce_instance AND (logName=projects/%MY_PROJECT%/logs/syslog OR logName=projects/%MY_PROJECT%/logs/custom_server_activity) AND NOT \"systemd-logind\" AND NOT \"pam_unix\" AND NOT \"session-\" AND NOT \"Deactivated successfully\"" --limit=15 --format="table(timestamp.date(tz=LOCAL):label=TIME, firstof(textPayload, jsonPayload.message, jsonPayload.msg, message):label=LOG_ENTRY)" >> debug_output.txt 2>&1
 
 echo.
 echo ====================================================================================

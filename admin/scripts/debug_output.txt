@@ -2,18 +2,18 @@
  STARTING SCRIPT INITIALIZATION DIAGNOSTICS         
 =================================================== 
 TIME                 LOG_ENTRY
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
-2026-05-15T16:40:01
+2026-05-16T02:21:23  May 16 00:21:23 instance-20260306-095006 sshd[217702]: Disconnected from user hamedahastral 87.5.8.193 port 46674
+2026-05-16T02:21:23  May 16 00:21:23 instance-20260306-095006 sshd[217702]: Received disconnect from 87.5.8.193 port 46674:11: Normal Shutdown
+2026-05-16T02:21:12  May 16 00:21:12 instance-20260306-095006 systemd[1]: Started Session 181 of User hamedahastral.
+2026-05-16T02:21:12  May 16 00:21:12 instance-20260306-095006 sshd[217654]: Accepted publickey for hamedahastral from 87.5.8.193 port 46674 ssh2: RSA SHA256:Bm/vjhile1XLEmHjYXiqIi1/HhfXRxRMpPEgNrIfJiM
+2026-05-16T02:21:06  May 16 00:21:06 instance-20260306-095006 sshd[217487]: Disconnected from user hamedahastral 87.5.8.193 port 46654
+2026-05-16T02:21:06  May 16 00:21:06 instance-20260306-095006 sshd[217487]: Received disconnect from 87.5.8.193 port 46654:11: Normal Shutdown
+2026-05-16T02:20:31  May 16 00:20:31 instance-20260306-095006 systemd[1]: Started Session 180 of User hamedahastral.
+2026-05-16T02:20:31  May 16 00:20:31 instance-20260306-095006 sshd[217429]: Accepted publickey for hamedahastral from 87.5.8.193 port 46654 ssh2: RSA SHA256:Bm/vjhile1XLEmHjYXiqIi1/HhfXRxRMpPEgNrIfJiM
+2026-05-16T02:20:31  May 16 00:20:31 instance-20260306-095006 sshd[217429]: Postponed publickey for hamedahastral from 87.5.8.193 port 46654 ssh2 [preauth]
+2026-05-16T02:20:30  May 16 00:20:30 instance-20260306-095006 systemd[1]: Finished GCE Workload Certificate refresh.
+2026-05-16T02:20:30  May 16 00:20:30 instance-20260306-095006 gce_workload_cert_refresh[217435]: 2026/05/16 00:20:30: Done
+2026-05-16T02:20:30  May 16 00:20:30 instance-20260306-095006 systemd[1]: Starting GCE Workload Certificate refresh...
+2026-05-16T02:20:02  ======================================
+2026-05-16T02:20:02  0 loaded units listed.
+2026-05-16T02:20:02    UNIT LOAD ACTIVE SUB DESCRIPTION
