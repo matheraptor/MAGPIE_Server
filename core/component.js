@@ -342,8 +342,8 @@ MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 	{
 		const map = this._get_STATS();
 		const K = MAGPIE.KEY.INDEX;
-		const keys = Array.from(K.VSPEEDS.keys())
-		const values = Array.from(K.VSPEEDS.values());
+		const keys = Array.from(K.VSPEEDS.values())
+		const values = Array.from(K.VSPEEDS.keys());
 		const Vspeeds = {};
 		map.forEach((keyID, index) => {
 			if(index % 2 === 0 && values.includes(keyID))

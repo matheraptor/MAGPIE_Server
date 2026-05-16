@@ -1184,11 +1184,11 @@ MAGPIE_KEY.setup = async function setup()
 		MAGPIE_SERVER.CLI._incrementLoadBar();
 		/** @param {Object} */
 		const index = (type) => {
-			const start = axioms.indexOf(type.get("start"));
-			const end = axioms.indexOf(type.get("end"));
+			const start = axioms.indexOf("Vmax")
+			const end = axioms.indexOf("Tdock")
 			const types = axioms.slice(start, end + 1)
 			types.forEach(label => {
-				type.set(type[label.toUpperCase()], label)
+				type.set(MAGPIE.KEY.INDEX[label.toUpperCase()], label)
 			})
 			return types.length
 		}
