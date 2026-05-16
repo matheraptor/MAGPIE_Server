@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.11
+ * @version 0.22.14
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,16 +20,19 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
  * 
- * @version 0.22.13 2026 05 16
+ * @version 0.22.14 2026 05 16
  * - ADDED: server instance background logger
  * - ADDED: Termius SSH ID
  * - ADDED: nGix inverse proxy and npm extension
+ * - ADDED: MAGPIE_CONTEXT prototype
  * - TWEAKED: improved RUNTIME.refresh ticking allows for layer-specific frame-count
  * - TWEAKED: wrapped entity exp handling to isolate future improvements
  * - TWEAKED: changing exp array handling from a dynamic/shift-push (O(n)) to static/index_accumulator (O(1)) 
  * - FIXED: MAGPIE_KEY.setup incorrectly indexing VSpeeds
  * - FIXED: MAGPIE_SYMBOL.getVspeeds incorrectly mapping Vspeeds
  * - FIXED: changing exp handling broke some methods
+ * - FIXED: DATABASE key labels
+ * - FIXED: RUNTIME ticking
  * 
  * @version 0.22.11 2026 05 15
  * - ADDED: DATABASE.pragma cache_size -64000 to mitigate the read flooding

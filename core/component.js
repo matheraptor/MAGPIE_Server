@@ -7,7 +7,10 @@
 // #region - INDEX
 //========================================================================
 const { MAGPIE } = require("./index");
-const { MAGPIE_SYSTEM } = require("./system");
+const { 
+	MAGPIE_SYSTEM,
+	MAGPIE_DATE
+ } = require("./system");
 function MAGPIE_COMPONENT(data)
 {
 	this.initialize(data);
@@ -47,6 +50,20 @@ function MAGPIE_EMOTE(data)
 {
 	this.initialize(data)
 }
+/**
+ * 
+ * @param {{
+ * ID: contextID,
+ * type: context_type,
+ * updated: epoch_real,
+ * entities: MAGPIE_ENTITY,
+ * exps: MAGPIE_EXP[],
+ * keys: MAGPIE_KEY[],
+ * symbols: MAGPIE_SYMBOL[],
+ * date: MAGPIE_DATE
+ * }} data 
+ * @returns {new MAGPIE_CONTEXT}
+ */
 function MAGPIE_CONTEXT(data)
 {
 	this.initialize(data)
@@ -85,15 +102,6 @@ function MAGPIE_KEY(data)
  * @returns {new MAGPIE_SYMBOL}
  */
 function MAGPIE_SYMBOL(data)
-{
-	this.initialize(data)
-}
-/**
- * 
- * @param {{}} data
- * @returns {new MAGPIE_TRAIT} 
- */
-function MAGPIE_TRAIT(data = {})
 {
 	this.initialize(data)
 }
@@ -210,6 +218,7 @@ MAGPIE_SYMBOL.meta = "";
  * @typedef {Number} symbolID
  * @typedef {Number} symbol_type {@link MAGPIE.KEY.SYMBOL.TYPE.meta}
  * @typedef {import("./index").STAT} STAT aka static parameter
+ * @typedef {import("./entity").STATS} STATS
  * @typedef {{ID: symbolID,
  * type: symbol_type,
  * name: String,
@@ -233,20 +242,68 @@ MAGPIE_SYMBOL.prototype.initialize = function initialize(data)
 	const stats = K.STATS;
 	this.STATS = new Float64Array(data?.STATS || [reqs,comps,stats])
 }
-MAGPIE_SYMBOL.prototype._get_requirements = function getRequirements()
+
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > getters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {String}
+ */
+MAGPIE_SYMBOL.prototype.getTypeName = function getTypeName()
+{
+	return Object.keys(MAGPIE.KEY.SYMBOL.TYPE).find(key => {
+		key === MAGPIE.KEY.SYMBOL.TYPE[key]
+	})
+}
+/**
+ * 
+ * @param {keyID} keyID
+ * @returns {MAGPIE_KEY} 
+ */
+MAGPIE_SYMBOL.prototype.getKey = function getKey(keyID)
+{
+	return MAGPIE_COMPONENT.__get("loadKeySync", [keyID]);
+}
+/**
+ * 
+ * @returns {symbolID[]}
+ */
+MAGPIE_SYMBOL.prototype._get_requirementIDs = function getRequirementIDs()
 {
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.REQUIREMENTS);
 	const end = this.STATS.indexOf(K.COMPOUNDS);
 	return this.STATS.slice(start + 1, end);
 }
-MAGPIE_SYMBOL.prototype._get_compounds = function getCompounds()
+MAGPIE_SYMBOL.prototype._get_requirements = function getRequirements()
+{
+	const requirementIDs = this._get_requirementIDs();
+	MAGPIE_COMPONENT.__get()
+}
+/**
+ * 
+ * @returns {symbolID[]}
+ */
+MAGPIE_SYMBOL.prototype._get_compoundIDs = function getCompoundIDs()
 {
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.COMPOUNDS);
 	const end = this.STATS.indexOf(K.STATS);
 	return this.STATS.slice(start + 1, end);
 }
+/**
+ * 
+ * @returns {STAT[]}
+ */
 MAGPIE_SYMBOL.prototype._get_STATS = function getSTATS()
 {
 	const K = MAGPIE.KEY.INDEX;
@@ -280,36 +337,6 @@ MAGPIE_SYMBOL.prototype.mapStats = function mapStats()
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
-}
-
-// #endregion
-//------------------------------------------------------------------------
-/**
- * @name 
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > getters
-//------------------------------------------------------------------------
-/**
- * 
- * @returns {String}
- */
-MAGPIE_SYMBOL.prototype.getTypeName = function getTypeName()
-{
-	return Object.keys(MAGPIE.KEY.SYMBOL.TYPE).find(key => {
-		key === MAGPIE.KEY.SYMBOL.TYPE[key]
-	})
-}
-/**
- * 
- * @param {keyID} keyID
- * @returns {MAGPIE_KEY} 
- */
-MAGPIE_SYMBOL.prototype.getKey = function getKey(keyID)
-{
-	return MAGPIE_COMPONENT.__get("loadKeySync", [keyID]);
 }
 /**
  * @typedef {{
@@ -419,6 +446,7 @@ MAGPIE_STATE.setup = function setup()
  */
 MAGPIE_STATE.prototype.initialize = function initialize(data)
 {
+	this._firmware = "MAGPIE_STATE";
 	this.ID = data.ID;
 	this.type = data.type;
 	this.name = data.name;
@@ -557,12 +585,7 @@ MAGPIE_EXP.prototype._get_targetSTATS = function _get_targetSTATS()
  */
 MAGPIE_EXP.prototype.getKeys = function getKeys()
 {
-	let keys = [];
-	for(const keyID of this.keys)
-	{
-		keys.push(this.getKey(keyID))
-	}
-	return keys
+	return MAGPIE_EXP.__hiveSync("_get_expKeys", [this])
 }
 /**
  * 
@@ -700,6 +723,7 @@ MAGPIE_EMOTE.setup = async function()
  */
 MAGPIE_EMOTE.prototype.initialize = function initialize(data)
 {
+	this._firmware = "MAGPIE_EMOTE";
 	this.ID = data.ID;
 	this.name = data.name;
 	this.type = data.type;
@@ -731,14 +755,40 @@ MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
 /**
  * @name 
  * @desc 
- * 
+ * @typedef {Number} contextID
+ * @typedef {Enumerator<Number>} context_type
+ * @typedef {import("./system").epoch_real} epoch_real
+ * @typedef {import("./entity").MAGPIE_ENTITY} MAGPIE_ENTITY
+ * @typedef {{
+ * ID: contextID,
+ * type: context_type,
+ * updated: epoch_real,
+ * entities: MAGPIE_ENTITY,
+ * exps: MAGPIE_EXP[],
+ * keys: MAGPIE_KEY[],
+ * symbols: MAGPIE_SYMBOL[],
+ * date: MAGPIE_DATE
+ * }} context_data
  */
 //========================================================================
 // #region - CONTEXT
 //========================================================================
+/**
+ * 
+ * @param {context_data} data 
+ * @returns {new MAGPIE_CONTEXT}
+ */
 MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 {
-	//
+	this._firmware = "MAGPIE_CONTEXT";
+	this.ID = Number(data?.ID) || Date.now();
+	this.type = Number(data?.type) || 0;
+	this.updated = Number(data?.updated) || this.ID;
+	this.entities = new Float64Array(data?.entities || 0);
+	this.exps = new Float64Array(data?.exps || 0) 
+	this.keys = new Float64Array(data?.keys || 0);
+	this.symbols = new Float64Array(data?.symbols || 0);
+	this.date = new MAGPIE_DATE(data?.date);
 }
 /**
  * 
@@ -787,6 +837,7 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
 //========================================================================
 MAGPIE_KEY.prototype.initialize = function initialize(data)
 {
+	this._firmware = "MAGPIE_KEY";
 	this.ID = Number(data?.ID) || Date.now();
 	this.type = Number(data?.type) || 0;
 	this.label = String(data?.label) || "";

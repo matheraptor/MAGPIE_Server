@@ -62,7 +62,9 @@ const { MAGPIE_PLAYER } = require("./player.js");
 const { 
 	MAGPIE_EXP, 
 	MAGPIE_KEY, 
-	MAGPIE_SYMBOL 
+	MAGPIE_SYMBOL,
+	MAGPIE_CONTEXT,
+	MAGPIE_TICKET 
 } = require("./component.js");
 MAGPIE_DATABASE.worker = new Worker("./core/database_worker.js");
 MAGPIE_DATABASE.call = function call(method, ...args)
@@ -124,8 +126,670 @@ MAGPIE_DATABASE.pingWorker = async function pingWorker()
  * 
  */
 //------------------------------------------------------------------------
-// #region > save
+// #region > Metastate
 //------------------------------------------------------------------------
+/**
+ * 
+ * @returns {MAGPIE_METASTATE} 
+ *  
+ */
+MAGPIE_DATABASE.loadMetastate = function loadMetastate()
+{
+	const ePrefix = "[DATABASE].loadMetastate: ";
+	try
+	{
+		const metastate = this.sync.loadWorldRow("MAGPIE_METASTATE", {});
+		if(!(metastate instanceof MAGPIE_METASTATE))
+			throw new Error(`no metastate in database`);
+		return metastate
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_METASTATE} metastate
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.saveMetastate = function saveMetastate(metastate)
+{
+	const ePrefix = "[DATABASE].saveMetastate: ";
+	try
+	{
+		if(!(metastate instanceof MAGPIE_METASTATE))
+			throw new Error(`${metastate} is invalid MAGPIE_METASTATE`);
+		metastate.meta.updated = this.timestamp();
+		const save = this.sync.saveWorldRow("MAGPIE_METASTATE", {
+			key: "MAGPIE_METASTATE",
+			data: metastate
+		})
+		return save
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Player
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} playerID 
+ * @returns {Promise<MAGPIE_PLAYER>}
+ */
+MAGPIE_DATABASE.loadPlayer = async function loadPlayer(playerID)
+{
+	const ePrefix = "[DATABASE].loadPlayer: ";
+	try
+	{
+		const player = await this.call("loadServerRow", ["MAGPIE_PLAYER", {ID: playerID}]);
+		if(!(player instanceof MAGPIE_PLAYER))
+			throw new Error(`[PLAYER-${playerID}] not found`);
+		return player
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} playerID 
+ * @returns {MAGPIE_PLAYER}
+ */
+MAGPIE_DATABASE.loadPlayerSync = function loadPlayer(playerID)
+{
+	const ePrefix = "[DATABASE].loadPlayer: ";
+	try
+	{
+		const player = this.sync.loadServerRow("MAGPIE_PLAYER", {ID: playerID});
+		if(!(player instanceof MAGPIE_PLAYER))
+			throw new Error(`[PLAYER-${playerID}] not found`);
+		return player
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * @typedef {String} password
+ * @param {email} email 
+ * @param {password} pass 
+ * @returns {Promise<Boolean>}
+ */
+MAGPIE_DATABASE.loginPlayer = async function loginPlayer(email, pass)
+{
+	if(!this.isValidEmail(email) || !this.isValidPass(pass)) return
+	const player = await this.call("loadServerRow", ["MAGPIE_PLAYER", {email: email}]);
+	if(!(player instanceof MAGPIE_PLAYER)) return false
+	if(!player.PASS === pass) return false;
+	return player
+}
+/**
+ * 
+ * @param {email} email 
+ * @returns {Boolean}
+ */
+MAGPIE_DATABASE.isValidEmail = function isValidEmail(email)
+{
+	const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  	return regex.test(email);
+}
+/**
+ * 
+ * @param {MAGPIE_PLAYER} player
+ * @returns {Promise<worker_result>} 
+ */
+MAGPIE_DATABASE.savePlayer = async function savePlayer(player)
+{
+	const ePrefix = "[DATABASE].savePlayer: ";
+	try
+	{
+		const payload = this.preparePlayer(player);
+		if(!payload) 
+			throw new Error(`${payload} is invalid player payload`);
+		const result = await this.call("saveServerRow", "MAGPIE_PLAYER", payload);
+		if(!result)
+			throw new Error(`unable to save [PLAYER-${player.ID}`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_PLAYER} player
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.savePlayerSync = function savePlayerSync(player)
+{
+	const ePrefix = "[DATABASE].savePlayer: ";
+	try
+	{
+		const payload = this.preparePlayer(player);
+		if(!payload) 
+			throw new Error(`${payload} is invalid player payload`);
+		const result = this.sync.saveServerRow("MAGPIE_PLAYER", payload);
+		if(!result)
+			throw new Error(`unable to save [PLAYER-${player.ID}`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * @typedef {String} email
+ * @typedef {String} username 
+ * @typedef {String} encrypted_password
+ * @typedef {Number} epoch_real from Date.now()
+ * @typedef {Number} epoch_game from metastate.date.timestamp()
+ * @typedef {Number} binary_bool 0 for false, 1 for true
+ * @typedef {{
+ * 	ID: Number,
+ *  username: username,
+ * 	email: email,
+ * 	PASS: encrypted_password,
+ * 	updated: epoch_real,
+ * 	isFrozen: binary_bool
+ * }} player_payload
+ * @param {MAGPIE_PLAYER} player
+ * @returns {player_payload} 
+ */
+MAGPIE_DATABASE.preparePlayer = function preparePlayer(player)
+{
+	const ePrefix = "[DATABASE].preparePlayer: ";
+	try
+	{
+		if(!(player instanceof MAGPIE_PLAYER))
+			throw new Error(`${player} is invalid MAGPIE_PLAYER`);
+		const now = this.timestamp();
+		player.saved = now;
+		const payload = {
+			ID: player.ID,
+			username: player.username,
+			email: player.email,
+			PASS: player.PASS,
+			isFrozen: player.isFrozen ? 1 : 0,
+			data: player
+		}
+		return payload
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Exp
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {MAGPIE_KEY[]} 
+ */
+MAGPIE_DATABASE.getExpKeys = function getExpKeys(exp)
+{
+	const ePrefix = "[DATABASE].getExpKeys: ";
+	try
+	{
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`${exp} is invalid MAGPIE_EXP`)
+		const keys = exp.keys;
+		if(!Array.isArray(keys) || keys.length < 1) return [];
+		const db = MAGPIE_DATABASE.sync.world;
+		const placeholders = keys.map(() => "?").join(", ")
+		const sql = `SELECT * FROM MAGPIE_KEY WHERE ID IN (${placeholders})`;
+		const rows = db.prepare(sql).all(keys);
+		const rowMap = new Map(rows.map(row => [row.ID, row]))
+		return keys.map(id => rowMap.get(id)).filter(Boolean)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return []
+	}
+}
+/**
+ * 
+ * @param {Number} expID 
+ * @returns {Promise<MAGPIE_EXP>}
+ */
+MAGPIE_DATABASE.loadExp = async function loadExp(expID)
+{
+	const ePrefix = "[DATABASE].loadExp: ";
+	try
+	{
+		const exp = await this.call("loadWorldRow", ["MAGPIE_EXP", {ID: expID}])
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`[EXP-${expID}] is not in database`);
+		return exp
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} expID 
+ * @returns {MAGPIE_EXP}
+ */
+MAGPIE_DATABASE.loadExpSync = function loadExpSync(expID)
+{
+	const ePrefix = "[DATABASE].loadExp: ";
+	try
+	{
+		const exp = MAGPIE_DATABASE.sync.loadWorldRow("MAGPIE_EXP", {ID: expID})
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`[EXP-${expID}] is not in database`);
+		return exp
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * @typedef {{
+ * ID: epoch_real,
+ * subjectID: Number,
+ * targetID: Number,
+ * data: MAGPIE_EXP
+ * }} exp_payload
+ * @param {MAGPIE_EXP} exp 
+ * @returns {exp_payload}
+ */
+MAGPIE_DATABASE.prepareExp = function prepareExp(exp)
+{
+	if(!(exp instanceof MAGPIE_EXP))
+		throw new Error(`${exp} is invalid EXP`)
+	const payload = {
+		ID: exp.ID,
+		subjectID: exp.subjectID || null,
+		targetID: exp.targetID || null,
+		data: exp
+	}
+	return payload
+} 
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {Promise<worker_result>} 
+ */
+MAGPIE_DATABASE.saveExp = async function saveExp(exp)
+{
+	const ePrefix = "[DATABASE].saveExp: ";
+	try
+	{
+		const payload = this.prepareExp(exp);
+		const result = await this.call("saveWorldRow", "MAGPIE_EXP", payload)
+		if(!result)
+			throw new Error(`unable to save [EXP-${exp.ID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.saveExpSync = function saveExpSync(exp)
+{
+	const ePrefix = "[DATABASE].saveExp: ";
+	try
+	{
+		const payload = this.prepareExp(exp);
+		// this.saveExpRelation(exp);
+		const result = this.sync.saveWorldRow("MAGPIE_EXP", payload);
+		if(!result)
+			throw new Error(`unable to save [EXP-${exp.ID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {worker_result}
+ */
+MAGPIE_DATABASE.saveExpRelation = function saveExpRelation(exp)
+{
+	let payloads = [];
+	exp.keys.forEach(key => {
+		const payload = {
+			expID: exp.ID,
+			keyID: key
+		}
+		payloads.push(payload)
+	})
+	const result = this.sync.makeTransaction(this.sync.world, () => {
+		for(const payload of payloads)
+		{
+			const { values, columns } = this.sync.rowSetter(payload);
+			this.sync.setRow("EXP_KEYS", values, columns, this.sync.world);
+		}
+		return true
+	})
+	if(!result)
+		throw new Error(`unable to save relations for [EXP-${exp.ID}]`)
+	return result
+}
+/**
+ * 
+ * @param {Number} expID
+ * @returns {Promise<worker_result>} 
+ */
+MAGPIE_DATABASE.deleteExp = async function deleteExp(expID)
+{
+	const ePrefix = "[DATABASE].deleteExp: ";
+	try
+	{
+		const result = await this.call("deleteRow", "MAGPIE_EXP", {ID: expID})
+		if(!result)
+			throw new Error(`unable to delete [EXP-${expID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} expID 
+ * @returns {worker_result}
+ */
+MAGPIE_DATABASE.deleteExpSync = function deleteExpSync(expID)
+{
+	const ePrefix = "[DATABASE].deleteExp: ";
+	try
+	{
+		MAGPIE_DATABASE.deleteExpKeysSync(expID);
+		const result = MAGPIE_DATABASE.sync.deleteWorldRow("MAGPIE_EXP", {ID: expID});
+		if(!result)
+			throw new Error(`unable to delete [EXP-${expID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} expID
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.deleteExpKeysSync = function deleteExpKeysSync(expID)
+{
+	const ePrefix = "[DATABASE].deleteExpKeys: ";
+	try
+	{
+		const result = this.sync.world.prepare(
+			"DELETE FROM EXP_KEYS WHERE expID = ?"
+		).run(expID)
+		if(!result)
+			throw new Error(`unable to delete [EXP-${expID}]`)
+		const message = `deleted ${result.changes} key relations for [EXP-${expID}]`;
+		MAGPIE_SYSTEM.log(ePrefix + message, "console", true)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Key
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} keyID 
+ * @returns {Promise<MAGPIE_KEY>} 
+ */
+MAGPIE_DATABASE.loadKey = async function loadKey(keyID)
+{
+	const ePrefix = "[DATABASE].loadKey: ";
+	try
+	{
+		const key = await this.call("loadWorldRow", ["MAGPIE_KEY", {ID: keyID}]);
+		if(!(key instanceof MAGPIE_KEY))
+			throw new Error(`[KEY-${keyID}] not in database`);
+		return key
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} keyID
+ * @returns {MAGPIE_KEY} 
+ */
+MAGPIE_DATABASE.loadKeySync = function loadKeySync(keyID)
+{
+	const ePrefix = "[DATABASE].loadKeySync: ";
+	try
+	{
+		const key = MAGPIE_DATABASE.sync.getRow("MAGPIE_KEY", {ID: keyID}, MAGPIE_DATABASE.sync.world)[0];
+		if(!key?.ID)
+			throw new Error(`[KEY-${keyID}] not in database`);
+		Object.setPrototypeOf(key, MAGPIE_KEY.prototype);
+		return key
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @typedef {{
+ * ID: epoch_real,
+ * type: Enumerator<Number>,
+ * label: String,
+ * originID: Number,
+ * compoundID: Number,
+ * symbolID: Number
+ * }} key_payload
+ * @param {MAGPIE_KEY} key 
+ * @returns {key_payload}
+ */
+MAGPIE_DATABASE.prepareKey = function prepareKey(key)
+{
+	return {
+		ID: key.ID,
+		type: key.type,
+		label: key.label,
+		originID: key.originID || null,
+		compoundID: key.compoundID || null,
+		symbolID: key.symbolID || null
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_KEY} key
+ * @returns {Promise<worker_result>} 
+ */
+MAGPIE_DATABASE.saveKey = async function saveKey(key)
+{
+	const ePrefix = "[DATABASE].saveKey: ";
+	try
+	{
+		const payload = this.prepareKey(key);
+		const result = await this.call("saveWorldRow", "MAGPIE_KEY", payload)
+		if(!result)
+			throw new Error(`unable to save [KEY-${key.ID}]`)
+		if(key.originID)
+			await this.call("saveWorldRow", ["key_legacies", {
+				keyID: key.originID,
+				legacyID: key.ID
+			}])
+		if(key.compoundID)
+			await this.call("saveWorldRow", ["key_components", {
+				keyID: key.compoundID,
+				componentID: key.ID
+			}])
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.messag, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_KEY} key
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.saveKeySync = function saveKeySync(key)
+{
+	const ePrefix = "[DATABASE].saveKey: ";
+	try
+	{
+		const payload = this.prepareKey(key);
+		const result = this.sync.saveWorldRow("MAGPIE_KEY", payload);
+		if(!result)
+			throw new Error(`unable to save [KEY-${key.ID}]`)
+		if(key.originID)
+			this.sync.saveWorldRow("key_legacies", {
+				keyID: key.originID,
+				legacyID: key.ID
+			})
+		if(key.compoundID)
+			this.sync.saveWorldRow("key_components", {
+				keyID: key.compoundID,
+				componentID: key.ID
+			})
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.messag, e)
+	}
+}
+/**
+ * 
+ * @param {Number} expID
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.deleteKeyLegacy = function deleteExpSync(expID)
+{
+	const ePrefix = "[DATABASE].deleteEXP: ";
+	try
+	{
+		const result = this.sync.world.prepare(
+			"DELETE FROM EXP_KEYS WHERE expID = ?"
+		).run(expID)
+		if(!result)
+			throw new Error(`unable to delete [EXP-${expID}]`)
+		const message = `deleted ${result.changes} key relations for [EXP-${expID}]`;
+		MAGPIE_SYSTEM.log(ePrefix + message, "console", true)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > delete
+//------------------------------------------------------------------------
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Entity
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {entityID} entityID 
+ * @returns {Promise<MAGPIE_ENTITY>}
+ */
+MAGPIE_DATABASE.loadEntity = async function loadEntity(entityID)
+{
+	const ePrefix = `[DATABASE].loadEntity: `;
+	try
+	{
+		const data = await this.call("loadWorldRow", "MAGPIE_ENTITY", {ID: entityID});
+		if(!data?.ID)
+			throw new Error(`[ENTITY-${entityID}] not found`)
+		const entity = Object.setPrototypeOf(data, MAGPIE_ENTITY.prototype);
+		return entity
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+	}
+}
+/**
+ * 
+ * @param {entityID} entityID
+ * @returns {MAGPIE_ENTITY} 
+ */
+MAGPIE_DATABASE.loadEntitySync = function loadEntitySync(entityID)
+{
+	const ePrefix = `[DATABASE].loadEntity: `;
+	try
+	{
+		const entity = this.sync.loadWorldRow("MAGPIE_ENTITY", {ID: entityID});
+		return entity
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+	}
+}
 /**
  * 
  * @param {MAGPIE_ENTITY} entity
@@ -227,609 +891,6 @@ MAGPIE_DATABASE.prepareEntity = function prepareEntity(entity)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
-/**
- * 
- * @param {MAGPIE_METASTATE} metastate
- * @returns {worker_result} 
- */
-MAGPIE_DATABASE.saveMetastate = function saveMetastate(metastate)
-{
-	const ePrefix = "[DATABASE].saveMetastate: ";
-	try
-	{
-		if(!(metastate instanceof MAGPIE_METASTATE))
-			throw new Error(`${metastate} is invalid MAGPIE_METASTATE`);
-		metastate.meta.updated = this.timestamp();
-		const save = this.sync.saveWorldRow("MAGPIE_METASTATE", {
-			key: "MAGPIE_METASTATE",
-			data: metastate
-		})
-		return save
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {MAGPIE_PLAYER} player
- * @returns {Promise<worker_result>} 
- */
-MAGPIE_DATABASE.savePlayer = async function savePlayer(player)
-{
-	const ePrefix = "[DATABASE].savePlayer: ";
-	try
-	{
-		const payload = this.preparePlayer(player);
-		if(!payload) 
-			throw new Error(`${payload} is invalid player payload`);
-		const result = await this.call("saveServerRow", "MAGPIE_PLAYER", payload);
-		if(!result)
-			throw new Error(`unable to save [PLAYER-${player.ID}`)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {MAGPIE_PLAYER} player
- * @returns {worker_result} 
- */
-MAGPIE_DATABASE.savePlayerSync = function savePlayerSync(player)
-{
-	const ePrefix = "[DATABASE].savePlayer: ";
-	try
-	{
-		const payload = this.preparePlayer(player);
-		if(!payload) 
-			throw new Error(`${payload} is invalid player payload`);
-		const result = this.sync.saveServerRow("MAGPIE_PLAYER", payload);
-		if(!result)
-			throw new Error(`unable to save [PLAYER-${player.ID}`)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * @typedef {String} email
- * @typedef {String} username 
- * @typedef {String} encrypted_password
- * @typedef {Number} epoch_real from Date.now()
- * @typedef {Number} epoch_game from metastate.date.timestamp()
- * @typedef {Number} binary_bool 0 for false, 1 for true
- * @typedef {{
- * 	ID: Number,
- *  username: username,
- * 	email: email,
- * 	PASS: encrypted_password,
- * 	updated: epoch_real,
- * 	isFrozen: binary_bool
- * }} player_payload
- * @param {MAGPIE_PLAYER} player
- * @returns {player_payload} 
- */
-MAGPIE_DATABASE.preparePlayer = function preparePlayer(player)
-{
-	const ePrefix = "[DATABASE].preparePlayer: ";
-	try
-	{
-		if(!(player instanceof MAGPIE_PLAYER))
-			throw new Error(`${player} is invalid MAGPIE_PLAYER`);
-		const now = this.timestamp();
-		player.saved = now;
-		const payload = {
-			ID: player.ID,
-			username: player.username,
-			email: player.email,
-			PASS: player.PASS,
-			isFrozen: player.isFrozen ? 1 : 0,
-			data: player
-		}
-		return payload
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * @typedef {{
- * ID: epoch_real,
- * subjectID: Number,
- * targetID: Number,
- * data: MAGPIE_EXP
- * }} exp_payload
- * @param {MAGPIE_EXP} exp 
- * @returns {exp_payload}
- */
-MAGPIE_DATABASE.prepareExp = function prepareExp(exp)
-{
-	if(!(exp instanceof MAGPIE_EXP))
-		throw new Error(`${exp} is invalid EXP`)
-	const payload = {
-		ID: exp.ID,
-		subjectID: exp.subjectID || null,
-		targetID: exp.targetID || null,
-		data: exp
-	}
-	return payload
-} 
-/**
- * 
- * @param {MAGPIE_EXP} exp
- * @returns {Promise<worker_result>} 
- */
-MAGPIE_DATABASE.saveExp = async function saveExp(exp)
-{
-	const ePrefix = "[DATABASE].saveExp: ";
-	try
-	{
-		const payload = this.prepareExp(exp);
-		const result = await this.call("saveWorldRow", "MAGPIE_EXP", payload)
-		if(!result)
-			throw new Error(`unable to save [EXP-${exp.ID}]`)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {MAGPIE_EXP} exp
- * @returns {worker_result} 
- */
-MAGPIE_DATABASE.saveExpSync = function saveExpSync(exp)
-{
-	const ePrefix = "[DATABASE].saveExp: ";
-	try
-	{
-		const payload = this.prepareExp(exp);
-		// this.saveExpRelation(exp);
-		const result = this.sync.saveWorldRow("MAGPIE_EXP", payload);
-		if(!result)
-			throw new Error(`unable to save [EXP-${exp.ID}]`)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {MAGPIE_EXP} exp 
- * @returns {worker_result}
- */
-MAGPIE_DATABASE.saveExpRelation = function saveExpRelation(exp)
-{
-	let payloads = [];
-	exp.keys.forEach(key => {
-		const payload = {
-			expID: exp.ID,
-			keyID: key
-		}
-		payloads.push(payload)
-	})
-	const result = this.sync.makeTransaction(this.sync.world, () => {
-		for(const payload of payloads)
-		{
-			const { values, columns } = this.sync.rowSetter(payload);
-			this.sync.setRow("EXP_KEYS", values, columns, this.sync.world);
-		}
-		return true
-	})
-	if(!result)
-		throw new Error(`unable to save relations for [EXP-${exp.ID}]`)
-	return result
-}
-/**
- * 
- * @typedef {{
- * ID: epoch_real,
- * type: Enumerator<Number>,
- * label: String,
- * originID: Number,
- * compoundID: Number,
- * symbolID: Number
- * }} key_payload
- * @param {MAGPIE_KEY} key 
- * @returns {key_payload}
- */
-MAGPIE_DATABASE.prepareKey = function prepareKey(key)
-{
-	return {
-		ID: key.ID,
-		type: key.type,
-		label: key.label,
-		originID: key.originID || null,
-		compoundID: key.compoundID || null,
-		symbolID: key.symbolID || null
-	}
-}
-/**
- * 
- * @param {MAGPIE_KEY} key
- * @returns {Promise<worker_result>} 
- */
-MAGPIE_DATABASE.saveKey = async function saveKey(key)
-{
-	const ePrefix = "[DATABASE].saveKey: ";
-	try
-	{
-		const payload = this.prepareKey(key);
-		const result = await this.call("saveWorldRow", "MAGPIE_KEY", payload)
-		if(!result)
-			throw new Error(`unable to save [KEY-${key.ID}]`)
-		if(key.originID)
-			await this.call("saveWorldRow", ["key_legacies", {
-				keyID: key.originID,
-				legacyID: key.ID
-			}])
-		if(key.compoundID)
-			await this.call("saveWorldRow", ["key_components", {
-				keyID: key.compoundID,
-				componentID: key.ID
-			}])
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.messag, e)
-	}
-}
-/**
- * 
- * @param {MAGPIE_KEY} key
- * @returns {worker_result} 
- */
-MAGPIE_DATABASE.saveKeySync = function saveKeySync(key)
-{
-	const ePrefix = "[DATABASE].saveKey: ";
-	try
-	{
-		const payload = this.prepareKey(key);
-		const result = this.sync.saveWorldRow("MAGPIE_KEY", payload);
-		if(!result)
-			throw new Error(`unable to save [KEY-${key.ID}]`)
-		if(key.originID)
-			this.sync.saveWorldRow("key_legacies", {
-				keyID: key.originID,
-				legacyID: key.ID
-			})
-		if(key.compoundID)
-			this.sync.saveWorldRow("key_components", {
-				keyID: key.compoundID,
-				componentID: key.ID
-			})
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.messag, e)
-	}
-}
-// #endregion
-//------------------------------------------------------------------------
-/**
- * @name load
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > load
-//------------------------------------------------------------------------
-/**
- * 
- * @param {entityID} entityID 
- * @returns {Promise<MAGPIE_ENTITY>}
- */
-MAGPIE_DATABASE.loadEntity = async function loadEntity(entityID)
-{
-	const ePrefix = `[DATABASE].loadEntity: `;
-	try
-	{
-		const data = await this.call("loadWorldRow", "MAGPIE_ENTITY", {ID: entityID});
-		if(!data?.ID)
-			throw new Error(`[ENTITY-${entityID}] not found`)
-		const entity = Object.setPrototypeOf(data, MAGPIE_ENTITY.prototype);
-		return entity
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-	}
-}
-/**
- * 
- * @param {entityID} entityID
- * @returns {MAGPIE_ENTITY} 
- */
-MAGPIE_DATABASE.loadEntitySync = function loadEntitySync(entityID)
-{
-	const ePrefix = `[DATABASE].loadEntity: `;
-	try
-	{
-		const entity = this.sync.loadWorldRow("MAGPIE_ENTITY", {ID: entityID});
-		return entity
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-	}
-}
-/**
- * 
- * @returns {MAGPIE_METASTATE} 
- *  
- */
-MAGPIE_DATABASE.loadMetastate = function loadMetastate()
-{
-	const ePrefix = "[DATABASE].loadMetastate: ";
-	try
-	{
-		const metastate = this.sync.loadWorldRow("MAGPIE_METASTATE", {});
-		if(!(metastate instanceof MAGPIE_METASTATE))
-			throw new Error(`no metastate in database`);
-		return metastate
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} playerID 
- * @returns {Promise<MAGPIE_PLAYER>}
- */
-MAGPIE_DATABASE.loadPlayer = async function loadPlayer(playerID)
-{
-	const ePrefix = "[DATABASE].loadPlayer: ";
-	try
-	{
-		const player = await this.call("loadServerRow", ["MAGPIE_PLAYER", {ID: playerID}]);
-		if(!(player instanceof MAGPIE_PLAYER))
-			throw new Error(`[PLAYER-${playerID}] not found`);
-		return player
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} playerID 
- * @returns {MAGPIE_PLAYER}
- */
-MAGPIE_DATABASE.loadPlayerSync = function loadPlayer(playerID)
-{
-	const ePrefix = "[DATABASE].loadPlayer: ";
-	try
-	{
-		const player = this.sync.loadServerRow("MAGPIE_PLAYER", {ID: playerID});
-		if(!(player instanceof MAGPIE_PLAYER))
-			throw new Error(`[PLAYER-${playerID}] not found`);
-		return player
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * @typedef {String} password
- * @param {email} email 
- * @param {password} pass 
- * @returns {Promise<Boolean>}
- */
-MAGPIE_DATABASE.loginPlayer = async function loginPlayer(email, pass)
-{
-	if(!this.isValidEmail(email) || !this.isValidPass(pass)) return
-	const player = await this.call("loadServerRow", ["MAGPIE_PLAYER", {email: email}]);
-	if(!(player instanceof MAGPIE_PLAYER)) return false
-	if(!player.PASS === pass) return false;
-	return player
-}
-/**
- * 
- * @param {email} email 
- * @returns {Boolean}
- */
-MAGPIE_DATABASE.isValidEmail = function isValidEmail(email)
-{
-	const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  	return regex.test(email);
-}
-/**
- * 
- * @param {Number} expID 
- * @returns {Promise<MAGPIE_EXP>}
- */
-MAGPIE_DATABASE.loadExp = async function loadExp(expID)
-{
-	const ePrefix = "[DATABASE].loadExp: ";
-	try
-	{
-		const exp = await this.call("loadWorldRow", ["MAGPIE_EXP", {ID: expID}])
-		if(!(exp instanceof MAGPIE_EXP))
-			throw new Error(`[EXP-${expID}] is not in database`);
-		return exp
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} expID 
- * @returns {MAGPIE_EXP}
- */
-MAGPIE_DATABASE.loadExpSync = function loadExpSync(expID)
-{
-	const ePrefix = "[DATABASE].loadExp: ";
-	try
-	{
-		const exp = MAGPIE_DATABASE.sync.loadWorldRow("MAGPIE_EXP", {ID: expID})
-		if(!(exp instanceof MAGPIE_EXP))
-			throw new Error(`[EXP-${expID}] is not in database`);
-		return exp
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} keyID 
- * @returns {Promise<MAGPIE_KEY>} 
- */
-MAGPIE_DATABASE.loadKey = async function loadKey(keyID)
-{
-	const ePrefix = "[DATABASE].loadKey: ";
-	try
-	{
-		const key = await this.call("loadWorldRow", ["MAGPIE_KEY", {ID: keyID}]);
-		if(!(key instanceof MAGPIE_KEY))
-			throw new Error(`[KEY-${keyID}] not in database`);
-		return key
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} keyID
- * @returns {MAGPIE_KEY} 
- */
-MAGPIE_DATABASE.loadKeySync = function loadKeySync(keyID)
-{
-	const ePrefix = "[DATABASE].loadKeySync: ";
-	try
-	{
-		const key = MAGPIE_DATABASE.sync.getRow("MAGPIE_KEY", {ID: keyID}, MAGPIE_DATABASE.sync.world)[0];
-		if(!key?.ID)
-			throw new Error(`[KEY-${keyID}] not in database`);
-		Object.setPrototypeOf(key, MAGPIE_KEY.prototype);
-		return key
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-// #endregion
-//------------------------------------------------------------------------
-/**
- * @name 
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > delete
-//------------------------------------------------------------------------
-/**
- * 
- * @param {Number} expID
- * @returns {Promise<worker_result>} 
- */
-MAGPIE_DATABASE.deleteExp = async function deleteExp(expID)
-{
-	const ePrefix = "[DATABASE].deleteExp: ";
-	try
-	{
-		const result = await this.call("deleteRow", "MAGPIE_EXP", {ID: expID})
-		if(!result)
-			throw new Error(`unable to delete [EXP-${expID}]`)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} expID 
- * @returns {worker_result}
- */
-MAGPIE_DATABASE.deleteExpSync = function deleteExpSync(expID)
-{
-	const ePrefix = "[DATABASE].deleteExp: ";
-	try
-	{
-		MAGPIE_DATABASE.deleteExpKeysSync(expID);
-		const result = MAGPIE_DATABASE.sync.deleteWorldRow("MAGPIE_EXP", {ID: expID});
-		if(!result)
-			throw new Error(`unable to delete [EXP-${expID}]`)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} expID
- * @returns {worker_result} 
- */
-MAGPIE_DATABASE.deleteExpKeysSync = function deleteExpKeysSync(expID)
-{
-	const ePrefix = "[DATABASE].deleteExpKeys: ";
-	try
-	{
-		const result = this.sync.world.prepare(
-			"DELETE FROM EXP_KEYS WHERE expID = ?"
-		).run(expID)
-		if(!result)
-			throw new Error(`unable to delete [EXP-${expID}]`)
-		const message = `deleted ${result.changes} key relations for [EXP-${expID}]`;
-		MAGPIE_SYSTEM.log(ePrefix + message, "console", true)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * @param {Number} expID
- * @returns {worker_result} 
- */
-MAGPIE_DATABASE.deleteKeyLegacy = function deleteExpSync(expID)
-{
-	const ePrefix = "[DATABASE].deleteEXP: ";
-	try
-	{
-		const result = this.sync.world.prepare(
-			"DELETE FROM EXP_KEYS WHERE expID = ?"
-		).run(expID)
-		if(!result)
-			throw new Error(`unable to delete [EXP-${expID}]`)
-		const message = `deleted ${result.changes} key relations for [EXP-${expID}]`;
-		MAGPIE_SYSTEM.log(ePrefix + message, "console", true)
-		return result
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -851,14 +912,14 @@ MAGPIE_DATABASE.saveSymbolSync = function saveSymbolSync(symbol)
 	const ePrefix = "[DATABASE].saveSymbolSync: ";
 	try
 	{
-		symbol._get_requirements().forEach(ID => {
+		symbol._get_requirementIDs().forEach(ID => {
 			if(ID)
 				MAGPIE_DATABASE.sync.saveWorldRow("symbol_recipes", {
 					requirementID: ID,
 					recipeID: symbol.ID
 				})
 		})
-		symbol._get_compounds().forEach(ID => {
+		symbol._get_compoundIDs().forEach(ID => {
 			if(ID)
 				MAGPIE_DATABASE.sync.saveWorldRow("symbol_components", {
 					compoundID: ID,
@@ -970,6 +1031,37 @@ MAGPIE_DATABASE.loadWorldRowByName = function loadWorldRowByName(tableName, name
 			WHERE f.name MATCH ?`);
 	return MAGPIE_DATABASE.sync
 		.resultsLoader(statement.all(ftsQuery));
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * @typedef {{
+ * ID: Number,
+ * type: Number,
+ * updated: Number,
+ * data: MAGPIE_CONTEXT
+ * }} context_payload
+ */
+//------------------------------------------------------------------------
+// #region > Context
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_CONTEXT} context 
+ * @returns {context_payload}
+ */
+MAGPIE_DATABASE.prepareContext = function prepareContext(context)
+{
+	/** @type {context_payload} */
+	const payload = {
+		ID: context.ID,
+		type: context.type,
+		updated: context.updated,
+		data: context
+	}
+	return payload
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1135,43 +1227,6 @@ MAGPIE_DATABASE.loadEquipsSync = function loadEquipsSync(hostID)
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-// #endregion
-//------------------------------------------------------------------------
-/**
- * @name 
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > Exp
-//------------------------------------------------------------------------
-/**
- * 
- * @param {MAGPIE_EXP} exp
- * @returns {MAGPIE_KEY[]} 
- */
-MAGPIE_DATABASE.getExpKeys = function getExpKeys(exp)
-{
-	const ePrefix = "[DATABASE].getExpKeys: ";
-	try
-	{
-		if(!(exp instanceof MAGPIE_EXP))
-			throw new Error(`${exp} is invalid MAGPIE_EXP`)
-		const keys = exp.keys;
-		if(!Array.isArray(keys) || keys.length < 1) return [];
-		const db = MAGPIE_DATABASE.sync.world;
-		const placeholders = keys.map(() => "?").join(", ")
-		const sql = `SELECT * FROM MAGPIE_KEY WHERE ID IN (${placeholders})`;
-		const rows = db.prepare(sql).all(keys);
-		const rowMap = new Map(rows.map(row => [row.ID, row]))
-		return keys.map(id => rowMap.get(id)).filter(Boolean)
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-		return []
 	}
 }
 // #endregion

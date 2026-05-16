@@ -38,9 +38,7 @@ const {
 	MAGPIE_METASTATE,
 	MAGPIE_DATE
 } = SYSTEM;
-// const { MAGPIE_SYSTEM } = SYSTEM;
-// const { MAGPIE_RUNTIME } = SYSTEM;
-// const { MAGPIE_HIVE } = SYSTEM;
+
 const { MAGPIE_PHYSICS } = require("./core/physics");
 const { 
 	MAGPIE_COMPONENT, 
@@ -526,16 +524,34 @@ MAGPIE_HIVE._get_entity = function _get_entity(entityID)
  * @param {String} fK name of child foreign key
  * @returns {Promise<MAGPIE_ENTITY[]>}
  */
-MAGPIE_HIVE._get_relatives = async function _get_relatives(rT, pK, fK)
+MAGPIE_HIVE._get_entity_relatives = async function getEntityRelatives(entityID, rT, pK, fK)
 {
-	const ePrefix = `[ENTITY-${this.ID}].getRelatives: `;
+	const ePrefix = `[HIVE].getEntityRelatives: `;
 	try
 	{
-		const payload = [this.ID, pK, fK, rT, "MAGPIE_ENTITY"]
+		const payload = [entityID, pK, fK, rT, "MAGPIE_ENTITY"]
 		const result = await MAGPIE_DATABASE.call("getWorldRelatedRows", payload);
 		if(!result || result?.length < 1)
 			throw new Error(`unable to fetch ${rT}`)
 		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+MAGPIE_HIVE._get_exp = function _get_exp(expID)
+{
+	const ePrefix = "[HIVE].getExp: ";
+	try
+	{
+		const registry = MAGPIE_HIVE._expBuffer.get(expID);
+		const exp = registry instanceof MAGPIE_EXP 
+			? registry 
+			: MAGPIE_DATABASE.loadExpSync(expID)
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`unable to find [EXP-${expID}]`)
+		return exp
 	}
 	catch(e)
 	{
@@ -549,24 +565,32 @@ MAGPIE_HIVE._get_relatives = async function _get_relatives(rT, pK, fK)
  */
 MAGPIE_HIVE._get_expKeys = function _get_expKeys(exp)
 {
-	const ePrefix = `[ENTITY-${this.ID}].getEXPkeys: `;
+	const ePrefix = "[HIVE].getExpKeys: ";
 	try
 	{
-		// if(exp.keys.every(key => key < 100000))
-		// 	return
-		const keys = []
-		exp.keys.forEach(keyID => {
-			keys.push(MAGPIE_DATABASE.loadKeySync(keyID))
-		})
+		const keyIDs = exp.keys;
+		if(!Array.isArray(keyIDs))
+			throw new Error(`${keyIDs} is invalid exp.keys array`)
+		if(keyIDs.length < 1) return
+		const keys = [];
+		for(const keyID of keyIDs)
+		{
+			try
+			{
+				const registry = MAGPIE_HIVE._keyBuffer.get(keyID);
+				const key = registry instanceof MAGPIE_KEY 
+					? registry 
+					: MAGPIE_DATABASE.loadKeySync(keyID)
+				if(!(key instanceof MAGPIE_KEY))
+					throw new Error(`unable to find [KEY-${keyID}]`)	
+				keys.push(key)
+			}
+			catch(e)
+			{
+				MAGPIE_SERVER.error(ePrefix + e.message, e)
+			}
+		}
 		return keys
-		// const recall = MAGPIE_DATABASE.sync.world.prepare(
-		// 	`SELECT TARGET.* FROM MAGPIE_EXP target 
-		// 	JOIN exp_keys rel ON target.ID = rel.keyID
-		// 	WHERE rel.expID = ?`
-		// ).all(exp);
-		// if(!recall || recall?.length < 1)
-		// 	throw new Error(`unable to fetch keys for [EXP-${exp.ID}]`)
-		// return recall
 	}
 	catch(e)
 	{
@@ -1940,6 +1964,12 @@ MAGPIE_DATABASE.setup = function setup()
 			data: blob
 		});
 		tables.set("metastate", metastate);
+		const contexts = this.sync.createWorldTable("MAGPIE_CONTEXT", {
+			ID: integerKey,
+			type: integer,
+			updated: integer,
+			data: blob
+		})
 		const players = this.sync.createServerTable("MAGPIE_PLAYER", {
 			ID: integerKey,
 			username: text,

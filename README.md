@@ -2,10 +2,6 @@
 type: readme
 version: 0.20.1 2026-04-25
 tags: [MAGPIE, server, readme]
-toc:
-  depth_from: 1
-  depth_to: 6
-  ordered: false
 ---
 
 # MAGPIE Server for Shelder Evolution {#top}

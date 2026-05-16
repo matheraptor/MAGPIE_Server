@@ -734,10 +734,10 @@ MAGPIE_ENTITY._hive_getExp = function _hive_getExp(expID)
  */
 MAGPIE_ENTITY._hive_getExpKeys = function _hive_getExpKeys(exp)
 {
-	return MAGPIE_ENTITY.__hiveSync("_get_databaseSync", ["getExpKeys", [exp]])
+	return exp.getKeys
 }
 /**
- * 
+ * {@link MAGPIE_HIVE._get_entity_relatives}
  * @param {String} rT name of relatives table
  * @param {String} pK name of parent foreign key
  * @param {String} fK name of child foreign key
@@ -745,7 +745,7 @@ MAGPIE_ENTITY._hive_getExpKeys = function _hive_getExpKeys(exp)
  */
 MAGPIE_ENTITY._hive_getRelatives = async function _hive_getRelatives(rT, pK, fK)
 {
-	return await MAGPIE_ENTITY.__hive("_get_relatives", rT, pK, fK)
+	return await MAGPIE_ENTITY.__hive("_get_relatives", [this.ID, rT, pK, fK])
 }
 /**
  * 
@@ -1457,7 +1457,7 @@ MAGPIE_ENTITY.prototype.processEmote = function processEmote(switchID, dt, exp, 
 	{
 		if(!(exp instanceof MAGPIE_EXP)) 
 			throw new Error(`${exp} is invalid MAGPIE_EXP`)
-		if(key instanceof MAGPIE_KEY)
+		if(key instanceof MAGPIE_KEY && key.label) 
 			return this._act_emote(MAGPIE.KEY.EMOTE.INDEX[key.label], exp)
 		const emote = MAGPIE_EMOTE.INDEX.get(exp.emoteID);
 		if(!emote) 
@@ -1705,7 +1705,7 @@ MAGPIE_ENTITY.prototype.processKeys = function processKeys(exp)
 			throw new Error(`${exp} is invalid MAGPIE_EXP`)
 		const keyList = exp.keys;
 		if(keyList.length < 1) return
-		const keys = MAGPIE_ENTITY._hive_getExpKeys(exp);
+		const keys = exp.getKeys();
 		if(keys.length < 1) return
 		const key = keys.find(key => key.type === MAGPIE.KEY.TYPE.EMOTE)
 		if(key)
@@ -1820,7 +1820,7 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 	const ePrefix = `[ENTITY-${this.ID}]._emote_eval: `;
 	try
 	{
-		const key = MAGPIE_ENTITY._hive_getExpKeys(exp)
+		const key = exp.getKeys()
 			.find(key => key.type === MAGPIE.KEY.TYPE.EVAL)
 		if(!key) return
 		eval(`${key.label.replace("$", exp.value)}`);
@@ -1954,7 +1954,7 @@ MAGPIE_ENTITY.prototype._emote_schedule = function _emote_schedule(exp)
     const ePrefix = `[ENTITY-${this.ID}].schedule: `;
 	try
 	{
-		const keys = MAGPIE_ENTITY._hive_getExpKeys(exp);
+		const keys = exp.getKeys()
 		const trigger = keys.find(key => key.type === MAGPIE.KEY.TYPE.TRIGGER)
 		if(!trigger) return
 		const triggered = Date.now() > trigger.ID;
@@ -2050,15 +2050,6 @@ MAGPIE_ENTITY._get_key = function getKey(keyID)
 {
 	return MAGPIE_ENTITY._database_Sync("loadKeySync", keyID)
 }
-/**
- * 
- * @param {MAGPIE_EXP} exp 
- * @returns {MAGPIE_KEY[]}
- */
-MAGPIE_ENTITY.prototype._get_exp_keys = function getExpKeys(exp)
-{
-	return MAGPIE_ENTITY._hive_getExpKeys(exp)
-}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -2091,6 +2082,7 @@ MAGPIE_ENTITY.prototype.addState = function addState(state)
 		if(!valid) return
 		const [stateID, index] = valid;
 		const slot = this.fitness[index];
+		if(slot === stateID) return
 		if(slot) 
 			throw new Error(`fitness[${index}] is occupied by [STATE-${slot}]`)
 		this.fitness[index] = stateID
@@ -2280,6 +2272,10 @@ MAGPIE_ENTITY.prototype._act_emote = function _act_emote(emoteID, exp)
 	const ePrefix = `[ENTITY-${this.ID}].actEmote: `;
 	try
 	{
+		if(isNaN(emoteID))
+			throw new Error(`${emoteID} is invalid emoteID`)
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`${exp} is invalid EXP`)
 		const emote = MAGPIE_EMOTE.INDEX.get(emoteID);
 		if(!emote) 
 			throw new Error(`unable to find [EMOTE-${emoteID}]`)
