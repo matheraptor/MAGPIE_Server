@@ -8,6 +8,12 @@ ssh-key.*
 # admin folders
 .admin/
 
+# tmp folders
+.tmp/
+
+# log folders
+.logs/
+
 # agent folders
 .agent
 .agents

@@ -343,7 +343,7 @@ MAGPIE_SYSTEM.log = function log(message, prefix = "console", logToConsole = tru
 		global.r?.displayPrompt(true);
 	}
 	if(typeof prefix === 'string')
-		MAGPIE_IO.append(`logs/${prefix}${date}.txt`, logTime + log + "\n");
+		MAGPIE_IO.append(`.logs/${prefix}${date}.txt`, logTime + log + "\n");
 }
 MAGPIE_SYSTEM.prototype.log = MAGPIE_SYSTEM.log;
 /**
@@ -358,7 +358,7 @@ MAGPIE_SYSTEM.error = function error(errorMessage, error)
 	const full = `[${this.Utility.CTZF()}]`;
 	MAGPIE_LOG.errors.push(log);
 	console.error(`[ERROR] ${errorMessage} | `, error);
-	const logged = MAGPIE_IO.append(`logs/error${date}.txt`, 
+	const logged = MAGPIE_IO.append(`.logs/error${date}.txt`, 
 		full + log + "\n" + error?.stack + "\n\n");
 	// r.displayPrompt();
 }
