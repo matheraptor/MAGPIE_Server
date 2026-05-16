@@ -4,7 +4,7 @@
 /**
  * @namespace MAGPIE
  * @author Matheraptor
- * @licence CC
+ * @licence GPL-3.0
  * 
  * @version 0.22.11
  * 
@@ -24,41 +24,31 @@
  * - ADDED: server instance background logger
  * - ADDED: Termius SSH ID
  * - ADDED: nGix inverse proxy and npm extension
- * - TWEAKED: improved RUNTIME.refresh ticking allows for layer-specific
- * 		frame-count
+ * - TWEAKED: improved RUNTIME.refresh ticking allows for layer-specific frame-count
  * - TWEAKED: wrapped entity exp handling to isolate future improvements
- * - TWEAKED: changing exp array handling from a dynamic/shift-push (O(n)) to 
- * 		static/index_accumulator (O(1)) 
+ * - TWEAKED: changing exp array handling from a dynamic/shift-push (O(n)) to static/index_accumulator (O(1)) 
  * - FIXED: MAGPIE_KEY.setup incorrectly indexing VSpeeds
  * - FIXED: MAGPIE_SYMBOL.getVspeeds incorrectly mapping Vspeeds
  * - FIXED: changing exp handling broke some methods
  * 
  * @version 0.22.11 2026 05 15
- * - ADDED: DATABASE.pragma cache_size -64000 to mitigate the 
- * 		read flooding
+ * - ADDED: DATABASE.pragma cache_size -64000 to mitigate the read flooding
  * - ADDED: DATABASE.helpers for symbol recipes/components
- * - ADDED: MAGPIE.KEYS for requirements, compounds, recipes, components, 
- * 		and stats 
- * - ADDED: RUNTIME.refresh clamp catch-up loop to prevent execution spikes
- * 		if(this._base > 100) this._base = 100;
+ * - ADDED: MAGPIE.KEYS for requirements, compounds, recipes, components, and stats 
+ * - ADDED: RUNTIME.refresh clamp catch-up loop to prevent execution spikes if(this._base > 100) this._base = 100;
  * - ADDED: MAGPIE_KEY.setup routine to index the axiom keys
  * - TWEAKED: MAGPIE_SYMBOL.STATS now includes requirements/compounds
  * - TWEAKED: MAGPIE_SYMBOL .requirementID and .compoundID deprecated
  * - TWEAKED: DATABASE.getExpKeys using more efficient sql
- * - FIXED: DATABASE.saveSymbolSync iterating through inexistent symbol's
- * 		.requirements and .compounds 
- * - FIXED: DATABASE.getRow passing floats instead of integers, causing
- * 		unnecessary read overhead
- * - FIXED: catastrophic bug "return" within for loop in HIVE .tick_buffer 
- * 		and .tick_remote causing subsequent entities in loop to be dropped
+ * - FIXED: DATABASE.saveSymbolSync iterating through inexistent symbol's .requirements and .compounds 
+ * - FIXED: DATABASE.getRow passing floats instead of integers, causing unnecessary read overhead
+ * - FIXED: catastrophic bug "return" within for loop in HIVE .tick_buffer and .tick_remote causing subsequent entities in loop to be dropped
  * - FIXED: RUNTIME.refresh while(this._base > 1) race condition
  * - FIXED: RUNTIME.refresh not async preventing safe database execution
  * - FIXED: DATABASE.saveSymbol typo
  * - FIXED: SYMBOL.STATS inconsistent key/value pair
- * - FIXED: MAGPIE.KEY.INDEX.VSPEEDS incorrectly initializing, causing
- * 		SYMBOL.getVspeeds to fail
- * - FIXED: SERVER.BOOT.shutdown hanging on incorrectly defined async 
- * 		behavior
+ * - FIXED: MAGPIE.KEY.INDEX.VSPEEDS incorrectly initializing, causing SYMBOL.getVspeeds to fail
+ * - FIXED: SERVER.BOOT.shutdown hanging on incorrectly defined async behavior
  * 
  * @version 0.22.4 2026 05 14
  * - ADDED: MAGPIE_IO.WORKER for fsio and logging
@@ -76,24 +66,19 @@
  * 
  * @version 0.21.11 2026 05 12
  * - ADDED: physics new method .rotorFromFrame and .rotorSlerp
- * - FIXED: physics.clampToGround jittery Og output due to contradicting 
- * 		rotor maths
- * - FIXED: physics.getAt braking magnitude decreasing exponentially resulting
- * 		in inability to achieve Vspeed 0 in a timely manner
+ * - FIXED: physics.clampToGround jittery Og output due to contradicting rotor maths
+ * - FIXED: physics.getAt braking magnitude decreasing exponentially resulting in inability to achieve Vspeed 0 in a timely manner
  * - FIXED: physics.getATpR incorrectly calculating Oerror
- * - FIXED: entity.clampToGround incorrectly clamping A and R when it should
- * 		only be clamping P, O, and V
+ * - FIXED: entity.clampToGround incorrectly clamping A and R when it should only be clamping P, O, and V
  * 
  * @version 0.21.8 2026 05 11
  * - FIXED: physics.getAt has no cruise tolerance, causing jittering of 
  * 	acceleration to constantly match the cruise speed
  * - FIXED: entity.updatePhysics infinite getAt due to no cutoff dV
  * - FIXED: entity.updatePhysics incorrectly applying vector deltas
- * - FIXED: physics._emote_seekTarget incorrectly passing options?.tolerance
- * 		instead of options
+ * - FIXED: physics._emote_seekTarget incorrectly passing options?.tolerance instead of options
  * - FIXED: runtime refresh incorrectly ticking layers
- * - FIXED: hive refresh incorrectly ticking entities, causing invalid 
- * 		physics updates
+ * - FIXED: hive refresh incorrectly ticking entities, causing invalid physics updates
  * - FIXED: hive standard layer incorrectly treated as remote
  * 
  * @version 0.21.5 2026 05 10
@@ -106,8 +91,7 @@
  * - ADDED: database_worker dropTable and addColumnToTable methods
  * - FIXED: database tables foreign keys not properly setup
  * - FIXED: database tables fields not properly setup
- * - FIXED: SERVER.js handler not type-checking, causing a commented-out 
- * 		playerHandler.js to crash the boot
+ * - FIXED: SERVER.js handler not type-checking, causing a commented-out playerHandler.js to crash the boot
  * - FIXED: unnecessary "zod" dependency mistakenly added by ESlint
  * - FIXED: playerHandler.js put on stand-by
  * 
@@ -148,8 +132,7 @@
  * - TWEAKED: new project structure from scratch
  * 
  * @version 0.19.2 2026 04 20
- * - FIXED: MAGPIE_ENTITY.refresh() unable to process multiple exps and use
- * 		STM/LTM 
+ * - FIXED: MAGPIE_ENTITY.refresh() unable to process multiple exps and use STM/LTM 
  * - TWEAKED: folder restructure with class decomposition in ./core/
  * - index.js (this file)
  * - system.js {@link MAGPIE_SYSTEM}
@@ -170,23 +153,18 @@
  * @version 0.18.8 2026 03 19
  * - ADDED: SYSTEM.Utility.printETA(s)
  * - ADDED: ENTITY.refresh dt overflow protection
- * - ADDED: ENTITY.refresh dt overflow protection automatically attempts
-	to sync metadate by requesting HIVE layer promotion
+ * - ADDED: ENTITY.refresh dt overflow protection automatically attempt to sync metadate by requesting HIVE layer promotion
  * - FIXED: MAGPIE_SERVER.error unreadable format
- * - FIXED: ENTITY.refresh dt overflow nested bugs  leading up
-	to HIVE.reqProm
+ * - FIXED: ENTITY.refresh dt overflow nested bugs  leading up to HIVE.reqProm
  * - FIXED: printETA minutes not % 60, and hours not % 24
  * 
  * @version 0.18.4 2026 03 17
  * - ADDED: Database sitrep during boot
  * 
  * @version 0.18.3 2026 03 16
- * - FIXED: incongruence with "timestamp" and "CTZ"; timestamp must be a
- * 		type Number of either Date.now() or equivalent; CTZ is a type String
- * - FIXED: multiple uses of "timestamp" as a "fake" Number for calculations,
- * 		resulting in inaccurate data
- * - FIXED: ENTITY.refresh calculating its "dt" from real timestamp, resulting
- * 		in inaccurate intervals and dt spikes due to time lag
+ * - FIXED: incongruence with "timestamp" and "CTZ"; timestamp must be a type Number of either Date.now() or equivalent; CTZ is a type String
+ * - FIXED: multiple uses of "timestamp" as a "fake" Number for calculations, resulting in inaccurate data
+ * - FIXED: ENTITY.refresh calculating its "dt" from real timestamp, resulting in inaccurate intervals and dt spikes due to time lag
  * - FIXED: entity refresh log bugs preventing correct application of forces
  * 
  * @version 0.18.0 2026 03 13
@@ -197,78 +175,60 @@
  * - FIXED: overhauled entity refresh and update loop
  * 
  * @version 0.17.17 2026 03 11
- * - FIXED: various typos and syntax errors as well as returning null instead
- * 		of proper types
+ * - FIXED: various typos and syntax errors as well as returning null instead of proper types
  * 
  * @version 0.17.16 2026 03 10
- * - FIXED: endless loop in MAGPIE_HIVE.save() due to "i < keys" instead of
- * 		"i < count"
- * - FIXED: MAGPIE_EMOTE.setup() triggers circular dependency warning due to
- * 		trying to load SERVER.js exports before being initialized
- * - FIXED: PHYSICS.validate(POVART) check for Object.prototype.toString.call()
- * 		is "Float64Arrat" instead of "[object Float64Array]"
+ * - FIXED: endless loop in MAGPIE_HIVE.save() due to "i < keys" instead of "i < count"
+ * - FIXED: MAGPIE_EMOTE.setup() triggers circular dependency warning due to trying to load SERVER.js exports before being initialized
+ * - FIXED: PHYSICS.validate(POVART) check for Object.prototype.toString.call() is "Float64Arrat" instead of "[object Float64Array]"
  * - FIXED: unable to HIVEsave any other type of entity other than default
  * - FIXED: {@link MAGPIE_SERVER.error} not logging error.stack
  * - FIXED: few bugs with typos. CTRL+F verison for details
  * 
  * @version 0.17.10 2026 03 09
- * - FIXED: few bugs with typos and invalid return statements. CTRL+F version
- * 		for details
+ * - FIXED: few bugs with typos and invalid return statements. CTRL+F version for details
  * 
  * @version 0.17.9 2026 03 08
- * - FIXED: VSCode Remote SSH connection slow and draining excessively on
- * 		VM performance
+ * - FIXED: VSCode Remote SSH connection slow and draining excessively on VM performance
  * - FIXED: client relying on development-domain (localhost)
  * - FIXED: development vs production environment conficts
- * - FIXED: unable to save Map objects to database due to JSON.stringify
- * 		limitations
- * - FIXED: MAGPIE_ENTITY not setting up properly due to malformed setup
- * 		methods
+ * - FIXED: unable to save Map objects to database due to JSON.stringify limitations
+ * - FIXED: MAGPIE_ENTITY not setting up properly due to malformed setupmethods
  * 
  * @version 0.17.5 2026 03 07
  * - ADDED: {@link MAGPIE_SERVER.CLI} cli-progress bar to reduce logs bloat
  * - FIXED: MAGPIE_DATE.leapYear() is not a function => should be .leapDay()
- * - FIXED: MAGPIE_METASTATE and MAGPIE_DATE decoupled accidentally by 0.17.2
- * 		tweaking of runtime logic
+ * - FIXED: MAGPIE_METASTATE and MAGPIE_DATE decoupled accidentally by 0.17.2 tweaking of runtime logic
  * - FIXED: server version not updated
  * 
  * @version 0.17.2 2026 03 06
- * - ADDED: Google Cloud server compute instance {@link MAGPIE.config.instance_name}
- * 		and connected it to project MAGPIE {@link MAGPIE.config.project_id}
- * - ADDED: configuration to run DuckDNS subdomain {@link MAGPIE.config.domain}
+ * - ADDED: Google Cloud server compute instance and connected it to project MAGPIE 
+ * - ADDED: configuration to run DuckDNS subdomain 
  * - FIXED: git repo running behind and having branch issues
- * - FIXED: {@link MAGPIE_DATABASE} methods incorrectly setup for async calls by
- * 		client systems
- * - FIXED: {@link MAGPIE_HIVE} lacking initialization
+ * - FIXED: DATABASE methods incorrectly setup for async calls by client systems
+ * - FIXED: MAGPIE_HIVE lacking initialization
  * 
  * @version 0.17.1 2026 03 05
- * - ADDED: worker_threads and {@link MAGPIE_DATABASE._worker} web worker
- * - TWEAKED: {@link MAGPIE_SERVER.error} message handling for improved 
- * 		readability of errors 
- * - FIXED: version not correctly showing up as M.m.p due to new number[]
- * 		format
- * - FIXED: version saving broken and breaking the entire METASTATE 
- * 		revival process
+ * - ADDED: worker_threads and web worker
+ * - TWEAKED: MAGPIE_SERVER.error message handling for improved readability of errors 
+ * - FIXED: version not correctly showing up as M.m.p due to new number[] format
+ * - FIXED: version saving broken and breaking the entire METASTATE revival process
  * @version 0.17.0 2026 03 02 
  * - ADDED: complete rewrite
- * - ADDED: {@link MAGPIE_HIVE} for {@link MAGPIE_ENTITY}
+ * - ADDED: MAGPIE_HIVE for MAGPIE_ENTITY handling
  * - TWEAKED: removed MAGPIE_LOG
- * - TWEAKED: rearranged {@link MAGPIE_RUNTIME} for systems only
+ * - TWEAKED: rearranged MAGPIE_RUNTIME for systems only
  * @version 0.16.4 2026 02 28
  * - TWEAKED: entity.update logic conformity with v0.4.3 MAGPIE_PHYSICS.js
  * - FIXED: various typos, context errors, and structural weaknesses
- * - FIXED: entity.update adds dA and dT to A0 and A1 when it's supposed
- * 		to be the processInput's job to do that.
+ * - FIXED: entity.update adds dA and dT to A0 and A1 when it's supposed to be the processInput's job to do that.
  * @version 0.16.3 2026 02 27
- * - TWEAKED: conformity update with v0.6.6 MAGPIE_SERVER.js and
- * 		v0.4.2 MAGPIE_PHYSICS.js
+ * - TWEAKED: conformity update with v0.6.6 MAGPIE_SERVER.js and v0.4.2 MAGPIE_PHYSICS.js
  * - FIXED: RUNTIME.kick not kicking properly
  * @version 0.16.2 2026 02 26
  * - ADDED: RUNTIME.refreshGuest wrapper to handle server-side logic
- * - TWEAKED: re-introduced the "@" hydration method from RMMZ JsonEx by
- * 		leveraging JSON.parse reviver and JSON.stringify replacer
- * - FIXED: ENTITY.refresh unable to processInput due to incorrect 
- * 		parameter defaults
+ * - TWEAKED: re-introduced the "@" hydration method from RMMZ JsonEx by leveraging JSON.parse reviver and JSON.stringify replacer
+ * - FIXED: ENTITY.refresh unable to processInput due to incorrect parameter defaults
  * - FIXED: RUNTIME.hosting and kicking incomplete logic
  * 
  * @version 0.16.1 2026 02 24
@@ -290,8 +250,7 @@
  *   guests
  * 
  * @version 0.13.1 2026 02 15
- * - FIXED: now() not in MAGPIE_SYSTEM prototype, causing cascading issues
- * in inheritance
+ * - FIXED: now() not in MAGPIE_SYSTEM prototype, causing cascading issues in inheritance
  * 
  * @version 0.13.0 2026 02 04
  * - complete rewrite
@@ -304,8 +263,7 @@
  * - major overhaul
  * 
  * @version 0.11.2 2025 11 01
- * - fixed: MAGPIE_Runtime guest hosting and system refresh not configured
- * 		properly
+ * - fixed: MAGPIE_Runtime guest hosting and system refresh not configured properly
  * 
  * @version 0.11.1 2025 10 30
  * - fixed MAGPIE_Log only logging playtime data
@@ -330,8 +288,7 @@
  * - HIMS overhaul
  * 
  * @version 0.7.1 2025 08 14 
- * - MAGPIE.run refresh loop bugfix: _guests refresh won't accept null
- *   causing catastrophic error
+ * - MAGPIE.run refresh loop bugfix: _guests refresh won't accept null causing catastrophic error
  * 
  * @version 0.7.0 2025 07 31 
  * - plugin suite overhaul
@@ -393,7 +350,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 12],
+			version: [0, 22, 13],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260516"
 		};

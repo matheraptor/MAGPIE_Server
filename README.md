@@ -10,7 +10,32 @@ toc:
 
 # MAGPIE Server for Shelder Evolution {#top}
 
-[TOC]
+- [MAGPIE Server for Shelder Evolution {#top}](#magpie-server-for-shelder-evolution-top)
+  - [Meta](#meta)
+    - [What is MAGPIE Server?](#what-is-magpie-server)
+    - [What is Shelder Evolution?](#what-is-shelder-evolution)
+    - [Why a MMORPG?](#why-a-mmorpg)
+    - [How does 'roguelike deckbuilding' fit in?](#how-does-roguelike-deckbuilding-fit-in)
+    - [What genre and why is it hard sci/fi?](#what-genre-and-why-is-it-hard-scifi)
+    - [Why 'Grey Tone' is just a baseline](#why-grey-tone-is-just-a-baseline)
+    - ['Bleak Agency' doesn't mean you are insignificant](#bleak-agency-doesnt-mean-you-are-insignificant)
+    - [Lore themes and the meta-narrative](#lore-themes-and-the-meta-narrative)
+    - [The case for a business model](#the-case-for-a-business-model)
+    - [Roadmap](#roadmap)
+  - [Index](#index)
+  - [NodeJS server + NWjs client](#nodejs-server--nwjs-client)
+    - [Pseudo-server](#pseudo-server)
+    - [Hosting and Domain](#hosting-and-domain)
+    - [RMMZ-based client](#rmmz-based-client)
+  - [ECS/OOP hybrid architecture](#ecsoop-hybrid-architecture)
+  - [Express server](#express-server)
+  - [Socket.io](#socketio)
+  - [JWT security](#jwt-security)
+  - [Better-sqlite3 database](#better-sqlite3-database)
+  - [REPL](#repl)
+    - [CLI-progress](#cli-progress)
+    - [CLI-spinner](#cli-spinner)
+  - [Lore](#lore)
 
 [Back to Top ⤴️](#top)
 
