@@ -36,6 +36,8 @@ const {
 const STATE = require("../data/states")
 const { MAGPIE_PHYSICS } = require("./physics");
 const ENTITY_TYPES = require("../data/entity_types");
+const { trim } = require("radash");
+const { fi } = require("zod/locales");
 /**
  * 
  * @typedef {import("./index").duration} duration
@@ -204,6 +206,11 @@ MAGPIE_ENTITY.isValidPOVART = function isValidPOVART(POVART)
 {
 	//
 }
+/**
+ * 
+ * @param {entity_fitness} fitness 
+ * @returns {Boolean}
+ */
 MAGPIE_ENTITY.isValidFitness = function isValidFitness(fitness)
 {
 	if(!fitness || fitness?.length < 1 || fitness.some(n => isNaN(n)))
@@ -520,31 +527,33 @@ MAGPIE_ENTITY.prototype.setupHost = async function setupHost()
 }
 /**
  * 
- * @param {entity_data} data 
- * @returns 
+ * @param {symbolID} fitness_data 
+ * @returns {Boolean}
+ * 
+ * 
  */
-MAGPIE_ENTITY.prototype.setupFitness = function setupFitness(data)
+MAGPIE_ENTITY.prototype.setupFitness = function setupFitness(fitness_data)
 {
 	const ePrefix = `[ENTITY-${this.ID}].setupFitness: `;
-	const fitness = data?.fitness;
-	const deckSize = fitness?.length;
-	if(!deckSize) return
+	const fitness = fitness_data || [];
+	const deckSize = fitness.length;
+	if(!deckSize) return false
 	try
 	{
-		const K = MAGPIE.KEY.ENTITY.STATS.INDEX;
 		const FIT = MAGPIE.KEY.FITNESS;
 		const deckZones = FIT.ZONES;
 		const index_entityID = FIT.E_ID;
 		const index_deckSize = FIT.DECKSIZE;
 		const arraySize = 2 + deckSize * deckZones + this._stat_endurance();
-		this.fitness = new Float64Array(arraySize).fill(NaN);
-		if(MAGPIE_ENTITY.isValidFitness(fitness))
+		this.fitness = new Float64Array(arraySize).fill(0);
+		if(!MAGPIE_ENTITY.isValidFitness(this.fitness))
 			throw new Error(`${fitness} is invalid fitness`)
 		this.fitness[index_entityID] = this.ID;
 		this.fitness[index_deckSize] = deckSize;
 		fitness.forEach((traitID, index) => {
 			this.fitness[index + 2] = traitID;
 		})
+		return true
 	}
 	catch(e)
 	{
@@ -687,11 +696,11 @@ MAGPIE_ENTITY._get_States = function _get_States(entity)
 {
 	const K = MAGPIE.KEY.FITNESS;
 	const deckSize = entity.fitness[K.DECKSIZE];
-	const offset = entity.fitness[K.TRAITS];
+	const offset = K.TRAITS;
 	const stateOffset = K.STATES;
 	const states = entity.fitness
 		.slice(offset + deckSize, offset + deckSize * stateOffset + 1)
-		.filter(n => !isNaN(n))
+		.filter(n => !!n)
 	return states
 }
 /**
@@ -1532,6 +1541,7 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 	try
 	{
 		const states = this._get_states();
+		return //@audit-issue processStates
 		if(states.length < 1) return
 		states.sort((a, b) => b - a);
 		const standardSwitch = 2;
@@ -1805,7 +1815,7 @@ MAGPIE_ENTITY.prototype._get_deckSize = function getDeckSize()
 /**
  * @param {traitID}
  * @param {symbolID} symbolID 
- * @returns {Boolean}
+ * @returns {deckSize}
  */
 MAGPIE_ENTITY.prototype._trait_add = function addTrait(symbolID)
 {
@@ -1816,16 +1826,48 @@ MAGPIE_ENTITY.prototype._trait_add = function addTrait(symbolID)
 			throw new Error(`${symbolID} is invalid traitID`)
 		const arr = new Array(...this.fitness)
 		const traits_offset = MAGPIE.KEY.FITNESS.TRAITS;
+		const deckSize = MAGPIE.KEY.FITNESS.DECKSIZE;
 		const remove = 0;
 		arr.splice(traits_offset + this._get_deckSize(), remove, symbolID);
-		arr[MAGPIE.KEY.FITNESS.DECKSIZE]++
+		arr[deckSize]++
 		this.fitness = new Float64Array(arr);
-		return true
+		return arr[deckSize]
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 		return false
+	}
+}
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {deckSize}
+ */
+MAGPIE_ENTITY.prototype._trait_remove = function removeTrait(symbolID)
+{
+	const ePrefix = `[ENTITY-${this.ID}].removeTrait: `;
+	try
+	{
+		const index = this._trait_getIndexOf(symbolID);
+		const traitID = this.fitness[index];
+		if(isNaN(traitID) || traitID !== symbolID)
+			throw new Error(`.fitness[${index}] is not [TRAIT-${symbolID}]`)
+		const traits = this._get_traits();
+		const arr = new Array(...this.fitness);
+		const lastTrait = traits[traits.length - 1];
+		arr[index] = lastTrait;
+		const offset = MAGPIE.KEY.FITNESS.TRAITS;
+		const deckSize = MAGPIE.KEY.FITNESS.DECKSIZE;
+		const remove = 1;
+		arr.splice(offset + deckSize, remove);
+		arr[deckSize]--;
+		this.fitness = new Float64Array(arr);
+		return deckSize	
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
 /**
@@ -1857,7 +1899,7 @@ MAGPIE_ENTITY.prototype._trait_getType = function getTypeTraits()
 	}
 }
 /**
- * 
+ * @todo blockTraitForState
  * @param {stateID} stateID 
  * @returns {fitness_index} fitness_index
  */
@@ -1866,7 +1908,7 @@ MAGPIE_ENTITY.prototype._trait_blockState = function blockTraitForState(stateID)
 	const ePrefix = `[ENTITY-${this.ID}].blockTraitForState: `;
 	try
 	{
-		//
+		return NaN
 	}
 	catch(e)
 	{
@@ -2166,10 +2208,10 @@ MAGPIE_ENTITY.prototype.addState = function addState(state)
 	try
 	{
 		const valid = MAGPIE_STATE.validateChange(state);
-		if(!valid) return
+		if(!valid) 
+			throw new Error(`${state} is invalid state`)
 		const [stateID, index] = valid;
 		const slot = this.fitness[index];
-		if(slot === stateID) return
 		if(slot) 
 			throw new Error(`fitness[${index}] is occupied by [STATE-${slot}]`)
 		this.fitness[index] = stateID

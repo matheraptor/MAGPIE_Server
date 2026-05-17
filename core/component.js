@@ -479,12 +479,16 @@ MAGPIE_STATE.validateChange = function validateChange(state)
 			throw new Error(`${state} is invalid state parameters`)
 		const [stateID, index] = state;
 		const valid = MAGPIE_STATE.validate(stateID)
-		if(valid)
-			return state
+		if(!isNaN(index))
+			throw new Error(`${index} is invalid state index`);
+		if(!valid)
+			throw new Error(`${stateID} is invalid stateID`)
+		return state
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return null
 	}
 }
 /**
