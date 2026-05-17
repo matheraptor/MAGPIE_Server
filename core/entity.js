@@ -1361,6 +1361,7 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 			throw new Error(`${dt} is invalid dT`);
 		// MAGPIE_SYSTEM._logging_debug(dt);
 		this.updated = Date.now();
+		// @todo different refresh methods according on type?
 		if(this.type < MAGPIE.KEY.ENTITY.TYPE.get("MATERIA").type)
 			return true
 		const input = this.processExp(switchID, dt, layer_frame);
@@ -1539,7 +1540,6 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 	try
 	{
 		const states = this._get_states();
-		return //@audit-issue processStates
 		if(states.length < 1) return
 		states.sort((a, b) => b - a);
 		const standardSwitch = 2;

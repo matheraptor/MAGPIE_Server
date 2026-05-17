@@ -458,6 +458,12 @@ MAGPIE.KEY.TYPE.MASTERCONTEXT = 31;
 MAGPIE.KEY.TYPE.MASTEREXP = 32;
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.MASTERTICKET = 33;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.SUBJECT = 101;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.OBJECT = 102;
+/** @type {key_type} */
+MAGPIE.KEY.TYPE.TARGET = 103;
 /**
  * 
  * @typedef {Enumerator<Number>} key_index
@@ -738,7 +744,8 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_429 = {
 // #region > Entity
 //------------------------------------------------------------------------
 MAGPIE.KEY.ENTITY = {};
-MAGPIE.KEY.ENTITY.TYPE = require("../data/entity_types")
+MAGPIE.KEY.ENTITY.TYPE = require("../data/entity_types");
+MAGPIE.KEY.ENTITY.UNIVERSE = 101;
 // #endregion
 //------------------------------------------------------------------------
 /**

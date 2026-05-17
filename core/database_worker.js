@@ -412,6 +412,16 @@ worker.addColumnToTable = function addColumnToTable(tableName, columnName, type,
 {
 	return db.prepare(`ALTER TABLE ${tableName} ADD COLUMN ${columnName} ${type}`).run()
 }
+/**
+ * 
+ * @param {String} tableName 
+ * @param {String} columnName 
+ * @param {Database} db 
+ */
+worker.dropColumnTable = function dropColumnTable(tableName, columnName, db)
+{
+	return db.prepare(`ALTER TABLE ${tableName} DROP COLUMN ${columnName}`).run()
+}
 // #endregion
 //------------------------------------------------------------------------
 /**

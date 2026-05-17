@@ -761,7 +761,7 @@ MAGPIE_DATABASE.loadEntity = async function loadEntity(entityID)
 	const ePrefix = `[DATABASE].loadEntity: `;
 	try
 	{
-		const data = await this.call("loadWorldRow", "MAGPIE_ENTITY", {ID: entityID});
+		const data = await MAGPIE_DATABASE.call("loadWorldRow", "MAGPIE_ENTITY", {ID: entityID});
 		if(!data?.ID)
 			throw new Error(`[ENTITY-${entityID}] not found`)
 		const entity = Object.setPrototypeOf(data, MAGPIE_ENTITY.prototype);
@@ -782,7 +782,7 @@ MAGPIE_DATABASE.loadEntitySync = function loadEntitySync(entityID)
 	const ePrefix = `[DATABASE].loadEntity: `;
 	try
 	{
-		const entity = this.sync.loadWorldRow("MAGPIE_ENTITY", {ID: entityID});
+		const entity = MAGPIE_DATABASE.sync.loadWorldRow("MAGPIE_ENTITY", {ID: entityID});
 		return entity
 	}
 	catch(e)
@@ -800,7 +800,7 @@ MAGPIE_DATABASE.saveEntity = async function saveEntity(entity)
 	const ePrefix = "[DATABASE].saveEntity: ";
 	try
 	{
-		const payload = this.prepareEntity(entity);
+		const payload = MAGPIE_DATABASE.prepareEntity(entity);
 		if(!payload)
 			throw new Error(`unable to prepare ${entity}`);
 		const result = await this.call("saveWorldRow", "MAGPIE_ENTITY", payload);
@@ -823,10 +823,10 @@ MAGPIE_DATABASE.saveEntitySync = function saveEntitySync(entity)
 	const ePrefix = "[DATABASE].saveEntity: ";
 	try
 	{
-		const payload = this.prepareEntity(entity);
+		const payload = MAGPIE_DATABASE.prepareEntity(entity);
 		if(!payload)
 			throw new Error(`unable to prepare ${entity}`);
-		const result = this.sync.saveWorldRow("MAGPIE_ENTITY", payload);
+		const result = MAGPIE_DATABASE.sync.saveWorldRow("MAGPIE_ENTITY", payload);
 		if(!result)
 			throw new Error(`unable to save [ENTITY-${entity.ID}`);
 		return result
@@ -846,7 +846,7 @@ MAGPIE_DATABASE.transactionSaveEntities = async function saveEntities(entityArra
 	const ePrefix = "[DATABASE].saveEntities: ";
 	try
 	{
-		const payloads = entityArray.map(entity => this.prepareEntity(entity));
+		const payloads = entityArray.map(entity => MAGPIE_DATABASE.prepareEntity(entity));
 		const result = await this.call("saveEntities", payloads)
 		return !!result
 	}
@@ -879,6 +879,7 @@ MAGPIE_DATABASE.prepareEntity = function prepareEntity(entity)
 		const payload = {
 			ID: entity.ID,
 			type: entity.type,
+			name: entity.name,
 			updated: entity.updated,
 			compoundID: compoundID || null,
 			hostID: hostID || null,
@@ -1062,6 +1063,48 @@ MAGPIE_DATABASE.prepareContext = function prepareContext(context)
 		data: context
 	}
 	return payload
+}
+/**
+ * 
+ * @param {Number} contextID
+ * @returns {MAGPIE_CONTEXT} 
+ */
+MAGPIE_DATABASE.loadContextSync = function loadContextSync(contextID)
+{
+	const ePrefix = "[DATABASE].loadContext: ";
+	try
+	{
+		const context = MAGPIE_DATABASE.sync.loadWorldRow("MAGPIE_CONTEXT", {ID: contextID})
+		if(!(context instanceof MAGPIE_CONTEXT))
+			throw new Error(`unable to find [CONTEXT-${contextID}]`)
+		return context
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_CONTEXT} context
+ * @returns {worker_result} 
+ */
+MAGPIE_DATABASE.saveContextSync = function saveContextSync(context)
+{
+	const ePrefix = "[DATABASE].saveContext: ";
+	try
+	{
+		if(!(context instanceof MAGPIE_CONTEXT))
+			throw new Error(`${context} is invalid MAGPIE_CONTEXT`)
+		const payload = MAGPIE_DATABASE.prepareContext(context);
+		const result = MAGPIE_DATABASE.sync.saveWorldRow("MAGPIE_CONTEXT", payload);
+		if(!result)
+			throw new Error(`unable to save [CONTEXT-${context.ID}`)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1256,17 +1299,25 @@ MAGPIE_DATABASE.loadEquipsSync = function loadEquipsSync(hostID)
 // #region > Symbol
 //------------------------------------------------------------------------
 /**
+ * @todo template-ify this 
  * Ensures the prototype tables, FTS5 indexes, and self-maintaining triggers
  * exist and are correctly configured on server boot.
  * @param {Database} db - The active better-sqlite3 database instance (MAGPIE_DATABASE.sync.world)
  */
-MAGPIE_DATABASE.initializeSymbolSchema = function initializeSymbolSchema(db) 
+MAGPIE_DATABASE.initializeTableSchema = function initializeTableSchema(tableName, tableSchema, db) 
 {
     // Wrap the entire boot setup in a transaction for maximum speed and safety
-    db.transaction(() => {
+	// const columnDefs = Object.entries(tableSchema).map(([name, type]) => {
+	// 	return `${name.includes("fk") ? "" : name} ${type}`
+	// })
+	// const noRowID = schema["PRIMARY KEY"] ? " WITHOUT ROWID " : "";
+
+	// const schema = `${columnDefs.join(", ")}`
+	db.transaction(() => {
         // 1. Ensure the core prototype table exists
-        db.exec(`
-            CREATE TABLE IF NOT EXISTS MAGPIE_SYMBOL (
+        
+		db.exec(`
+            CREATE TABLE IF NOT EXISTS ${tableName} (
                 ID INTEGER PRIMARY KEY,
                 type INTEGER,
                 requirementID INTEGER,
