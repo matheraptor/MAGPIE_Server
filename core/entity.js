@@ -1395,11 +1395,15 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt, layer_frame)
 {
 	const ePrefix = `[ENTITY-${this.ID}].processExp: `;
-	const exps = this.exps;
-	if(exps < 1) return
+	const exps = this._get_array_expID();
+	// return MAGPIE_SYSTEM._logging_debug(layer_frame)
+	if(exps.length < 1) return
+	const expID = this._get_nextExpID(layer_frame);
+	if(!expID) 
+		throw new Error(`${expID} is invalid EXP.ID`)
 	try
 	{
-		const exp = MAGPIE_ENTITY._hive_getExp(this._get_nextExpID(layer_frame))
+		const exp = MAGPIE_ENTITY._hive_getExp(expID)
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error(`${exp} is invalid EXP`);
 		return exp
@@ -1414,6 +1418,7 @@ MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt, layer_fra
  */
 MAGPIE_ENTITY.prototype._get_array_expID = function getArrayExpID()
 {
+	// MAGPIE_SYSTEM._logging_debug(this.exps)
 	return this.exps;
 }
 /**
@@ -1423,6 +1428,8 @@ MAGPIE_ENTITY.prototype._get_array_expID = function getArrayExpID()
 MAGPIE_ENTITY.prototype._get_nextExpID = function getNextExpID(layer_frame)
 {
 	const exps = this._get_array_expID();
+	if(!Array.isArray(exps) || exps.length < 1)
+		throw new Error(`${exps} is invalid EXP array`)
 	if(layer_frame >= exps.length)
 		layer_frame = layer_frame % exps.length
 	const expID = exps[layer_frame];
@@ -2182,7 +2189,7 @@ MAGPIE_ENTITY.prototype._get_exps = function _get_exps()
 	{
 		const exp = MAGPIE_ENTITY._hive_getExp(expID);
 		if(exp instanceof MAGPIE_EXP)
-			exps.push(exp)
+			list.push(exp)
 	}
 	return list
 }

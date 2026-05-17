@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.14
+ * @version 0.22.15
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,9 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.version}
+ * 
+ * @version 0.22.15 2026 05 17
+ * - FIXED: typo in entity._get_exps causing cascading errors
  * 
  * @version 0.22.14 2026 05 16
  * - ADDED: server instance background logger
@@ -353,7 +356,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 13],
+			version: [0, 22, 14],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260516"
 		};
