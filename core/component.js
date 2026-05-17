@@ -282,12 +282,12 @@ MAGPIE_SYMBOL.prototype._get_requirementIDs = function getRequirementIDs()
 	const K = MAGPIE.KEY.INDEX;
 	const start = this.STATS.indexOf(K.REQUIREMENTS);
 	const end = this.STATS.indexOf(K.COMPOUNDS);
-	return this.STATS.slice(start + 1, end);
+	return this.STATS.slice(start + 1, end) || [];
 }
 MAGPIE_SYMBOL.prototype._get_requirements = function getRequirements()
 {
 	const requirementIDs = this._get_requirementIDs();
-	MAGPIE_COMPONENT.__get()
+	return requirementIDs.map(ID => MAGPIE_COMPONENT.__get("loadSymbolSync", [ID]))
 }
 /**
  * 

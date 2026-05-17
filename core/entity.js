@@ -131,6 +131,10 @@ MAGPIE_ENTITY.__hiveSync = function __hiveSync(method, arguments)
 {
 	//
 }
+MAGPIE_ENTITY.__database = function __database(method, arguments)
+{
+	//
+}
 /**
  * 
  * @param {MAGPIE_ENTITY} entity
@@ -276,6 +280,7 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * the buffer and using exp aggregation so that STM and LTM is now an
  * emergent property of the ".exps" buffer cycle
  * 
+ * @typedef {import("./index").index} index
  * @typedef {Number} entityID Date.now()
  * @typedef {import("./physics").POVART} POVART [
  * ...P, 
@@ -310,6 +315,7 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {Number[]} fitness
  * @typedef {import("./index").epoch_real_s} epoch_real_s time in s since epoch J2000
  * @typedef {import("../data/entity_types").traitID} traitID 
+ * @typedef {import("./component").symbolID} symbolID
  * @typedef {Number} stateID
  * @typedef {Number} wasteIndex
  * @typedef {Number} injuryID
@@ -878,6 +884,22 @@ MAGPIE_ENTITY.prototype._get_orbit = function getOrbit()
 //------------------------------------------------------------------------
 // #region > setters
 //------------------------------------------------------------------------
+/**
+ * 
+ * @returns {database_result}
+ */
+MAGPIE_ENTITY.prototype.setSync = function setSync()
+{
+	return MAGPIE_ENTITY._hive_setEntitySync(this)
+}
+/**
+ * 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_ENTITY.prototype.set = async function set()
+{
+	return await MAGPIE_ENTITY._hive_setEntity(this)
+}
 /**
  * 
  * @param {[String, ...args]} payload 
@@ -1776,6 +1798,64 @@ MAGPIE_ENTITY.prototype._get_type = function getType()
 //========================================================================
 // #region - TRAITS
 //========================================================================
+MAGPIE_ENTITY.prototype._get_deckSize = function getDeckSize()
+{
+	return this.fitness[MAGPIE.KEY.FITNESS.DECKSIZE]
+}
+/**
+ * @param {traitID}
+ * @param {symbolID} symbolID 
+ * @returns {Boolean}
+ */
+MAGPIE_ENTITY.prototype._trait_add = function addTrait(symbolID)
+{
+	const ePrefix = `[ENTITY-${this.ID}].addTrait: `;
+	try
+	{
+		if(isNaN(symbolID))
+			throw new Error(`${symbolID} is invalid traitID`)
+		const arr = new Array(...this.fitness)
+		const traits_offset = MAGPIE.KEY.FITNESS.TRAITS;
+		const remove = 0;
+		arr.splice(traits_offset + this._get_deckSize(), remove, symbolID);
+		arr[MAGPIE.KEY.FITNESS.DECKSIZE]++
+		this.fitness = new Float64Array(arr);
+		return true
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return false
+	}
+}
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {index}
+ */
+MAGPIE_ENTITY.prototype._trait_getIndexOf = function getTraitIndex(symbolID)
+{
+	return this.fitness.findIndex(n => n === symbolID)
+}
+/**
+ * @returns {symbolID[]}
+ */
+MAGPIE_ENTITY.prototype._trait_getType = function getTypeTraits()
+{
+	const ePrefix = `[ENTITY-${this.ID}].getTypeTraits: `;
+	try
+	{
+		const archetype = this._get_type();
+		const reqs = archetype._get_requirementIDs();
+		const comps = archetype._get_compoundIDs();
+		return [archetype.ID, ...reqs, ...comps];
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return []
+	}
+}
 /**
  * 
  * @param {stateID} stateID 

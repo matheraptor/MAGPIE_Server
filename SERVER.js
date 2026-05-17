@@ -615,7 +615,8 @@ MAGPIE_HIVE._get_expKeys = function _get_expKeys(exp)
  */
 MAGPIE_HIVE._set_database = async function _set_database(method, arguments)
 {
-	return await MAGPIE_DATABASE[method](...arguments);
+	const callback = MAGPIE_DATABASE[method]
+	return await callback(...arguments);
 }
 /**
  * 
@@ -625,7 +626,8 @@ MAGPIE_HIVE._set_database = async function _set_database(method, arguments)
  */
 MAGPIE_HIVE._set_databaseSync = function _set_database(method, arguments)
 {
-	return MAGPIE_DATABASE[method](...arguments)
+	const callback = MAGPIE_DATABASE[method]
+	return callback(...arguments)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1049,7 +1051,8 @@ MAGPIE_ENTITY.__hiveSync = function __hiveSync(method, arguments)
  */
 MAGPIE_ENTITY.__hive = async function __hive(method, arguments)
 {
-	return MAGPIE_HIVE[method](...arguments)
+	const callback = MAGPIE_HIVE[method]
+	return callback(...arguments)
 }
 MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POVART1, dt)
 {
@@ -1121,7 +1124,8 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
  */
 MAGPIE_ENTITY._database = async function _database(method, argument)
 {
-	return await MAGPIE_DATABASE[method](argument)
+	const callback = MAGPIE_DATABASE[method]
+	return await callback(argument)
 }
 /**
  * 
@@ -1131,7 +1135,8 @@ MAGPIE_ENTITY._database = async function _database(method, argument)
  */
 MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
 {
-	return MAGPIE_DATABASE[method](argument)
+	const callback = MAGPIE_DATABASE[method]
+	return callback(argument)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1151,7 +1156,8 @@ MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
  */
 MAGPIE_COMPONENT.__get = function get(method, arguments)
 {
-	return MAGPIE_DATABASE.sync[method](...arguments)
+	const callback = MAGPIE_DATABASE.sync[method]
+	return callback(...arguments)
 }
 /**
  * 

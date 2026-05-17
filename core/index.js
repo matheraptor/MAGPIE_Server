@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.15
+ * @version 0.22.16
  * 
  * @depdendencies 
  * - Node.js 
@@ -18,9 +18,10 @@
  * - jsonwebtoken 
  * - cli-spinner
  * ------------------------------------------------------------------------
- * @changelog 20260302 {@link MAGPIE.meta.version}
+ * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.22.15 2026 05 17
+ * @version 0.22.16 2026 05 17
+ * - ADDED: entity ._trait* basic handling methods
  * - FIXED: typo in entity._get_exps causing cascading errors
  * 
  * @version 0.22.14 2026 05 16
@@ -356,7 +357,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 15],
+			version: [0, 22, 16],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260517"
 		};
@@ -756,7 +757,9 @@ MAGPIE.KEY.PHYSICS = {};
  * @typedef {Number} mass in kg
  * @typedef {Number} velocity in m/s
  * @typedef {Number} acceleration in m/s²
- * @typedef {Number} index
+ * @typedef {Number} index array address
+ * @typedef {Number} offset array address offset used in "index + offset"
+ * @typedef {Number} offset_mult multiplier for index offset
  * @typedef {[x<Number>, y<Number>, z<Number>]} vector3 3D vector [x,y,z]
  * @typedef {[yz<Number>, xz<Number>, xy<Number>]} bivector 3D bivector [yz, xz, xy]
  * @typedef {[yz<Number>, xz<Number>, xy<Number>, w<Number>]} rotor
@@ -1330,14 +1333,23 @@ MAGPIE.KEY.CELESTIAL.COMP = MAGPIE.KEY.STATS.FIT;
 //------------------------------------------------------------------------
 MAGPIE.KEY.FITNESS = {};
 MAGPIE.KEY.FITNESS.meta = {};
+/** @type {index} */
 MAGPIE.KEY.FITNESS.E_ID = 0;
-MAGPIE.KEY.FITNESS.DECKSIZE = MAGPIE.KEY.FITNESS.E_ID + 1;
-MAGPIE.KEY.FITNESS.TRAITS = MAGPIE.KEY.DECKSIZE + 1;
+/** @type {index} */
+MAGPIE.KEY.FITNESS.DECKSIZE = 1;
+/** @type {index} */
+MAGPIE.KEY.FITNESS.TRAITS = 2;
+/** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.STATES = 2;
+/** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.EQUIPS = 3;
+/** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.WASTE = 4;
+/** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.INJURY = 5;
+/** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.STAMINA = 6;
+/** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.ZONES = MAGPIE.KEY.FITNESS.INJURY;
 // #endregion
 //------------------------------------------------------------------------
