@@ -407,7 +407,7 @@ MAGPIE_ENTITY.prototype.setup = async function setup(data)
 	await this.setupParents();
 	await this.setupCompound();
 	await this.setupHost();
-	this.setupFitness(data?.fitness);
+	this.setupFitness(fitness);
 }
 /**
  * 
