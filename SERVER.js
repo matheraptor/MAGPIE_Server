@@ -421,8 +421,8 @@ MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt,
 			if(!(entity instanceof MAGPIE_ENTITY)) 
 				throw new Error(`${entity} is invalid MAGPIE_ENTITY`)
 			if(entity.type < 1) continue
-			if((now - entity.updated) > dt * 3000)
-				this.kick(entity.ID, `timed-out`)
+			// if((now - entity.updated) > dt * 3000) @audit-issue what's wrong with this?
+			// 	this.kick(entity.ID, `timed-out`)
 			const pass = entity.refresh(switchID, dt, layer_frame);
 			if(!pass) 
 				this.kick(entity.ID, "failed update")

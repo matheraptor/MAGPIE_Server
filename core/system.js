@@ -1813,7 +1813,11 @@ MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID)
 			target: targetLayerID, 
 			retain: true
 		});
-		MAGPIE_SYSTEM._logging_debug(Array.from(MAGPIE_HIVE._registry.entries()))
+		const now = Date.now();
+		const stale = entity.updated > now + MAGPIE.KEY.ENTITY.STALE 
+			? ` [STALE-${entity.updated}]`
+			: "";
+		entity.updated = now;
 		const layerRecord = MAGPIE_HIVE._registry.get(layerID);
 		layerRecord.nextSlot = (slot + 1) <= K.slots ? slot + 1 : -1
 		MAGPIE_HIVE._registry.set(layerID, layerRecord);
@@ -1821,7 +1825,7 @@ MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID)
 			throw new Error(`unable to host [ENTITY-${entity.ID}]`)
 		const message = `[HIVE].hosting [ENTITY-${entity.ID}] on `
 			+ `[${layerName}][${slot}] with target [LAYER-${targetLayerID}]`
-		MAGPIE_SYSTEM.log(ePrefix + message, null, true)
+		MAGPIE_SYSTEM.log(ePrefix + message + stale, "console", true)
 		return entity.ID 
 	}
 	catch(e)
