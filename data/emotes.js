@@ -49,7 +49,7 @@ const SEEK_TARGET = {
 		const traitIndex = Number(exp.value);
 		const index = !isNaN(traitIndex) ? traitIndex : entity._trait_blockState(stateID)
 		const state = [stateID, index]
-		return entity.addState(state);
+		// return entity.addState(state);
 	},
 	onPassive: function()
 	{
