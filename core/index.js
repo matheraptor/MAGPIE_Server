@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.19
+ * @version 0.22.20
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,8 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.22.20 2026 05 19
  * 
  * @version 0.22.19 2026 05 18
  * - FIXED: MAGPIE_DATE.weekDay not updating at ultraTICK
@@ -361,9 +363,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 19],
+			version: [0, 22, 20],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260518"
+			firmwareDate: "20260519"
 		};
 	}
 }
