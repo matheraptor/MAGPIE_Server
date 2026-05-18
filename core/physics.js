@@ -51,6 +51,7 @@ function MAGPIE_PHYSICS()
  * @typedef {Number} voltage in Volt (V) = kg * m²/(s³ * A)
  * @typedef {Number} angle_rad in radians (rad) 0 to PI
  * @typedef {Number} angle_deg in degrees (°) 0 to 360
+ * @typedef {Number} angle_euler in degress (°) -180 to 180
  * @typedef {Number} ratio variable * ratio<0 to 1>
  * @typedef {Number} coefficient variable * coefficient
  * @typedef {Number} percentage %
@@ -1360,12 +1361,12 @@ MAGPIE_PHYSICS.isValidOrbit = function isValidOrbit(orbit)
 	const [a,e,i,raan,aop,nu,T0,M0] = orbit;
 	const valid = [
 		e >= 0 || e <= 1 ? true : false,
-		this.isValidAngle(i),
-		this.isValidAngle(raan),
-		this.isValidAngle(aop),
-		this.isValidAngle(nu),
+		this.isValidAngleRad(i),
+		this.isValidAngleRad(raan),
+		this.isValidAngleRad(aop),
+		this.isValidAngleRad(nu),
 		T0 <= Date.now(),
-		this.isValidAngle(M0)
+		this.isValidAngleRad(M0)
 	]
 	if(valid.some(n => !n))
 		return false
@@ -2503,7 +2504,7 @@ MAGPIE_PHYSICS.rotateVector = function rotateVector(vector, angleRad)
 	{
 		if(!this.isValidVector(vector))
 			throw new Error(`(${vector}) is invalid vector`);
-		if(!this.isValidAngle(angleRad))
+		if(!this.isValidAngleRad(angleRad))
 			throw new Error(`(${angleRad}) is invalid angle`);
 		const v = vector;
 		return this.vector_rotate(v[0], v[1], v[2], angleRad);
@@ -2514,11 +2515,37 @@ MAGPIE_PHYSICS.rotateVector = function rotateVector(vector, angleRad)
 		return [NaN, NaN, NaN]
 	}
 }
-MAGPIE_PHYSICS.isValidAngle = function isValidAngle(angleRad)
+/**
+ * @param {angle_rad} angleRad
+ * @returns {Boolean}
+ */
+MAGPIE_PHYSICS.isValidAngleRad = function isValidAngleRad(angleRad)
 {
 	if(isNaN(angleRad) || angleRad > Math.PI || angleRad < 0)
 		return true
-	else return false
+	return false
+}
+/**
+ * 
+ * @param {angleDeg} angleDeg 
+ * @returns {Boolean}
+ */
+MAGPIE_PHYSICS.isValidAngleDeg = function isValidAngleDeg(angleDeg)
+{
+	if(isNaN(angleDeg || angleDeg < 0 || angleDeg > 360))
+		return false
+	return true
+}
+/**
+ * 
+ * @param {angle_euler} angleEuler
+ * @returns {Boolean} 
+ */
+MAGPIE_PHYSICS.isValidAngleEuler = function isValidAngleEuler(angleEuler)
+{
+	if(isNaN(angleEuler) || angleEuler < -180 || angleEuler > 180)
+		return false
+	return true
 }
 /**
  * 
@@ -2788,7 +2815,64 @@ MAGPIE_PHYSICS.rotorSlerp = function rotorSlerp(r0, r1, t)
 //------------------------------------------------------------------------
 // #region > compose
 //------------------------------------------------------------------------
-
+/**
+ * {@link MAGPIE_PHYSICS._getO1toP1}
+ * 
+ * @param {vector3} P0 POVART₀ 
+ * @param {angle_euler} pitchDeg 
+ * @param {angle_euler} rollDeg 
+ * @param {angle_deg} headingDeg 
+ * @returns {rotor} O1
+ */
+MAGPIE_PHYSICS.rotorFromEuler = function rotorFromEuler(P0, pitchDeg, rollDeg, headingDeg)
+{
+	const ePrefix = "[PHYSICS].rotorFromEuler: ";
+	try
+	{
+		if(!this.isValidVector(P0)) 
+			throw new Error(`${P0} is invalid P₀`);
+		if(!this.isValidAngleEuler(pitchDeg))
+			throw new Error(`${pitchDeg} is invalid pitch angle`);
+		if(!this.isValidAngleEuler(rollDeg))
+			throw new Error(`${rollDeg} is invalid roll angle`);
+		if(!this.isValidAngleDeg(headingDeg))
+			throw new Error(`${headingDeg} is invalid heading (°)`)
+		// 1. derive local coordinate frame (same as _getO1toP1)
+		const up = this.normalizeVector(P0);
+		const North = MAGPIE.KEY.POVART.UP;
+		const dotN = this.dotProduct(North, up);
+		const dotNup = this.scaleVector(up, dotN);
+		const localNorth = this.normalizeVector(this.subVectors(North, dotNup));
+		const localEast = this.crossProduct(localNorth, up);
+		// 2. construct the fwd vector (heading + pitch)
+		// start pointing north, rotate by heading around Up, then pitch around localEast
+		const hRad = this._U_deg_to_rad(headingDeg);
+		const pRad = this._U_deg_to_rad(pitchDeg);
+		// direction vector in the plane of the horizon
+		const northComponent = this.scaleVector(localNorth, Math.cos(hRad));
+		const eastComponent = this.scaleVector(localEast, Math.sin(hRad));
+		const dirHorizon = this.addVectors(northComponent, eastComponent);
+		// tilt the direction vector based on pitch
+		const horizonComponent = this.scaleVector(dirHorizon, Math.cos(pRad));
+		const upComponent = this.scaleVector(up, Math.sin(pRad));
+		const TiltFwd = this.addVectors(horizonComponent, upComponent);
+		// 3 construct the up vector (roll)
+		// start with world up, rotate by roll around the new forward vector
+		const rRad = this._U_deg_to_rad(rollDeg);
+		// use rotorFromAxisAngle to get the roll rotation
+		const rollRotor = this.rotorFromAxisAngle(TiltFwd, rRad);
+		const TiltUp = this.rotorApply(rollRotor, up);
+		// compose via existing frame logic
+		const rotor = this.rotorNormalize(this.rotorFromFrame(TiltFwd, TiltUp));
+		if(!this.isValidRotor(rotor))
+			throw new Error(`${rotor} is invalid O₁`)
+		return rotor
+	} 
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.messag, e)
+	}
+}
 /**
  * @method rotorFromBivector (B, dt) — step-rotor from angular velocity
  * @Math Given angular velocity bivector B (rad/s) and timestep dt (s):speed = |B| = total angular speed in rad/s
