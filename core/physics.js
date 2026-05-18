@@ -1034,7 +1034,7 @@ MAGPIE_PHYSICS._getDeltaR = function _getDeltaR(O0, O1)
 	try
 	{
 		// 1. Get the conjugate of O0 (the 'inverse' orientation)
-		const O0_inv = this._rotor_conjugate(O0);
+		const O0_inv = this.rotorReverse(O0);
 		// 2. multiply target by inverse to get difference
 		const deltaR = this._rotor_multiply(O1, O0_inv);
 		return deltaR
@@ -2595,6 +2595,23 @@ MAGPIE_PHYSICS._rotor_identity = function rotorIdentity()
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+*/
+//------------------------------------------------------------------------
+// #region > low
+//------------------------------------------------------------------------
+/**
+ * @desc complete inversion, including identity (w)
+ * @param {rotor} rotor
+ * @returns {rotor} 
+ */
+MAGPIE_PHYSICS.rotorInvert = function rotorInvert(rotor)
+{
+	return [-rotor[0], -rotor[1], -rotor[2], -rotor[3]]
+}
+/**
  * @desc Math: Reverse of a rotor = negate the bivector part, 
  * keep the scalar. This is R~ used in the sandwich product, 
  * and equivalent to the quaternion conjugate.
@@ -2651,58 +2668,48 @@ MAGPIE_PHYSICS.rotorMagnitude = function rotorMagnitude(R)
 	}
 }
 /**
- * @desc Math: Rotor product (same rule as quaternion multiplication, 
- * rewritten for [yz,xz,xy,s]). Written as R1·R2, meaning R1 is applied first.
- * @param {rotor} R1 rotor[yz,xz,xy,w]
- * @param {rotor} R2 rotor[yz,xz,xy,w]
- * @returns {rotor} rotor[yz,xz,xy,w]
- * @desc 
- * ```js
- * Let p = R1, q = R2;
- * result.s  =  p.s*q.s  − p.yz*q.yz − p.xz*q.xz − p.xy*q.xy
- * result.yz =  p.s*q.yz + p.yz*q.s  + p.xz*q.xy − p.xy*q.xz
- * result.xz =  p.s*q.xz − p.yz*q.xy + p.xz*q.s  + p.xy*q.yz
- * result.xy =  p.s*q.xy + p.yz*q.xz − p.xz*q.yz + p.xy*q.s
- * ```
- * Sanity check: compose identity with identity → identity: 
- * rotorCompose([0,0,0,1], [0,0,0,1]) → [0, 0, 0, 1]
+ * 
+ * @param {rotor} r0 
+ * @param {rotor} r1
+ * @returns {Number} 
  */
-MAGPIE_PHYSICS.rotorCompose = function rotorCompose(R1, R2) {
-	const [p_yz, p_xz, p_xy, p_s] = R1;
-	const [q_yz, q_xz, q_xy, q_s] = R2;
-	return [
-		p_s * q_yz + p_yz * q_s + p_xz * q_xy - p_xy * q_xz,  // yz
-		p_s * q_xz - p_yz * q_xy + p_xz * q_s + p_xy * q_yz,  // xz
-		p_s * q_xy + p_yz * q_xz - p_xz * q_yz + p_xy * q_s,   // xy
-		p_s * q_s - p_yz * q_yz - p_xz * q_xz - p_xy * q_xy   // scalar
-	];
+MAGPIE_PHYSICS.rotorDotProduct = function rotorDotProduct(r0, r1)
+{
+	return (r0[0] * r1[0]) + (r0[1] * r1[1]) + (r0[2] * r1[2]) + (r0[3] * r1[3])
 }
 /**
- * @method rotorFromBivector (B, dt) — step-rotor from angular velocity
- * @Math Given angular velocity bivector B (rad/s) and timestep dt (s):speed = |B| = total angular speed in rad/s
- * `speed = |B|` = total angular speed in rad/s
- * `angle = speed * dt` = rotation angle this tick
- * Step-rotor = `cos(angle/2) + sin(angle/2) * B_normalised`
- * Half-angle because sandwich product doubles the angle (two reflections)
- * @param {bivector} B bivector[yz,xz,xy]
- * @param {Number} dt delta time
- * @returns {rotor} rotor[yz,xz,xy,w]
- * @desc Sanity check: `rotorFromBivector([0,0,0], 0.016) → [0, 0, 0, 1]` 
- * (zero speed = identity)
+ * @desc multiplies two rotors (A * B)
+ * @param {rotor} A rotor₁ 
+ * @param {rotor} B rotor₂
+ * @returns {rotor} resulting orientation (O₁)
  */
-MAGPIE_PHYSICS.rotorFromBivector = function rotorFromBivector(B, dt) {
-	const speed = Math.sqrt(B[0] ** 2 + B[1] ** 2 + B[2] ** 2);
-	if (speed < 1e-10) return [0, 0, 0, 1]; //no rotation
-	const angle = speed * dt;
-	const half = angle / 2;
-	const s = Math.sin(half) / speed;
-	return [
-		B[0] * s, //yz
-		B[1] * s, //xz
-		B[2] * s, //xy
-		Math.cos(half) //scalar
-	]
+MAGPIE_PHYSICS._rotor_multiply = function _rotor_multiply(A, B)
+{
+	const ePrefix = "[PHYSICS].rotorMultiply: ";
+	try
+	{
+		if(!this.isValidRotor(A))
+			throw new Error(`${A} is invalid rotor₁`);
+		if(!this.isValidRotor(B))
+			throw new Error(`${B} is invalid rotor₂`);
+		const [a1, a2, a3, a0] = A;
+		const [b1, b2, b3, b0] = B;
+		const O1 = new Float64Array([
+			a0 * b1 + a1 * b0 + a2 * b3 - a3 * b2, //yz
+			a0 * b2 - a1 * b3 + a2 * b0 + a3 * b1, // xz
+			a0 * b3 + a1 * b2 - a2 * b1 + a3 * b0, // xy
+			a0 * b0 - a1 * b1 - a2 * b2 - a3 * b3  // w (scalar)
+		]);
+		if(!this.isValidRotor(O1))
+			throw new Error(`${O1} is invalid O₁`)
+		return O1
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
+
 /**
  * @method rotorApply (R, v) — rotate a vector
  * @Math Sandwich product `R~ v R` applied to a pure vector. 
@@ -2729,6 +2736,83 @@ MAGPIE_PHYSICS.rotorApply = function rotorApply(R, v) {
 		vx + s * tx + b_xz * tz - b_xy * ty,
 		vy + s * ty + b_xy * tx - b_yz * tz,
 		vz + s * tz + b_yz * ty - b_xz * tx
+	]
+}
+/**
+ * 
+ * @param {rotor} r0 starting rotor
+ * @param {rotor} r1 target rotor
+ * @param {ratio} t interpolation ratio
+ * @returns {rotor} 
+ */
+MAGPIE_PHYSICS.rotorSlerp = function rotorSlerp(r0, r1, t)
+{
+	let dot = this._U_clampRange(this.rotorDotProduct(r0, r1), -1.0, 1.0);
+	let target = r1;
+	if(dot < 0.0)
+	{
+		dot = -dot
+		target = this.rotorInvert(r1)
+	}
+	if(dot > 0.9995)
+	{
+		const result = [
+			r0[0] + t * (target[0] - r0[0]),
+			r0[1] + t * (target[1] - r0[1]),
+			r0[2] + t * (target[2] - r0[2]),
+			r0[3] + t * (target[3] - r0[3])
+		]
+		const mag = this.rotorMagnitude(result);
+		return [result[0] / mag, result[1] / mag, result[2] / mag, result[3] / mag]
+	}
+	const theta_0 = Math.acos(dot);
+	const theta = theta_0 * t;
+	const sin_theta_0 = Math.sin(theta_0);
+	const sin_theta = Math.sin(theta);
+	const s0 = Math.sin((1 - t) * theta_0) / sin_theta_0;
+	const s1 = Math.sin(t * theta_0) / sin_theta_0;
+	return [
+		(s0 * r0[0]) + (s1 * target[0]),
+		(s0 * r0[1]) + (s1 * target[1]),
+		(s0 * r0[2]) + (s1 * target[2]),
+		(s0 * r0[3]) + (s1 * target[3])
+	]
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > compose
+//------------------------------------------------------------------------
+
+/**
+ * @method rotorFromBivector (B, dt) — step-rotor from angular velocity
+ * @Math Given angular velocity bivector B (rad/s) and timestep dt (s):speed = |B| = total angular speed in rad/s
+ * `speed = |B|` = total angular speed in rad/s
+ * `angle = speed * dt` = rotation angle this tick
+ * Step-rotor = `cos(angle/2) + sin(angle/2) * B_normalised`
+ * Half-angle because sandwich product doubles the angle (two reflections)
+ * @param {bivector} B bivector[yz,xz,xy]
+ * @param {Number} dt delta time
+ * @returns {rotor} rotor[yz,xz,xy,w]
+ * @desc Sanity check: `rotorFromBivector([0,0,0], 0.016) → [0, 0, 0, 1]` 
+ * (zero speed = identity)
+ */
+MAGPIE_PHYSICS.rotorFromBivector = function rotorFromBivector(B, dt) {
+	const speed = Math.sqrt(B[0] ** 2 + B[1] ** 2 + B[2] ** 2);
+	if (speed < 1e-10) return [0, 0, 0, 1]; //no rotation
+	const angle = speed * dt;
+	const half = angle / 2;
+	const s = Math.sin(half) / speed;
+	return [
+		B[0] * s, //yz
+		B[1] * s, //xz
+		B[2] * s, //xy
+		Math.cos(half) //scalar
 	]
 }
 /**
@@ -2818,65 +2902,42 @@ MAGPIE_PHYSICS.rotorFromFrame = function rotorFromFrame(Tfwd, Tup)
 	return this.rotorCompose(rTwist, rFwd)
 }
 /**
- * 
- * @param {rotor} r0 starting rotor
- * @param {rotor} r1 target rotor
- * @param {ratio} t interpolation ratio
- * @returns {rotor} 
+ * @desc Math: Rotor product (same rule as quaternion multiplication, 
+ * rewritten for [yz,xz,xy,s]). Written as R1·R2, meaning R1 is applied first.
+ * @param {rotor} R1 rotor[yz,xz,xy,w]
+ * @param {rotor} R2 rotor[yz,xz,xy,w]
+ * @returns {rotor} rotor[yz,xz,xy,w]
+ * @desc 
+ * ```js
+ * Let p = R1, q = R2;
+ * result.s  =  p.s*q.s  − p.yz*q.yz − p.xz*q.xz − p.xy*q.xy
+ * result.yz =  p.s*q.yz + p.yz*q.s  + p.xz*q.xy − p.xy*q.xz
+ * result.xz =  p.s*q.xz − p.yz*q.xy + p.xz*q.s  + p.xy*q.yz
+ * result.xy =  p.s*q.xy + p.yz*q.xz − p.xz*q.yz + p.xy*q.s
+ * ```
+ * Sanity check: compose identity with identity → identity: 
+ * rotorCompose([0,0,0,1], [0,0,0,1]) → [0, 0, 0, 1]
  */
-MAGPIE_PHYSICS.rotorSlerp = function rotorSlerp(r0, r1, t)
-{
-	let dot = this._U_clampRange(this.rotorDotProduct(r0, r1), -1.0, 1.0);
-	let target = r1;
-	if(dot < 0.0)
-	{
-		dot = -dot
-		target = this.rotorInvert(r1)
-	}
-	if(dot > 0.9995)
-	{
-		const result = [
-			r0[0] + t * (target[0] - r0[0]),
-			r0[1] + t * (target[1] - r0[1]),
-			r0[2] + t * (target[2] - r0[2]),
-			r0[3] + t * (target[3] - r0[3])
-		]
-		const mag = this.rotorMagnitude(result);
-		return [result[0] / mag, result[1] / mag, result[2] / mag, result[3] / mag]
-	}
-	const theta_0 = Math.acos(dot);
-	const theta = theta_0 * t;
-	const sin_theta_0 = Math.sin(theta_0);
-	const sin_theta = Math.sin(theta);
-	const s0 = Math.sin((1 - t) * theta_0) / sin_theta_0;
-	const s1 = Math.sin(t * theta_0) / sin_theta_0;
+MAGPIE_PHYSICS.rotorCompose = function rotorCompose(R1, R2) {
+	const [p_yz, p_xz, p_xy, p_s] = R1;
+	const [q_yz, q_xz, q_xy, q_s] = R2;
 	return [
-		(s0 * r0[0]) + (s1 * target[0]),
-		(s0 * r0[1]) + (s1 * target[1]),
-		(s0 * r0[2]) + (s1 * target[2]),
-		(s0 * r0[3]) + (s1 * target[3])
-	]
+		p_s * q_yz + p_yz * q_s + p_xz * q_xy - p_xy * q_xz,  // yz
+		p_s * q_xz - p_yz * q_xy + p_xz * q_s + p_xy * q_yz,  // xz
+		p_s * q_xy + p_yz * q_xz - p_xz * q_yz + p_xy * q_s,   // xy
+		p_s * q_s - p_yz * q_yz - p_xz * q_xz - p_xy * q_xy   // scalar
+	];
 }
-
+// #endregion
+//------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
  * 
- * @param {rotor} rotor
- * @returns {rotor} 
  */
-MAGPIE_PHYSICS.rotorInvert = function rotorInvert(rotor)
-{
-	return [-rotor[0], -rotor[1], -rotor[2], -rotor[3]]
-}
-/**
- * 
- * @param {rotor} r0 
- * @param {rotor} r1
- * @returns {Number} 
- */
-MAGPIE_PHYSICS.rotorDotProduct = function rotorDotProduct(r0, r1)
-{
-	return (r0[0] * r1[0]) + (r0[1] * r1[1]) + (r0[2] * r1[2]) + (r0[3] * r1[3])
-}
+//------------------------------------------------------------------------
+// #region > convert
+//------------------------------------------------------------------------
 /**
  * 
  * @param {rotor} rotor 
@@ -2907,47 +2968,6 @@ MAGPIE_PHYSICS._rotor_toHeadingAbs = function _rotor_toHeadingAbs(rotor, P0)
 }
 /**
  * 
- * @param {rotor} R [yz, xz, xy, w]
- * @returns {rotor} R_conj [-yz, -xz, -xy, w]
- */
-MAGPIE_PHYSICS._rotor_conjugate = function _rotor_conjugate(R)
-{
-	return new Float64Array([-R[0], -R[1], -R[2], R[3]])
-}
-/**
- * @desc multiplies two rotors (A * B)
- * @param {rotor} A rotor₁ 
- * @param {rotor} B rotor₂
- * @returns {rotor} resulting orientation (O₁)
- */
-MAGPIE_PHYSICS._rotor_multiply = function _rotor_multiply(A, B)
-{
-	const ePrefix = "[PHYSICS].rotorMultiply: ";
-	try
-	{
-		if(!this.isValidRotor(A))
-			throw new Error(`${A} is invalid rotor₁`);
-		if(!this.isValidRotor(B))
-			throw new Error(`${B} is invalid rotor₂`);
-		const [a1, a2, a3, a0] = A;
-		const [b1, b2, b3, b0] = B;
-		const O1 = new Float64Array([
-			a0 * b1 + a1 * b0 + a2 * b3 - a3 * b2, //yz
-			a0 * b2 - a1 * b3 + a2 * b0 + a3 * b1, // xz
-			a0 * b3 + a1 * b2 - a2 * b1 + a3 * b0, // xy
-			a0 * b0 - a1 * b1 - a2 * b2 - a3 * b3  // w (scalar)
-		]);
-		if(!this.isValidRotor(O1))
-			throw new Error(`${O1} is invalid O₁`)
-		return O1
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
  * @param {rotor} Ot [yz,xz,xy,w]
  * @param {vector3} P0 Position₀ [x,y,z]
  * @param {rotor} O0 Orientation₀ [yz,xz,xy,w]
@@ -2973,48 +2993,8 @@ MAGPIE_PHYSICS._rotor_angle = function getRotorAngle(Ot, P0, O0)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
-/**
- * 
- * @param {POVART} POVART0 entity's POVART₀
- * @param {bivector} dT entity's delta Torque
- * @param {Number} dt delta time in seconds
- * @returns {POVART} entity's POVART₁
- */
-MAGPIE_PHYSICS.applyTorque = function applyTorque(POVART0, dT, dt)
-{
-	const message = `[PHYSICS].applyTorque: `;
-	let POVART1 = new Float64Array(POVART0);
-	try
-	{
-		if(!this.isValidPOVART(POVART0)) 
-			throw new Error(`(${POVART0}) is invalid POVART₀`);
-		if(!this.isValidVector(dT))
-			throw new Error(`(${dT}) is invalid dT`);
-		if(isNaN(dt) || !dt)
-			throw new Error(`(${dt}) is invalid dt`);
-		const { T0, R0, O0 } = this.decomp_POVART(POVART0);
-		const T1 = this.addVectors(T0, dT);
-		const dR = this.scaleVector(T1, dt);
-		const R1 = this.addVectors(R0, dR);
-		const dO = this.rotorFromBivector(R1, dt);
-		const cO = this.rotorCompose(dO, O0);
-		const O1 = this.rotorNormalize(cO);
-		POVART1 = this.setTorque(POVART1, T1);
-		POVART1 = this.setRotation(POVART1, R1);
-		POVART1 = this.setOrientation(POVART1, O1);
-		if(!this.isValidPOVART(POVART1))
-			throw new Error(`${POVART1} is invalid POVART₁`);
-		POVART0 = POVART1;
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(message + e.message, e);
-	}
-	finally
-	{
-		return POVART0
-	}
-}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * 
  * back to {@link MAGPIE_PHYSICS.rotor}
@@ -3154,6 +3134,74 @@ MAGPIE_PHYSICS._calculate_growthMassKg = function _calculate_growthMassKg(entity
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - WRAPPERS
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Apply
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {POVART} POVART0 entity's POVART₀
+ * @param {bivector} dT entity's delta Torque
+ * @param {Number} dt delta time in seconds
+ * @returns {POVART} entity's POVART₁
+ */
+MAGPIE_PHYSICS.applyTorque = function applyTorque(POVART0, dT, dt)
+{
+	const message = `[PHYSICS].applyTorque: `;
+	let POVART1 = new Float64Array(POVART0);
+	try
+	{
+		if(!this.isValidPOVART(POVART0)) 
+			throw new Error(`(${POVART0}) is invalid POVART₀`);
+		if(!this.isValidVector(dT))
+			throw new Error(`(${dT}) is invalid dT`);
+		if(isNaN(dt) || !dt)
+			throw new Error(`(${dt}) is invalid dt`);
+		const { T0, R0, O0 } = this.decomp_POVART(POVART0);
+		const T1 = this.addVectors(T0, dT);
+		const dR = this.scaleVector(T1, dt);
+		const R1 = this.addVectors(R0, dR);
+		const dO = this.rotorFromBivector(R1, dt);
+		const cO = this.rotorCompose(dO, O0);
+		const O1 = this.rotorNormalize(cO);
+		POVART1 = this.setTorque(POVART1, T1);
+		POVART1 = this.setRotation(POVART1, R1);
+		POVART1 = this.setOrientation(POVART1, O1);
+		if(!this.isValidPOVART(POVART1))
+			throw new Error(`${POVART1} is invalid POVART₁`);
+		POVART0 = POVART1;
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(message + e.message, e);
+	}
+	finally
+	{
+		return POVART0
 	}
 }
 // #endregion
