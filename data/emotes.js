@@ -43,10 +43,11 @@ const SEEK_TARGET = {
 	 * @param {fitness_index} traitIndex
 	 * @returns {{At: vector3, Tt: bivector}} results
 	 */
-	onAction: function seekTarget(exp, entity, traitIndex) 
+	onAction: function seekTarget(exp, entity) 
 	{
 		const stateID = INDEX.SEEKING_TARGET;
-		const index = traitIndex ? traitIndex : entity._trait_blockState(stateID)
+		const traitIndex = Number(exp.value);
+		const index = !isNaN(traitIndex) ? traitIndex : entity._trait_blockState(stateID)
 		const state = [stateID, index]
 		return entity.addState(state);
 	},
