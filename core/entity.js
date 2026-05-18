@@ -1505,7 +1505,7 @@ MAGPIE_ENTITY.prototype.processEmote = function processEmote(switchID, dt, exp, 
 		if(!output?.exp)
 			throw new Error(`${output} is invalid emote output`);
 		const stateIndex = 0; //@todo how do we figure out stateIndex from emote?
-		this.addState([output.addState, stateIndex]);
+		// this.addState([output.addState, stateIndex]);
 		this.removeState([output.removeState, stateIndex]);
 		this.switchState([output.switchState[0]], stateIndex, output.switchState[1]);
 		return output.exp
