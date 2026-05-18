@@ -1,5 +1,17 @@
 const { MAGPIE } = require("../core/index");
 /**
+ * @typedef {import("../core/entity").MAGPIE_ENTITY} MAGPIE_ENTITY
+ * @typedef {import("../core/component").MAGPIE_EXP} MAGPIE_EXP
+ * @typedef {import("../core/index").stamina_index} stamina_index
+ * @typedef {import("../core/physics").vector3} vector3
+ * @typedef {import("../core/physics").bivector} bivector
+ * @typedef {{
+ * At: vector3,
+ * Tt: bivector,
+ * exp: MAGPIE_EXP
+ * }} state_output
+ */
+/**
  * @typedef {{
  * ID: Number,
  * type: state_type, 
@@ -169,49 +181,29 @@ const SEEKING_TARGET = {
 	ID: 302,
 	type: TYPE.FSM,
 	name: "SEEKING_TARGET",
-	description: "FSM state that, while tolerance area is not reached, "
-		+ "looks for a EXP with a KEY_TARGET to inject its targetPOVART.P1, until ",
+	description: `exp.keys.find(keyID => {
+			isTypeTARGET(keyID) ? seekTarget(exp) : return
+		})`,
 	stack: 1,
 	onApply: () => {},
-	onUpdate: (exp, entity, process) => {
-		const ePrefix = "[SEEKING_TARGET].onUpdate: ";
-		try
-		{
-			if(exp?.keys || exp?.targetPOVART) 
-				throw new Error(`${exp} is invalid MAGPIE_EXP`);
-			if(!exp.keys.find(key => key.originID === MAGPIE.KEY.INDEX.TARGET))
-				return
-			if(!entity?.ID || isNaN(entity.ID))
-				throw new Error(`${entity} is invalid MAGPIE_ENTITY`);
-			const POVART0 = exp.subjectID.slice(0,30);
-			const P1 = exp.targetID.slice(0,3);
-			const STATS = exp.subjectID;
-			const toler = exp.keys.find(key => key.originID === MAGPIE.KEY.INDEX.PROXIMITY) ? 1 : 0;
-			const options = {intensity: exp.value, tolerance: toler}
-			const output = entity._emote_seekTarget(exp);
-			const purge = true;
-			if(output.arrived) entity.removeState(302, 1, purge);
-			if(output.proximity) entity.switchState(302, 303);
-			if(output.braking) entity.switchState(302,304);
-			const stats = [];
-			stats.forEach((stat, index) => {
-				if(stat !== 0)
-					entity._PARAMS[index] += stat
-			})
-			const pushStates = [];
-			pushStates.forEach(ID => {
-				entity.addState(ID);
-			})
-			const popStates = [];
-			popStates.forEach(ID => {
-				entity.removeState(ID)
-			});
-			return output
-		}
-		catch(e)
-		{
-			return new Error(ePrefix + e.message);
-		}
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {stamina_index} stamina_index
+	 * @returns {state_output}
+	 */
+	onUpdate: (exp, entity, process, stamina_index) => {
+		const target = exp._key_isTypeTARGET();
+		if(!target) return output = {exp: exp}
+
+		const output = entity._emote_seekTarget(exp);
+		const purge = true;
+		if(output.arrived) entity.removeState(stamina_index, 1, purge);
+		if(output.proximity) entity.switchState(stamina_index, 303);
+		if(output.braking) entity.switchState(stamina_index,304);
+		return output
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -227,15 +219,11 @@ const APPROACHING_TARGET = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
-	onUpdate: (exp, entity) => {
-		if(!exp.keys.find(key => key.originID === MAGPIE.KEY.INDEX.TARGET))
-			return console.log(`state302: skip`)
+	onUpdate: (exp, entity, stamina_index) => {
 		const purge = true;
 		const output = entity._seekTarget(exp);
 		if(output.arrived) entity.removeState(303, 1, purge);
 		if(!output.proximity) entity.switchState(303, 304);
-		entity.exps.push(output.exp);
-		console.log("state302: true | recycling exp")
 		return output
 	},
 	onRemove: () => {},
@@ -252,7 +240,14 @@ const ON_TARGET = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
-	onUpdate: (exp, entity) => {
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {stamina_index} stamina_index 
+	 * @return {state_output}
+	 */
+	onUpdate: (exp, entity, stamina_index) => {
 		//
 	},
 	onRemove: () => {},

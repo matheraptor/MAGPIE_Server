@@ -410,7 +410,7 @@ MAGPIE.KEY.NODE_ENV = MAGPIE.config.NODE_ENV;
  *  legacy: keyID[],
  *  compound: keyID[]
  * }} key_data
- * 
+ * @typedef {index} stamina_index entity.fitness[stamina_index] ({@link MAGPIE.KEY.FITNESS.STAMINA}) 
  * 
  */
 //------------------------------------------------------------------------
@@ -491,6 +491,38 @@ MAGPIE.KEY.INDEX.TARGET = 12;
 MAGPIE.KEY.INDEX.TRIVIAL = 13;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TIME = 14;
+/*** @type {Map<keyID, stamina_index>} */
+MAGPIE.KEY.INDEX.STAMINA = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_0 = 100;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_0, 0)
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_1 = 101;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_1, 1);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_2 = 102;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_2, 2);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_3 = 103;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_3, 3);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_4 = 104;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_4, 4);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_5 = 105;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_5, 5);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_6 = 106;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.STAMINA_6, 6);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_7 = 107;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_7, 7);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_8 = 108;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_8, 8);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_9 = 109;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX_9, 9);
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.REQUIREMENTS = 1001;
 /** @type {key_index} */

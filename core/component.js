@@ -384,6 +384,30 @@ MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+/**
+ * 
+ * 
+ * @returns {keyID[]}
+ */
+MAGPIE_SYMBOL.prototype.getKeys = function getKeys()
+{
+	return this.STATS.map((item, index) => {
+		if(index % 2 === 0)
+			item
+	})
+}
+/**
+ * 
+ * @param {keyID} keyID
+ * @returns {key_value} 
+ */
+MAGPIE_SYMBOL.prototype._get_keyID = function getKeyID(keyID)
+{
+	const index = this.STATS.indexOf(keyID);
+	if(index % 2 !== 0)
+		return 
+	return this.STATS[index + 1]
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -505,6 +529,7 @@ MAGPIE_STATE.validateChange = function validateChange(state)
  * @typedef {Number} emoteID
  * @typedef {import("./entity").entityID} entityID
  * @typedef {import(".").keyID} keyID
+ * @typedef {Number} key_value
  */
 //========================================================================
 // #region - EXP

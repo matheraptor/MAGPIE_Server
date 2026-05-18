@@ -6,6 +6,7 @@ const { INDEX } = require("./states")
  * @typedef {import("../core/index").vector3} vector3
  * @typedef {import("../SERVER.js").bivector} bivector
  * @typedef {import("../core/entity.js").fitness_index} fitness_index
+ * @typedef {import("../core/index.js").stamina_index} stamina_index
  */
 /** @type {import("../SERVER.js").exp_output} */
 const defaults = { exp: null, At: [0,0,0], Tt: [0,0,0], keys: [], persist: null };
@@ -40,14 +41,13 @@ const SEEK_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {fitness_index} traitIndex
+	 * @param {stamina_index} stamina_index
 	 * @returns {{At: vector3, Tt: bivector}} results
 	 */
-	onAction: function seekTarget(exp, entity) 
+	onAction: function seekTarget(exp, entity, stamina_index) 
 	{
 		const stateID = INDEX.SEEKING_TARGET;
-		const traitIndex = Number(exp.value);
-		const index = !isNaN(traitIndex) ? traitIndex : entity._trait_blockState(stateID)
+		const index = stamina_index;
 		const state = [stateID, index]
 		return entity.addState(state);
 	},
@@ -68,11 +68,12 @@ const SCHEDULE = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {stamina_index} stamina_index
 	 * @returns {{At: vector3, Tt: bivector}}
 	 */
-	onAction: function schedule(exp, entity) 
+	onAction: function schedule(exp, entity, stamina_index) 
 	{
-		return entity._emote_schedule(exp)
+		return entity._emote_schedule(exp, stamina_index)
 	},
 	onPassive: () => {}
 }
