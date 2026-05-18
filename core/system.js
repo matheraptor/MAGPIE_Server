@@ -1107,6 +1107,9 @@ MAGPIE_DATE.prototype.megaTICK = function megaTICK()
 MAGPIE_DATE.prototype.ultraTICK = function ultraTICK()
 {
 	this.hour = 0;
+	this.weekDay >= Object.keys(this.getCalendar().weekDays).length - 1
+		? this.weekDay = 0 
+		: this.weekDay++
 	// const K = MAGPIE.KEY.SWITCHES;
 	// MAGPIE_SYSTEM.switches.setValue(K.ULTRA_TICK, true);
 	const months = this.getCalendar().months;
