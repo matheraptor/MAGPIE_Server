@@ -116,6 +116,7 @@ function MAGPIE_SYMBOL(data)
 /**
  * @typedef {import("./system").database_result} database_result
  * @typedef {import("./index").index} index
+ * @typedef {import("./index").stamina_index} stamina_index
  * 
  * @name COMPONENT
  * @desc 
@@ -705,6 +706,17 @@ MAGPIE_EXP.prototype._emote_onTarget = function _emote_onTarget()
 	}
 }
 /**
+ * @returns {stamina_index}
+ */
+MAGPIE_EXP.prototype._get_stamina_index = function getStaminaINdex()
+{
+	this.keys.forEach(keyID => {
+		const match = MAGPIE.KEY.INDEX.STAMINA.get(keyID);
+		if(!isNaN(match))
+			return match
+	})
+}
+/**
  * 
  * @desc back to {@link }
  *
@@ -788,6 +800,9 @@ MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
  * @typedef {Enumerator<Number>} context_type
  * @typedef {import("./system").epoch_real} epoch_real
  * @typedef {import("./entity").MAGPIE_ENTITY} MAGPIE_ENTITY
+ * @typedef {import("./index").urgency} urgency
+ * @typedef {import("./index").gravity} gravity
+ * @typedef {import("./index").ambiguity} ambiguity
  * @typedef {{
  * ID: contextID,
  * type: context_type,
@@ -796,7 +811,10 @@ MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
  * exps: MAGPIE_EXP[],
  * keys: MAGPIE_KEY[],
  * symbols: MAGPIE_SYMBOL[],
- * date: MAGPIE_DATE
+ * date: MAGPIE_DATE,
+ * urgency: urgency,
+ * graivty: gravity,
+ * ambiguity: ambiguity
  * }} context_data
  */
 //========================================================================
@@ -818,6 +836,41 @@ MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 	this.keys = new Float64Array(data?.keys || 0);
 	this.symbols = new Float64Array(data?.symbols || 0);
 	this.date = new MAGPIE_DATE(data?.date);
+	this.urgency = Number(data?.urgency || NaN);
+	this.gravity = Number(data?.gravity || NaN);
+	this.ambiguity = Number(data?.ambiguity || NaN);
+}	
+/**
+ * 
+ * @param {String} method 
+ * @param {[]} arguments
+ * @returns {*} 
+ */
+MAGPIE_CONTEXT.__hiveSync = function __hiveSync(method, arguments)
+{
+	//
+}
+/**
+ * 
+ * @param {String} method 
+ * @param {[]} arguments
+ * @returns {Promise<*>} 
+ */
+MAGPIE_CONTEXT.__hive = async function __hive(method, arguments)
+{
+	//
+}
+/**
+ * 
+ * @returns {Promise<Boolean>}
+ */
+MAGPIE_CONTEXT.prototype._awake = async function _awake()
+{
+	return await this.__hive("_host_context", [this])
+}
+MAGPIE_CONTEXT.prototype._sleep = async function _sleep()
+{
+	return await this.__hive("_kick_context", [this, "context_sleep"])
 }
 /**
  * 

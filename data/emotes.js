@@ -41,15 +41,13 @@ const SEEK_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {stamina_index} stamina_index
 	 * @returns {{At: vector3, Tt: bivector}} results
 	 */
-	onAction: function seekTarget(exp, entity, stamina_index) 
+	onAction: function seekTarget(exp, entity) 
 	{
-		const stateID = INDEX.SEEKING_TARGET;
-		const index = stamina_index;
-		const state = [stateID, index]
-		return entity.addState(state);
+		const index = exp._get_stamina_index();
+		if(isNaN(index)) return
+		return entity.onState(index);
 	},
 	onPassive: function()
 	{

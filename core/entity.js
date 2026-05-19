@@ -2202,10 +2202,10 @@ MAGPIE_ENTITY._get_key = function getKey(keyID)
  */
 MAGPIE_ENTITY.prototype.onState = function onState(stamina_index)
 {
-	const ePrefix = `[ENTITY-${this.ID}].addState: `;
+	const ePrefix = `[ENTITY-${this.ID}].onState: `;
 	try
 	{
-		if(isValidStamina(stamina_index))
+		if(!this.isValidStamina(stamina_index))
 			throw new Error(`${stamina_index} is invalid STA index (0-9)`)
 		const stateID = this._trait_getStateID(this._get_stamina(stamina_index))
 		const slot = this.fitness[index];

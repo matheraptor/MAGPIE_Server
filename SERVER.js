@@ -1091,6 +1091,26 @@ MAGPIE_COMPONENT.__setSync = function setSync(method, arguments)
 /**
  * @name 
  * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Context
+//------------------------------------------------------------------------
+MAGPIE_CONTEXT.__hive = async function __hive(method, arguments)
+{
+	const callback = MAGPIE_HIVE[method]
+	return await callback(...arguments)
+}
+MAGPIE_CONTEXT.__hiveSync = function __hiveSync(method, arguments)
+{
+	const callback = MAGPIE_HIVE[method]
+	return callback(...arguments)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
  * @typedef {import("./core/index").keyID} keyID
  */
 //------------------------------------------------------------------------

@@ -191,14 +191,13 @@ const SEEKING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {stamina_index} stamina_index
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, stamina_index) => {
-		const target = exp._key_isTypeTARGET();
+	onUpdate: (exp, entity, process) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target) return output = {exp: exp}
-
 		const output = entity._emote_seekTarget(exp);
+		const stamina_index = exp._get_stamina_index();
 		const purge = true;
 		if(output.arrived) entity.removeState(stamina_index, 1, purge);
 		if(output.proximity) entity.switchState(stamina_index, 303);
