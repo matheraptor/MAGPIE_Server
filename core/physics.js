@@ -8,6 +8,8 @@
 //========================================================================
 const { MAGPIE } = require("./index");
 const { MAGPIE_SYSTEM } = require("./system");
+const Algebra = require('ganja.js');
+const GA3D = Algebra(3,0,0)
 function MAGPIE_PHYSICS()
 {
 	this.initialize(...arguments);
@@ -74,6 +76,54 @@ MAGPIE_PHYSICS.prototype.constructor = MAGPIE_PHYSICS;
  */
 //========================================================================
 //#endregion --- Physics
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - GANJA
+//========================================================================
+MAGPIE_PHYSICS.ganja = {};
+MAGPIE_PHYSICS.ganja.meta = "";
+/**
+ * @name 
+ * @desc 
+ * @typedef {Object} gRotor
+ */
+//------------------------------------------------------------------------
+// #region > Rotor
+//------------------------------------------------------------------------
+const { e0, e1, e2, e3 } = require("ganja.js")(3,0,1);
+const planetCenter = 1e123;
+const PGA = require("ganja.js")(3,0,1);
+PGA(() => {
+	const planetCenter = 1e123;
+	let motor = Math.exp(1000 * 0.5 * 1e03);
+	let linearVelocity = 10.0;
+	function physicsTick(pitchInput, yawInput, rollInput)
+	{
+		const pitch = Math.exp(pitchInput * 0.5 * 1e23);
+		const yaw = Math.exp(yawInput * 0.5 * 1e31);
+		const roll = Math.exp(rollInput * 0.5 * 1e12);
+		const localTurn = yaw * pitch * roll;
+		const localMove = Math.exp(linearVelocity * 0.5 * 1e03);
+		motor = motor * localTurn * localMove;
+		motor = motor / Math.sqrt(motor * ~motor)
+	}
+	physicsTick(0.01, 0.005, 0.0)
+})
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
 //========================================================================
 /**
  * @typedef {[Number, Number, Number]} coords [lat, lon, ASL]
@@ -2815,64 +2865,7 @@ MAGPIE_PHYSICS.rotorSlerp = function rotorSlerp(r0, r1, t)
 //------------------------------------------------------------------------
 // #region > compose
 //------------------------------------------------------------------------
-/**
- * {@link MAGPIE_PHYSICS._getO1toP1}
- * 
- * @param {vector3} P0 POVART₀ 
- * @param {angle_euler} pitchDeg 
- * @param {angle_euler} rollDeg 
- * @param {angle_deg} headingDeg 
- * @returns {rotor} O1
- */
-MAGPIE_PHYSICS.rotorFromEuler = function rotorFromEuler(P0, pitchDeg, rollDeg, headingDeg)
-{
-	const ePrefix = "[PHYSICS].rotorFromEuler: ";
-	try
-	{
-		if(!this.isValidVector(P0)) 
-			throw new Error(`${P0} is invalid P₀`);
-		if(!this.isValidAngleEuler(pitchDeg))
-			throw new Error(`${pitchDeg} is invalid pitch angle`);
-		if(!this.isValidAngleEuler(rollDeg))
-			throw new Error(`${rollDeg} is invalid roll angle`);
-		if(!this.isValidAngleDeg(headingDeg))
-			throw new Error(`${headingDeg} is invalid heading (°)`)
-		// 1. derive local coordinate frame (same as _getO1toP1)
-		const up = this.normalizeVector(P0);
-		const North = MAGPIE.KEY.POVART.UP;
-		const dotN = this.dotProduct(North, up);
-		const dotNup = this.scaleVector(up, dotN);
-		const localNorth = this.normalizeVector(this.subVectors(North, dotNup));
-		const localEast = this.crossProduct(localNorth, up);
-		// 2. construct the fwd vector (heading + pitch)
-		// start pointing north, rotate by heading around Up, then pitch around localEast
-		const hRad = this._U_deg_to_rad(headingDeg);
-		const pRad = this._U_deg_to_rad(pitchDeg);
-		// direction vector in the plane of the horizon
-		const northComponent = this.scaleVector(localNorth, Math.cos(hRad));
-		const eastComponent = this.scaleVector(localEast, Math.sin(hRad));
-		const dirHorizon = this.addVectors(northComponent, eastComponent);
-		// tilt the direction vector based on pitch
-		const horizonComponent = this.scaleVector(dirHorizon, Math.cos(pRad));
-		const upComponent = this.scaleVector(up, Math.sin(pRad));
-		const TiltFwd = this.addVectors(horizonComponent, upComponent);
-		// 3 construct the up vector (roll)
-		// start with world up, rotate by roll around the new forward vector
-		const rRad = this._U_deg_to_rad(rollDeg);
-		// use rotorFromAxisAngle to get the roll rotation
-		const rollRotor = this.rotorFromAxisAngle(TiltFwd, rRad);
-		const TiltUp = this.rotorApply(rollRotor, up);
-		// compose via existing frame logic
-		const rotor = this.rotorNormalize(this.rotorFromFrame(TiltFwd, TiltUp));
-		if(!this.isValidRotor(rotor))
-			throw new Error(`${rotor} is invalid O₁`)
-		return rotor
-	} 
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.messag, e)
-	}
-}
+
 /**
  * @method rotorFromBivector (B, dt) — step-rotor from angular velocity
  * @Math Given angular velocity bivector B (rad/s) and timestep dt (s):speed = |B| = total angular speed in rad/s
