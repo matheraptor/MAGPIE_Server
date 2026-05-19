@@ -1267,13 +1267,13 @@ MAGPIE_RUNTIME.prototype.refresh = function refresh()
 	MAGPIE_SYSTEM.refresh.call(this)
 	if(!this.isActive) return
 	const dt = Date.now() - this._now;
-	this._now += dt;
+	this._now = Date.now();
 	this._lag += dt;
 	this._base += dt;
 	this._game += dt;
-	if(this._lag > 100) this._lag = 100;
-	while(this._lag > 1)
-		this.TICK_base();
+	// if(this._lag > 100) this._lag = 100;
+	// while(this._lag > 1)
+	this.TICK_base();
 }
 MAGPIE_RUNTIME.prototype.TICK_base = function TICK_base()
 {
@@ -2017,7 +2017,27 @@ MAGPIE_HIVE._host_symbol = function hostSymbol(symbol)
  */
 MAGPIE_HIVE._host_context = function hostContext(context)
 {
-	return MAGPIE_HIVE._contextBuffer.set(context.ID, context).size;
+	MAGPIE_HIVE._contextBuffer.set(context.ID, context).size;
+	const entities = context.entities;
+	const exps = context.exps;
+	const keys = context.keys;
+	const symbols = context.symbols
+	if(entities.length < 1 && exps.length < 1 && keys.length < 1 && symbols.length < 1)
+		return
+	const layers = MAGPIE.KEY.RUNTIME.LAYER.size;
+	const layerID = layers - Math.max(layers, (context.urgency + context.gravity));
+	entities.forEach(entityID => {
+		MAGPIE_HIVE.host(MAGPIE_HIVE._get_entity(entityID), layerID)
+	})
+	exps.forEach(expID => {
+		MAGPIE_HIVE._host_exp(MAGPIE_HIVE._get_exp(expID))
+	})
+	keys.forEach(keyID => {
+		MAGPIE_HIVE._host_key(MAGPIE_HIVE._get_key(keyID))
+	})
+	symbols.forEach(symbolID => {
+		MAGPIE_HIVE._host_symbol(MAGPIE_HIVE._get_symbol(symbolID))
+	})
 }
 /**
  * 

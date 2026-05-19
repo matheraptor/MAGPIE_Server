@@ -324,7 +324,7 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {Number} stateID
  * @typedef {Number} wasteIndex
  * @typedef {Number} injuryID
- * @typedef {Number} staminaIndex 
+ * @typedef {import("./index").stamina_index} stamina_index  
  * @typedef {import("../data/entity_types").expID} expID
  * @typedef {import("./index").distance} distance
  * @typedef {import("./index").ratio} ratio
@@ -2190,25 +2190,24 @@ MAGPIE_ENTITY._get_key = function getKey(keyID)
 /**
  * @name 
  * @desc 
- * 
+ * @typedef {staminaIndex}
  */
 //========================================================================
 // #region - STATE
 //========================================================================
 /**
- * 
- * @param {[stateID, Number]} state [stateID, index]
+ *  
+ * @param {stamina_index} stamina_index
  * @returns {Boolean}
  */
-MAGPIE_ENTITY.prototype.addState = function addState(state)
+MAGPIE_ENTITY.prototype.onState = function onState(stamina_index)
 {
-	const ePrefix = `[ENTITY-${this.ID}].addState: `;
+	const ePrefix = `[ENTITY-${this.ID}].onState: `;
 	try
 	{
-		const valid = MAGPIE_STATE.validateChange(state);
-		if(!valid) 
-			throw new Error(`${state} is invalid state`)
-		const [stateID, index] = valid;
+		if(!this.isValidStamina(stamina_index))
+			throw new Error(`${stamina_index} is invalid STA index (0-9)`)
+		const stateID = this._trait_getStateID(this._get_stamina(stamina_index))
 		const slot = this.fitness[index];
 		if(slot) 
 			throw new Error(`fitness[${index}] is occupied by [STATE-${slot}]`)
@@ -2222,17 +2221,67 @@ MAGPIE_ENTITY.prototype.addState = function addState(state)
 }
 /**
  * 
- * @param {[stateID, Number]} state [stateID, index] 
+ * @param {symbolID} traitID 
+ * @returns {stateID}
+ */
+MAGPIE_ENTITY.prototype._trait_getStateID = function getStateIDfromTrait(traitID)
+{
+	const trait = this._trait_get(traitID);
+	if(!trait) return
+	const stateID = trait._get_keyID(MAGPIE.KEY.TYPE.STATE);
+	if(isNaN(stateID))
+		throw new Error(`${stateID} is invalid state.ID`)
+	return stateID
+}
+/**
+ * 
+ * @param {symbolID} traitID 
+ * @returns {MAGPIE_SYMBOL}
+ */
+MAGPIE_ENTITY.prototype._trait_get = function getTraitByID(traitID)
+{
+	const ePrefix = `[ENTITY-${this.ID}].getTraitByID: `;
+	try
+	{
+		const traits = this._get_traits();
+		if(!traits) return
+		const trait = traits.find(trait => trait.ID === traitID);
+		if(!(trait instanceof MAGPIE_SYMBOL))
+			throw new Error(`has not [TRAIT-${traitID}]`)
+		return trait
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return null
+	}
+}
+/**
+ * 
+ * @param {index} index 
+ * @returns {symbolID}
+ */
+MAGPIE_ENTITY.prototype._get_stamina = function _get_stamina(index)
+{
+	const K = MAGPIE.KEY.FITNESS;
+	const offset = K.TRAITS + K.DECKSIZE * K.STAMINA
+	const traitID = this.fitness[offset + index];
+	if(isNaN(traitID))
+		throw new Error(`${traitID} at [FITNESS-${offset + index}] is invalid traitID`)
+	return traitID
+}
+/**
+ * 
+ * @param {stamina_index} stamina_index 
  * @returns {Boolean}
  */
-MAGPIE_ENTITY.prototype.removeState = function removeState(state)
+MAGPIE_ENTITY.prototype.removeState = function removeState(stamina_index)
 {
 	const ePrefix = `[ENTITY-${this.ID}].removeState: `;
 	try
 	{
-		const valid = MAGPIE_STATE.validateChange(state);
-		if(!valid) return
-		const [stateID, index] = valid;
+		if(!this.isValidStamina(stamina_index))
+			throw new Error(`${stamina_index} is invalid STA index`)
 		const slot = this.fitness[index];
 		if(isNaN(slot))
 			throw new Error(`fitness[${index}] is already empty`)
@@ -2243,6 +2292,15 @@ MAGPIE_ENTITY.prototype.removeState = function removeState(state)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+/**
+ * 
+ * @param {stamina_index} index
+ * @returns {Boolean} 
+ */
+MAGPIE_ENTITY.prototype.isValidStamina = function isValidStamina(index)
+{
+	!isNaN(index) && index > 0 && index < 10
 }
 /**
  * 

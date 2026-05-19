@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.20
+ * @version 0.22.21
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,11 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.22.20 2026 05 19
+ * @version 0.22.21 2026 05 19
+ * - ADDED: MAGPIE.KEY.INDEX.STAMINA Map<keyID, stamina_index>
+ * - ADDED: MAGPIE.KEY.INDEX STAMINA_0 to STAMINA_9 Enumerator<stamina_index>
+ * - TWEAKED: entity.addState is now .onState — stateID is fetched from trait
+ * - TWEAKED: stamina_index instead of traitIndex, for tracking card played
  * 
  * @version 0.22.19 2026 05 18
  * - FIXED: MAGPIE_DATE.weekDay not updating at ultraTICK
@@ -363,7 +367,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 20],
+			version: [0, 22, 21],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260519"
 		};
@@ -410,7 +414,7 @@ MAGPIE.KEY.NODE_ENV = MAGPIE.config.NODE_ENV;
  *  legacy: keyID[],
  *  compound: keyID[]
  * }} key_data
- * 
+ * @typedef {index} stamina_index entity.fitness[stamina_index] ({@link MAGPIE.KEY.FITNESS.STAMINA}) 
  * 
  */
 //------------------------------------------------------------------------
@@ -491,6 +495,38 @@ MAGPIE.KEY.INDEX.TARGET = 12;
 MAGPIE.KEY.INDEX.TRIVIAL = 13;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TIME = 14;
+/*** @type {Map<keyID, stamina_index>} */
+MAGPIE.KEY.INDEX.STAMINA = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_0 = 100;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_0, 0)
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_1 = 101;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_1, 1);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_2 = 102;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_2, 2);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_3 = 103;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_3, 3);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_4 = 104;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_4, 4);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_5 = 105;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_5, 5);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_6 = 106;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.STAMINA_6, 6);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_7 = 107;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_7, 7);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_8 = 108;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_8, 8);
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.STAMINA_9 = 109;
+MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX_9, 9);
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.REQUIREMENTS = 1001;
 /** @type {key_index} */
@@ -559,6 +595,120 @@ MAGPIE.KEY.INDEX.TCREEP = 6003;
 MAGPIE.KEY.INDEX.TDOCK = 6004;
 MAGPIE.KEY.INDEX.VSPEEDS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("VMAX"));
 MAGPIE.KEY.INDEX.VSPEEDS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("TDOCK"));
+/**
+ * @typedef {Enumerator<Number>} urgency
+ * @type {Map<keyID, {value: urgency, desc: String>}}
+ */
+MAGPIE.KEY.INDEX.URGENCY = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_STRATEGIC = 10001;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_STRATEGIC, {
+	value: -1, 
+	desc: "neutral urgency to always keep in mind"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE = 10100;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE, {
+	value: 0,
+	desc: "Must do NOW"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_DIRE = 10101;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_DIRE, {
+	value: 1,
+	desc: "Must do NEXT"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_CRITICAL = 10102;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_CRITICAL, {
+	value: 2,
+	desc: "Must do AS SOON AS POSSIBLE (ASAP)"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_SIGNIFICANT = 10103;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_SIGNIFICANT, {
+	value: 3,
+	desc: "Should do SOON"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_LATENT = 10104;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_LATENT, {
+	value: 4,
+	desc: "Can do if and when possible"
+});
+/** 
+ * @typedef {Enumerator<Number>} gravity
+ * @type {Map<keyID, {value: gravity, desc: String>}} 
+ * 
+ * */
+MAGPIE.KEY.INDEX.GRAVITY = new Map()
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_TACTICAL = 10199;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TACTICAL, {
+	value: -1,
+	desc: "Neutral gravity to keep in mind"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_VITAL = 10200;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_VITAL, {
+	value: 0,
+	desc: "Must care about this ABOVE ALL"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_SEVERE = 10201;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_SEVERE, {
+	value: 1,
+	desc: "Must care about this AS MUCH AS POSSIBLE"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_PRESSING = 10202;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_PRESSING, {
+	value: 2,
+	desc: "Should care about this when possible"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT = 10203;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT, {
+	value: 3,
+	desc: "Might care sometimes; probably unsafe to ignore"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL = 10204;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL, {
+	value: 4,
+	desc: "Probably safe to ignore"
+});
+/** 
+ * @typedef {Enumerator<Number>} ambiguity
+ * @type {Map<keyID, {value: ambiguity, desc: String}>} 
+ * */
+MAGPIE.KEY.INDEX.AMBIGUITY = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AMBIGUITY_UNIVERSAL = 10300;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_UNIVERSAL, {
+	value: 0,
+	desc: "Anyone can know about this"
+})
+MAGPIE.KEY.INDEX.AMBIGUITY_AMBIGUOUS = 10301;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_AMBIGUOUS, {
+	value: 1,
+	desc: "Must investigate to know"
+})
+MAGPIE.KEY.INDEX.AMBIGUITY_CONTESTED = 10302;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_CONTESTED, {
+	value: 2,
+	desc: "Information about this is unreliable"
+})
+MAGPIE.KEY.INDEX.AMBIGUITY_DISCREET = 10303;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_DISCREET, {
+	value: 3,
+	desc: "Information about this is hard to find"
+})
+MAGPIE.KEY.INDEX.AMBIGUITY_SECRET = 10304;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_SECRET, {
+	value: 4,
+	desc: "Information about this is private"
+})
 // #endregion
 //------------------------------------------------------------------------
 /**
