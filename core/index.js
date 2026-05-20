@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.21
+ * @version 0.22.21a
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,9 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.22.21a 2026 05 20
+ * - FIXED: revert to before interim update
  * 
  * @version 0.22.21 2026 05 19
  * - ADDED: MAGPIE.KEY.INDEX.STAMINA Map<keyID, stamina_index>
@@ -369,7 +372,7 @@ class MAGPIE {
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
 			version: [0, 22, 21],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260519"
+			firmwareDate: "20260520"
 		};
 	}
 }
