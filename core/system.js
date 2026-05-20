@@ -1266,18 +1266,15 @@ MAGPIE_RUNTIME.prototype.refresh = function refresh()
 {
 	MAGPIE_SYSTEM.refresh.call(this)
 	if(!this.isActive) return
-	const dt = Date.now() - this._now;
-	this._now = Date.now();
-	this._lag += dt;
-	this._base += dt;
-	this._game += dt;
-	// if(this._lag > 100) this._lag = 100;
-	// while(this._lag > 1)
-	this.TICK_base();
+	this._lag = Date.now() - this._now;
+	while(this._lag > 0)
+		this.TICK_base();
 }
 MAGPIE_RUNTIME.prototype.TICK_base = function TICK_base()
 {
 	this._lag--;
+	this._base++;
+	this._game++;
 	this._baseFrame++;
 	if(this._game >= 16.67)
 		this.TICK_game();
@@ -1286,6 +1283,7 @@ MAGPIE_RUNTIME.prototype.TICK_base = function TICK_base()
 	const layerBase = 0;
 	const switchBase = 0;
 	this.tick_layer(layerBase, switchBase, this._baseFrame);
+	this._now = Date.now();
 }
 MAGPIE_RUNTIME.prototype.TICK_game = function TICK_game()
 {
@@ -1642,10 +1640,10 @@ MAGPIE_HIVE._get_entity_new = function newEntity(data)
 /**
  * 
  * @param {String} method 
- * @param {[]} arguments
- * @returns {*} 
+ * @param {[]} args
+ * @returns {*}
  */
-MAGPIE_HIVE.__get_serverSync = function __get_serverSync(method, arguments)
+MAGPIE_HIVE.__get_serverSync = function __get_serverSync(method, args)
 {
 	//
 }

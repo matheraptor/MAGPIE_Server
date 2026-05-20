@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.21
+ * @version 0.22.22
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,12 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.22.22 2026 05 20
+ * - ADDED: Ganja.js
+ * - TWEAKED: rotor/quaternion low-level physics to leverage Ganja.js
+ * - FIXED: rotorCompose
+ * - FIXED: RUNTIME.refresh lagging very slightly (approx 1h every 8h)
  * 
  * @version 0.22.21 2026 05 19
  * - ADDED: MAGPIE.KEY.INDEX.STAMINA Map<keyID, stamina_index>
@@ -367,9 +373,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 21],
+			version: [0, 22, 22],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260519"
+			firmwareDate: "20260520"
 		};
 	}
 }

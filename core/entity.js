@@ -1668,8 +1668,8 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		const T1 = MAGPIE_PHYSICS.addVectors(T0, dT);
 		const R1 = MAGPIE_PHYSICS.addVectors(R0, T1);
 		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
-		const Ocomp = MAGPIE_PHYSICS.rotorCompose(dO, O0);
-		const O1 = MAGPIE_PHYSICS.rotorNormalize(Ocomp);
+		// HASTAL Doctrine: Right-side multiplication for local frame rotation (O_new = O_old * R_delta)
+		const O1 = MAGPIE_PHYSICS.rotorCompose(O0, dO);
 		//
 		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
 		const dV = MAGPIE_PHYSICS.addVectors(V0, A1);
