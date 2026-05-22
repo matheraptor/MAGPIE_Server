@@ -14,15 +14,15 @@ echo "Passive MAGPIE Governor v6 loaded. Waiting for manual node start..."
 
 while true; do
     # 2. Look for the active Node process safely
-    NODE_PID=$(pgrep -f "node SERVER.js")
+    NODE_PID=$(pgrep -f "SERVER.js")
 
     if [ ! -z "$NODE_PID" ]; then
         # 3. Check if cpulimit is already attached to this specific PID using pgrep
         if ! pgrep -f "cpulimit.*-p $NODE_PID" > /dev/null; then
-            
+
             # Kill any orphaned cpulimit processes left over from old server runs
             pkill -f "cpulimit" 2>/dev/null
-            
+
             echo "Manual Node process detected (PID: $NODE_PID). Applying 30% CPU throttle..."
             # Launch cpulimit in the background securely
             /usr/bin/cpulimit -p "$NODE_PID" -l "$CPU_LIMIT" -b
