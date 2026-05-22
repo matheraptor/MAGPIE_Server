@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.24
+ * @version 0.22.26
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,9 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.22.26 2026 05 22
+ * - TWEAKED: merged runtime-retrofit branch
  * 
  * @version 0.22.24 2026 05 20
  * - FIXED: runtime.refresh lagging (being tested)
@@ -372,9 +375,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 24],
+			version: [0, 22, 26],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260520"
+			firmwareDate: "20260522"
 		};
 	}
 }
