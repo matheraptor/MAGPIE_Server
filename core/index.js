@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.21a
+ * @version 0.22.24
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,8 +20,10 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.22.21a 2026 05 20
- * - FIXED: revert to before interim update
+ * @version 0.22.24 2026 05 20
+ * - FIXED: runtime.refresh lagging (being tested)
+ * - FIXED: runtime.refresh racing ahead
+ * - FIXED: hive.buffers not being used
  * 
  * @version 0.22.21 2026 05 19
  * - ADDED: MAGPIE.KEY.INDEX.STAMINA Map<keyID, stamina_index>
@@ -370,7 +372,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 21],
+			version: [0, 22, 24],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260520"
 		};
@@ -730,7 +732,7 @@ MAGPIE.KEY.RUNTIME.meta = {
 /** @type {Map<Number, {name: String, delta: Number, slots: Number}} */
 MAGPIE.KEY.RUNTIME.LAYER = new Map();
 MAGPIE.KEY.RUNTIME.LAYER.set(0, { name: "_GuestsBase", delta: 0.001, slots: 100 });
-MAGPIE.KEY.RUNTIME.LAYER.set(1, { name: "_GuestsGame", delta: 0.016, slots: 1000 });
+MAGPIE.KEY.RUNTIME.LAYER.set(1, { name: "_GuestsGame", delta: 0.033, slots: 1000 });
 MAGPIE.KEY.RUNTIME.LAYER.set(2, { name: "_GuestsStandard", delta: 1, slots: 5000 });
 MAGPIE.KEY.RUNTIME.LAYER.set(3, { name: "_GuestsSuper", delta: 60, slots: 10000 });
 MAGPIE.KEY.RUNTIME.LAYER.set(4, { name: "_GuestsMega", delta: 60 ** 2, slots: 50000 });

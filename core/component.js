@@ -835,7 +835,7 @@ MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 	this.exps = new Float64Array(data?.exps || 0) 
 	this.keys = new Float64Array(data?.keys || 0);
 	this.symbols = new Float64Array(data?.symbols || 0);
-	this.date = new MAGPIE_DATE(data?.date);
+	this.metadate = Number(data?.metadate) || 0;
 	this.urgency = Number(data?.urgency || NaN);
 	this.gravity = Number(data?.gravity || NaN);
 	this.ambiguity = Number(data?.ambiguity || NaN);
@@ -862,15 +862,23 @@ MAGPIE_CONTEXT.__hive = async function __hive(method, arguments)
 }
 /**
  * 
+ * @returns {database_result}
+ */
+MAGPIE_CONTEXT.prototype.setSync = function setSync()
+{
+	return MAGPIE_CONTEXT.__hiveSync("_set_databaseSync", ["saveContextSync", [this]])
+}
+/**
+ * 
  * @returns {Promise<Boolean>}
  */
 MAGPIE_CONTEXT.prototype._awake = async function _awake()
 {
-	return await this.__hive("_host_context", [this])
+	return await MAGPIE_CONTEXT.__hive("_host_context", [this])
 }
 MAGPIE_CONTEXT.prototype._sleep = async function _sleep()
 {
-	return await this.__hive("_kick_context", [this, "context_sleep"])
+	return await MAGPIE_CONTEXT.__hive("_kick_context", [this, "context_sleep"])
 }
 /**
  * 

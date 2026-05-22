@@ -1100,6 +1100,7 @@ MAGPIE_DATABASE.saveContextSync = function saveContextSync(context)
 		const result = MAGPIE_DATABASE.sync.saveWorldRow("MAGPIE_CONTEXT", payload);
 		if(!result)
 			throw new Error(`unable to save [CONTEXT-${context.ID}`)
+		return result
 	}
 	catch(e)
 	{

@@ -738,16 +738,7 @@ MAGPIE_ENTITY.prototype._get_fatLevel = function _get_fatLevel()
  */
 MAGPIE_ENTITY._hive_getExp = function _hive_getExp(expID)
 {
-	return MAGPIE_ENTITY.__hiveSync("_get_databaseSync", ["loadExpSync", [expID]])
-}
-/**
- * 
- * @param {MAGPIE_EXP} exp
- * @returns {MAGPIE_KEY[]}
- */
-MAGPIE_ENTITY._hive_getExpKeys = function _hive_getExpKeys(exp)
-{
-	return exp.getKeys
+	return MAGPIE_ENTITY.__hiveSync("_get_exp", [expID])
 }
 /**
  * {@link MAGPIE_HIVE._get_entity_relatives}
@@ -767,7 +758,7 @@ MAGPIE_ENTITY._hive_getRelatives = async function _hive_getRelatives(rT, pK, fK)
 MAGPIE_ENTITY.prototype.getMother = function getMother()
 {
 	const motherID = this.STATS[MAGPIE.KEY.STATS.MOTHER];
-	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [motherID]);
+	return MAGPIE_ENTITY.__hiveSync("_get_entity", [motherID]);
 }
 /**
  * 
@@ -776,7 +767,7 @@ MAGPIE_ENTITY.prototype.getMother = function getMother()
 MAGPIE_ENTITY.prototype.getFather = function getFather()
 {
 	const fatherID = this.STATS[MAGPIE.KEY.STATS.FATHER];
-	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [fatherID]);
+	return MAGPIE_ENTITY.__hiveSync("_get_entity", [fatherID]);
 }
 /**
  * 
@@ -785,7 +776,7 @@ MAGPIE_ENTITY.prototype.getFather = function getFather()
 MAGPIE_ENTITY.prototype.getCompound = function getCompound()
 {
 	const compoundID = this.STATS[MAGPIE.KEY.STATS.COMPOUND];
-	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [compoundID]);
+	return MAGPIE_ENTITY.__hiveSync("_get_entity", [compoundID]);
 }
 /**
  * 
@@ -794,7 +785,7 @@ MAGPIE_ENTITY.prototype.getCompound = function getCompound()
 MAGPIE_ENTITY.prototype.getHost = function getHost()
 {
 	const hostID = this.STATS[MAGPIE.KEY.STATS.HOST];
-	return MAGPIE_ENTITY.__hiveSync("_get_entitySync", [hostID]);
+	return MAGPIE_ENTITY.__hiveSync("_get_entity", [hostID]);
 }
 /**
  * @returns {Promise<MAGPIE_ENTITY[]>}
@@ -1781,12 +1772,12 @@ MAGPIE_ENTITY.prototype.processKeys = function processKeys(exp)
 // #region > Getters
 //------------------------------------------------------------------------
 /**
- * 
+ * {@link MAGPIE_HIVE._get_symbol}
  * @returns {MAGPIE_SYMBOL}
  */
 MAGPIE_ENTITY.prototype._get_type = function getType()
 {
-	return MAGPIE_ENTITY._database_Sync("loadSymbolSync", this.type)
+	return MAGPIE_ENTITY.__hiveSync("_get_symbol", [this.type])
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -2175,7 +2166,7 @@ MAGPIE_ENTITY._set_key = async function setKey(key)
  */
 MAGPIE_ENTITY._get_key = function getKey(keyID)
 {
-	return MAGPIE_ENTITY._database_Sync("loadKeySync", keyID)
+	return MAGPIE_ENTITY.__hiveSync("_get_key", [keyID])
 }
 // #endregion
 //------------------------------------------------------------------------

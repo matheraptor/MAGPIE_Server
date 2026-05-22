@@ -519,7 +519,7 @@ MAGPIE_HIVE._get_entity = function _get_entity(entityID)
 		if(!entry || entry?.layerID >= MAGPIE.KEY.HIVE.BUFFER_SIZE) 
 			return MAGPIE_DATABASE.loadEntitySync(entityID);
 		const index = entry.slot;
-		return this.getSlot(index, entry.layerID)
+		return MAGPIE_HIVE.getSlot(index, entry.layerID)
 	}
 	catch(e)
 	{
@@ -686,23 +686,23 @@ MAGPIE_HIVE.awake = async function awake()
 		})
 		MAGPIE_SERVER.CLI._incrementLoadBar()
 		MAGPIE_SERVER.log(ePrefix + `loaded ${entities.length}x entities`)
-		hive.exps.forEach(expID => {
-			MAGPIE_HIVE._expBuffer.set(expID, MAGPIE_DATABASE.loadExpSync(expID));
-		})
-		MAGPIE_SERVER.CLI._incrementLoadBar()
-		MAGPIE_SERVER.log(ePrefix + `loaded ${hive.exps.length}x exps`)
-		hive.keys.forEach(keyID => {
-			MAGPIE_HIVE._keyBuffer.set(keyID, MAGPIE_DATABASE.loadKeySync(keyID));
-		})
-		MAGPIE_SERVER.CLI._incrementLoadBar()
-		MAGPIE_SERVER.log(ePrefix + `loaded ${hive.keys.length}x keys`)
-		hive.symbols.forEach(symbolID => {
-			MAGPIE_HIVE._symbolBuffer.set(symbolID, MAGPIE_DATABASE.loadSymbolSync(symbolID));
-		})
-		MAGPIE_SERVER.CLI._incrementLoadBar()
-		MAGPIE_SERVER.log(ePrefix + `loaded ${hive.symbols.length}x symbols`)
+		// hive.exps.forEach(expID => {
+		// 	MAGPIE_HIVE._host_exp(MAGPIE_DATABASE.loadExpSync(expID), );
+		// })
+		// MAGPIE_SERVER.CLI._incrementLoadBar()
+		// MAGPIE_SERVER.log(ePrefix + `loaded ${hive.exps.length}x exps`)
+		// hive.keys.forEach(keyID => {
+		// 	MAGPIE_HIVE._keyBuffer.set(keyID, MAGPIE_DATABASE.loadKeySync(keyID));
+		// })
+		// MAGPIE_SERVER.CLI._incrementLoadBar()
+		// MAGPIE_SERVER.log(ePrefix + `loaded ${hive.keys.length}x keys`)
+		// hive.symbols.forEach(symbolID => {
+		// 	MAGPIE_HIVE._symbolBuffer.set(symbolID, MAGPIE_DATABASE.loadSymbolSync(symbolID));
+		// })
+		// MAGPIE_SERVER.CLI._incrementLoadBar()
+		// MAGPIE_SERVER.log(ePrefix + `loaded ${hive.symbols.length}x symbols`)
 		hive.contexts.forEach(contextID => {
-			MAGPIE_HIVE._contextBuffer.set(contextID, MAGPIE_DATABASE.loadContextSync(contextID))
+			MAGPIE_HIVE._host_context(MAGPIE_DATABASE.loadContextSync(contextID))
 		})
 		MAGPIE_SERVER.CLI._incrementLoadBar()
 		MAGPIE_SERVER.log(ePrefix + `loaded ${hive.contexts.length}x contexts`)
@@ -721,9 +721,6 @@ MAGPIE_HIVE.save = async function save()
 		const result = await this.saveEntities()
 		r.context.METASTATE.hive = {
 			registry: MAGPIE_HIVE._registry,
-			exps: Array.from(MAGPIE_HIVE._expBuffer.keys()),
-			keys: Array.from(MAGPIE_HIVE._keyBuffer.keys()),
-			symbols: Array.from(MAGPIE_HIVE._symbolBuffer.keys()),
 			contexts: Array.from(MAGPIE_HIVE._contextBuffer.keys())
 		}
 		const metastate = MAGPIE_DATABASE.saveMetastate(r.context.METASTATE);
@@ -1233,7 +1230,6 @@ MAGPIE_EXP.prototype.getKey = function getKey(keyID)
 MAGPIE_SERVER.SYS._metastate_tick_base = MAGPIE_METASTATE._TICK_base;
 MAGPIE_METASTATE.prototype.TICK_base = async function TICK_base(layerID, switchID)
 {
-	// MAGPIE_SERVER.HIVE.refresh(layerID, switchID);
 	const now = performance.now();
 	this.date.millisecond = Math.floor(now % 1000);
 	if(switchID === 2) 
