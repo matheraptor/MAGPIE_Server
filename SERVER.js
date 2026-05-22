@@ -2,6 +2,7 @@
  * 
  * @namespace MAGPIE_Server
  * @author Matheraptor
+ * @version 0.22.26
  * @desc server frontend
  * {@link MAGPIE}
  */
