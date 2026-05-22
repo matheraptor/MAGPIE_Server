@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.26
+ * @version 0.22.27
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,8 +20,10 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.22.26 2026 05 22
+ * @version 0.22.27 2026 05 22
  * - TWEAKED: merged runtime-retrofit branch
+ * - FIXED: MAGPIE_IO.WORKER not being used
+ * - FIXED: MAGPIE_SYSTEM .log & .error updated to use worker
  * 
  * @version 0.22.24 2026 05 20
  * - FIXED: runtime.refresh lagging (being tested)
@@ -375,7 +377,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 26],
+			version: [0, 22, 27],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260522"
 		};

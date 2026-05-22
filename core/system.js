@@ -1,7 +1,7 @@
 /**
  * @name 
  * @desc 
- * @version 0.22.26
+ * @version 0.22.27
  */
 //========================================================================
 // #region - INDEX
@@ -345,8 +345,14 @@ MAGPIE_SYSTEM.log = function log(message, prefix = "console", logToConsole = tru
 		else console.log(consoleTime + log);
 		global.r?.displayPrompt(true);
 	}
+	
 	if(typeof prefix === 'string')
-		MAGPIE_IO.append(`.logs/${prefix}${date}.txt`, logTime + log + "\n");
+	{
+		const filename = `.logs/${prefix}${date}.txt`;
+		const timestamp = logTime;
+		const level = prefix.toUpperCase();
+		MAGPIE_IO.append(filename, timestamp, level, log);
+	}
 }
 MAGPIE_SYSTEM.prototype.log = MAGPIE_SYSTEM.log;
 /**
@@ -361,8 +367,10 @@ MAGPIE_SYSTEM.error = function error(errorMessage, error)
 	const full = `[${this.Utility.CTZF()}]`;
 	MAGPIE_LOG.errors.push(log);
 	console.error(`[ERROR] ${errorMessage} | `, error);
-	const logged = MAGPIE_IO.append(`.logs/error${date}.txt`, 
-		full + log + "\n" + error?.stack + "\n\n");
+	const timestamp = full;
+	const filename = `.logs/error${date}.txt`;
+	const logged = MAGPIE_IO.append(filename, 
+		full, "ERROR",log + "\n" + error?.stack + "\n---\n");
 	// r.displayPrompt();
 }
 MAGPIE_SYSTEM.prototype.error = MAGPIE_SYSTEM.error;
@@ -2362,11 +2370,26 @@ MAGPIE_IO.write = function write(filename, content)
         return e
     }
 }
-MAGPIE_IO.append = function append(filename, content)
+/**
+ * 
+ * @param {String} filename 
+ * @param {String} timestamp 
+ * @param {String} level 
+ * @param {String} message 
+ * @returns {Boolean}
+ */
+MAGPIE_IO.append = function append(filename, timestamp, level = "INFO", message = "")
 {
     try
     {
-        return fs.appendFileSync(filename, content); 
+        const payload = {
+			timestamp: timestamp,
+			level: level,
+			message: message,
+			filename: filename
+		}
+		MAGPIE_IO.WORKER.postMessage(JSON.stringify(payload))
+		return true
     }
     catch(e)
     {
