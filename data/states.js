@@ -2,7 +2,7 @@ const { MAGPIE } = require("../core/index");
 /**
  * @typedef {import("../core/entity").MAGPIE_ENTITY} MAGPIE_ENTITY
  * @typedef {import("../core/component").MAGPIE_EXP} MAGPIE_EXP
- * @typedef {import("../core/index").stamina_index} stamina_index
+ * @typedef {import("../core/index").state_index} state_index
  * @typedef {import("../core/physics").vector3} vector3
  * @typedef {import("../core/physics").bivector} bivector
  * @typedef {{
@@ -191,17 +191,20 @@ const SEEKING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
+	 * @param {state_index} state_index
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process) => {
+	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target) return output = {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const stamina_index = exp._get_stamina_index();
+		if(!target || !process) return {exp: exp}
+		const output = entity._seekTarget(exp);
 		const purge = true;
-		if(output.arrived) entity.removeState(stamina_index, 1, purge);
-		if(output.proximity) entity.switchState(stamina_index, 303);
-		if(output.braking) entity.switchState(stamina_index,304);
+		const reaching = 303;
+		const approaching = 304;
+		const onTarget = 305;
+		if(output.arrived) entity.switchState(state_index, onTarget);
+		if(output.proximity) entity.switchState(state_index, approaching);
+		if(output.braking) entity.switchState(state_index, reaching);
 		return output
 	},
 	onRemove: () => {},
@@ -211,29 +214,51 @@ states.push(SEEKING_TARGET);
 /** @type {Enumerator<Number>}  */
 INDEX.SEEKING_TARGET = SEEKING_TARGET.ID;
 //------------------------------------------------------------------------
-const APPROACHING_TARGET = {
+const REACHING_TARGET = {
 	ID: 303,
 	type: TYPE.FSM,
-	name: "APPROACHING_TARGET",
+	name: "REACHING_TARGET",
 	description: "",
 	stack: 1,
 	onApply: () => {},
-	onUpdate: (exp, entity, stamina_index) => {
-		const purge = true;
+	onUpdate: (exp, entity, process, state_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target) return {exp: exp}
 		const output = entity._seekTarget(exp);
-		if(output.arrived) entity.removeState(303, 1, purge);
-		if(!output.proximity) entity.switchState(303, 304);
+		const onTarget = 305;
+		if(output.arrived) entity.switchState(state_index, onTarget);
+		const approaching = 304
+		if(!output.proximity) entity.switchState(state_index, approaching)
 		return output
 	},
 	onRemove: () => {},
 	onExpire: () => {}
 }
-states.push(APPROACHING_TARGET);
+states.push(REACHING_TARGET);
 /** @type {Enumerator<Number>}  */
-INDEX.APPROACHING_TARGET = APPROACHING_TARGET.ID;
+INDEX.REACHING_TARGET = REACHING_TARGET.ID;
+//------------------------------------------------------------------------
+const APPROACHING_TARGET = {
+	ID: 304,
+	type: TYPE.FSM,
+	name: "APPROACHING_TARGET",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: (exp, entity, process, state_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target) return {exp: exp}
+		const output = entity._seekTarget(exp);
+		const reaching = REACHING_TARGET.ID;
+		if(output.proximity) entity.switchState(state_index, reaching)
+		const coasting = SEEKING_TARGET.ID;
+		if(!output.braking) entity.switchState(state_index, coasting);
+		return output
+	}
+}
 //------------------------------------------------------------------------
 const ON_TARGET = {
-	ID: 304,
+	ID: 305,
 	type: TYPE.FSM,
 	name: "ON_TARGET",
 	description: "",
@@ -243,11 +268,17 @@ const ON_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {stamina_index} stamina_index 
+	 * @param {state_index} state_index 
 	 * @return {state_output}
 	 */
-	onUpdate: (exp, entity, stamina_index) => {
-		//
+	onUpdate: (exp, entity, process, state_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target) return {exp: exp}
+		const output = entity._seekTarget(exp);
+		const reaching = REACHING_TARGET.ID;
+		if(!output.arrived) entity.switchState(state_index, reaching);
+		//@todo onTarget effects
+		return output
 	},
 	onRemove: () => {},
 	onExpire: () => {}

@@ -287,6 +287,8 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * emergent property of the ".exps" buffer cycle
  * 
  * @typedef {import("./index").index} index
+ * @typedef {import("./index").state_index} state_index
+ * @typedef {import("./index").stamina_index} stamina_index 
  * @typedef {Number} entityID Date.now()
  * @typedef {import("./physics").POVART} POVART [
  * ...P, 
@@ -324,8 +326,7 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {import("./component").symbolID} symbolID
  * @typedef {Number} stateID
  * @typedef {Number} wasteIndex
- * @typedef {Number} injuryID
- * @typedef {import("./index").stamina_index} stamina_index  
+ * @typedef {Number} injuryID 
  * @typedef {import("../data/entity_types").expID} expID
  * @typedef {import("./index").distance} distance
  * @typedef {import("./index").ratio} ratio
@@ -1425,7 +1426,7 @@ MAGPIE_ENTITY.prototype.processExp = function processExp(switchID, dt, layer_fra
 		throw new Error(`${expID} is invalid EXP.ID`)
 	try
 	{
-		const exp = MAGPIE_ENTITY._hive_getExp(expID)
+		const exp = MAGPIE_ENTITY.__hiveSync("_get_exp", [expID])
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error(`${exp} is invalid EXP`);
 		return exp
@@ -1530,15 +1531,16 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 		if(states.length < 1) return
 		states.sort((a, b) => b - a);
 		const standardSwitch = 2;
-		for(const stateID of states)
-		{
+		const K = MAGPIE.KEY.FITNESS;
+		states.forEach((stateID, index) => {
 			try
 			{
 				const state = MAGPIE_STATE.INDEX.get(stateID);
 				if(!(state instanceof MAGPIE_STATE))
 					throw new Error(`${stateID} is invalid MAGPIE_STATE`);
 				const process = switchID >= standardSwitch ? true : false;
-				const output = state.onUpdate(exp, this, process);
+				const state_index = this._get_index_state(index);
+				const output = state.onUpdate(exp, this, process, state_index);
 				if(output?.keyID)
 					exp.keys.push(keyID)
 				if(output?.target)
@@ -1553,7 +1555,7 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 			{
 				MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 			}
-		}
+		})
 	}
 	catch(e)
 	{
@@ -1563,6 +1565,16 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 	{
 		return { exp, target }
 	}
+}
+/**
+ * 
+ * @param {index} state_index 
+ * @returns {state_index}
+ */
+MAGPIE_ENTITY.prototype._get_index_state = function getStateIndex(state_index)
+{
+	const K = MAGPIE.KEY.FITNESS;
+	return K.TRAITS + this.fitness[K.DECKSIZE] * K.STATES + state_index
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1939,7 +1951,7 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 			.find(key => key.type === MAGPIE.KEY.TYPE.EVAL)
 		if(!key) return
 		eval(`${key.label.replace("$", exp.value)}`);
-		key.set("type", MAGPIE.KEY.TYPE.EXP)
+		key._set_type(MAGPIE.KEY.TYPE.EXP)
 		return { At: [0,0,0], Tt: [0,0,0] }
 	}
 	catch(e)
@@ -1998,7 +2010,8 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		Object.entries(speeds).forEach(entry => {
 			const key = entry[0];
 			const value = entry[1];
-			options[key] = value;
+			if(key && value)
+				options[key] = value;
 		})
 		// MAGPIE_SYSTEM._logging_debug(options.Vcruise)
 		const output = MAGPIE_PHYSICS
@@ -2076,7 +2089,7 @@ MAGPIE_ENTITY.prototype._emote_schedule = function _emote_schedule(exp)
 		MAGPIE_SYSTEM._logging_debug(triggered)
 		if(!triggered) return
 		exp.removeKey(MAGPIE.KEY.EMOTE.INDEX.SCHEDULE);
-		const result = trigger.set("type", MAGPIE.KEY.TYPE.EMOTE);
+		const result = trigger._set_type(MAGPIE.KEY.TYPE.EMOTE);
 	}
 	catch(e)
 	{
@@ -2292,25 +2305,16 @@ MAGPIE_ENTITY.prototype.isValidStamina = function isValidStamina(index)
 }
 /**
  * 
- * @param {[stateID, Number]} stateA 
- * @param {stateID} stateB 
+ * @param {stamina_index} stamina_index 
+ * @param {stateID} stateID 
  * @returns {Boolean}
  */
-MAGPIE_ENTITY.prototype.switchState = function switchState(stateA, stateB)
+MAGPIE_ENTITY.prototype.switchState = function switchState(stamina_index, stateID)
 {
 	const ePrefix = `[ENTITY-${this.ID}].switchState: `;
 	try
 	{
-		const validA = MAGPIE_STATE.validateChange(stateA);
-		const validB = MAGPIE_STATE.validate(stateB);
-		if(!validA || !validB) return
-		const [stateA_ID, index] = validA;
-		const stateB_ID = validB;
-		const slot = this.fitness[index];
-		if(isNaN(slot))
-			throw new Error(`fitness[${index}] is empty`)
-		this.fitness[index] = stateB_ID;
-		return true
+		this.fitness[stamina_index] = stateID;
 	}
 	catch(e)
 	{

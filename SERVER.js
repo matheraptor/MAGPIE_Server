@@ -550,24 +550,6 @@ MAGPIE_HIVE._get_entity_relatives = async function getEntityRelatives(entityID, 
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 	}
 }
-MAGPIE_HIVE._get_exp = function _get_exp(expID)
-{
-	const ePrefix = "[HIVE].getExp: ";
-	try
-	{
-		const registry = MAGPIE_HIVE._expBuffer.get(expID);
-		const exp = registry instanceof MAGPIE_EXP 
-			? registry 
-			: MAGPIE_DATABASE.loadExpSync(expID)
-		if(!(exp instanceof MAGPIE_EXP))
-			throw new Error(`unable to find [EXP-${expID}]`)
-		return exp
-	}
-	catch(e)
-	{
-		MAGPIE_SERVER.error(ePrefix + e.message, e)
-	}
-}
 /**
  * 
  * @param {MAGPIE_EXP} exp
@@ -587,10 +569,7 @@ MAGPIE_HIVE._get_expKeys = function _get_expKeys(exp)
 		{
 			try
 			{
-				const registry = MAGPIE_HIVE._keyBuffer.get(keyID);
-				const key = registry instanceof MAGPIE_KEY 
-					? registry 
-					: MAGPIE_DATABASE.loadKeySync(keyID)
+				const key = MAGPIE_HIVE._get_key(keyID);
 				if(!(key instanceof MAGPIE_KEY))
 					throw new Error(`unable to find [KEY-${keyID}]`)	
 				keys.push(key)
@@ -1158,30 +1137,25 @@ MAGPIE_KEY.setup = async function setup()
 }
 /**
  * 
- * @param {keyID} keyID 
- * @returns {database_result} 
- */
-MAGPIE_KEY.prototype.setSync = function setSync(keyID)
-{
-	return MAGPIE_DATABASE.saveKeySync(this);
-}
-/**
- * 
- * @param {keyID} keyID 
+ * @param {String} method
+ * @param {[]} arguments
  * @returns {Promise<database_result>}
  */
-MAGPIE_KEY.prototype.set = async function set(keyID)
+MAGPIE_KEY.__hive = async function __hive(method, arguments)
 {
-	return await MAGPIE_DATABASE.saveKey(this);
+	const callback = MAGPIE_HIVE[method];
+	return await callback(...arguments)
 }
 /**
  * 
- * @param {} keyID 
- * @returns {MAGPIE_KEY}
+ * @param {String} method
+ * @param {[]} arguments
+ * @returns {database_result}
  */
-MAGPIE_KEY.prototype.get = function get(keyID)
+MAGPIE_KEY.__hiveSync = function __hiveSync(method, arguments)
 {
-	return MAGPIE_DATABASE.loadKeySync(keyID)
+	const callback = MAGPIE_HIVE[method];
+	return callback(...arguments)
 }
 // #endregion
 //------------------------------------------------------------------------

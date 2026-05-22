@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.28
+ * @version 0.22.29
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,7 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.22.28 2026 05 22
+ * @version 0.22.29 2026 05 22
  * - ADDED: HIVE._set_${component} methods
  * - ADDED: SYMBOL._add${element} methods
  * - TWEAKED: entity.onState => .addState
@@ -382,7 +382,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 28],
+			version: [0, 22, 29],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260522"
 		};
@@ -429,7 +429,8 @@ MAGPIE.KEY.NODE_ENV = MAGPIE.config.NODE_ENV;
  *  legacy: keyID[],
  *  compound: keyID[]
  * }} key_data
- * @typedef {index} stamina_index entity.fitness[stamina_index] ({@link MAGPIE.KEY.FITNESS.STAMINA}) 
+ * @typedef {index} stamina_index entity.fitness[stamina_index] ({@link MAGPIE.KEY.FITNESS.STAMINA})
+ * @typedef {index} state_index entity.fitness[2 + size * 2 + index] 
  * 
  */
 //------------------------------------------------------------------------
@@ -442,52 +443,77 @@ MAGPIE.KEY.SEMANTICS.meta = {
 }
 /** @typedef {Enumerator<Number>} key_type */
 MAGPIE.KEY.TYPE = {};
+/** @type {Map<key_type, String>} */
+MAGPIE.KEY.TYPES = new Map();
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.AXIOM = 0;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.AXIOM, "AXIOM")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.KEY = 1;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.KEY, "KEY")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.METAKEY = 2;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.METAKEY, "METAKEY");
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.SEMANTIC = 3;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.SEMANTIC, "SEMANTIC");
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.CONTEXT = 4;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.CONTEXT, "CONTEXT");
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.VACANT_1 = 5;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.VACANT_1, "VACANT_1");
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.EXP = 6;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.EXP, "EXP");
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.EMOTE = 7;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.EMOTE, "EMOTE")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.TRIGGER = 8;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TRIGGER, "TRIGGER")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.EVAL = 9;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.EVAL, "EVAL")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.TIME = 10;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TIME, "TIME")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.STATE = 11;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.STATE, "STATE")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.TICKET = 12;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TICKET, "TICKET")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.METAEXP = 20;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.METAEXP, "METAEXP")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.METATICKET = 21;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.METATICKET, "METATICKET")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.METACONTEXT = 22;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.METACONTEXT, "METACONTEXT")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.MASTERKEY = 30;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.MASTERKEY, "MASTERKEY")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.MASTERCONTEXT = 31;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.MASTERCONTEXT, "MASTERCONTEXT")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.MASTEREXP = 32;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.MASTEREXP, "MASTEREXP")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.MASTERTICKET = 33;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.MASTERTICKET, "MASTERTICKET")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.SUBJECT = 101;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.SUBJECT, "SUBJECT")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.OBJECT = 102;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.OBJECT, "OBJECT")
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.TARGET = 103;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TARGET, "TARGET")
 /**
  * 
  * @typedef {Enumerator<Number>} key_index

@@ -800,9 +800,8 @@ MAGPIE_EXP.prototype._emote_onTarget = function _emote_onTarget()
 MAGPIE_EXP.prototype._get_stamina_index = function getStaminaINdex()
 {
 	this.keys.forEach(keyID => {
-		const match = MAGPIE.KEY.INDEX.STAMINA.get(keyID);
-		if(!isNaN(match))
-			return match
+		const index = MAGPIE.KEY.INDEX.STAMINA.get(keyID);
+		if(index) return index
 	})
 }
 /**
@@ -1041,32 +1040,51 @@ MAGPIE_KEY._newKey = function newKey(data)
 }
 /**
  * 
- * @param {String} property 
- * @param {*} value 
- * @returns {database_result}
- */
-MAGPIE_KEY.prototype.setSync = function setSync(property, value)
-{
-	//
-}
-/**
  * 
- * @param {String} property 
- * @param {*} value 
  * @returns {Promise<database_result>}
  */
-MAGPIE_KEY.prototype.set = async function set(property, value)
+MAGPIE_KEY.prototype.set = async function set()
 {
-	//
+	return await MAGPIE_KEY.__hive("_set_database", ["saveKey", [this]])
 }
 /**
  * 
- * @param {String} property 
+ * 
+ * @returns {database_result}
+ */
+MAGPIE_KEY.prototype.setSync = function set()
+{
+	return  MAGPIE_KEY.__hive("_set_databaseSync", ["saveKeySync", [this]])
+}
+/**
+ * 
+ * @param {key_type} key_type
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_KEY.prototype._set_type = async function setType(key_type)
+{
+	const ePrefix = `[KEY-${this.ID}].setType: `;
+	try
+	{
+		if(isNaN(key_type))
+			throw new Error(`${key_type} is invalid key_type`)
+		this.type = key_type
+		return this.set();
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+
+/**
+ * 
+ * @param {keyID} keyID 
  * @returns {MAGPIE_KEY}
  */
-MAGPIE_KEY.prototype.get = function get(property)
+MAGPIE_KEY.prototype.getKey = async function getKey(keyID)
 {
-	//
+	return await MAGPIE_KEY.__hiveSync(`_get_key`, [keyID])
 }
 /**
  * 
@@ -1074,15 +1092,25 @@ MAGPIE_KEY.prototype.get = function get(property)
  */
 MAGPIE_KEY.prototype.getOrigin = function getOrigin()
 {
-	return this.get(this.originID)
+	return this.getKey(this.originID)
 }
-MAGPIE_KEY.prototype.setOrigin = function setOrigin(keyID)
+MAGPIE_KEY.prototype.setOrigin = async function setOrigin(keyID)
 {
-	//
+	this.originID = keyID;
+	return this.set();
 }
-MAGPIE_KEY.prototype.removeOrigin = function removeOrigin()
+MAGPIE_KEY.prototype.removeOrigin = async function removeOrigin()
 {
-	//
+	this.originID = null;
+	return this.set();
+}
+/**
+ * 
+ * @returns {String}
+ */
+MAGPIE_KEY.prototype._get_type = function getType()
+{
+	return MAGPIE.KEY.TYPES.get(this.type)
 }
 /**
  * 
