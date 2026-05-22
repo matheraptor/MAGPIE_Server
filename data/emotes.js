@@ -41,13 +41,14 @@ const SEEK_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {stamina_index} stamina_index
 	 * @returns {{At: vector3, Tt: bivector}} results
 	 */
-	onAction: function seekTarget(exp, entity) 
+	onAction: function seekTarget(exp, entity, stamina_index) 
 	{
-		const index = exp._get_stamina_index();
-		if(isNaN(index)) return
-		return entity.onState(index);
+		if(!exp || !entity || !stamina_index)
+			return
+		return entity.addState(stamina_index);
 	},
 	onPassive: function()
 	{
@@ -65,7 +66,7 @@ const SCHEDULE = {
 	/**
 	 * 
 	 * @param {MAGPIE_EXP} exp 
-	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {MAGPIE_ENTITY} entity
 	 * @param {stamina_index} stamina_index
 	 * @returns {{At: vector3, Tt: bivector}}
 	 */

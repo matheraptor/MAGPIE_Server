@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.27
+ * @version 0.22.28
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,10 +20,15 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.22.27 2026 05 22
+ * @version 0.22.28 2026 05 22
+ * - ADDED: HIVE._set_${component} methods
+ * - ADDED: SYMBOL._add${element} methods
+ * - TWEAKED: entity.onState => .addState
  * - TWEAKED: merged runtime-retrofit branch
+ * - TWEAKED: SYMBOL._set aliased to HIVE instead of DATABASE
  * - FIXED: MAGPIE_IO.WORKER not being used
  * - FIXED: MAGPIE_SYSTEM .log & .error updated to use worker
+ * - FIXED: emote cascading errors due to invalid passed stamina_index
  * 
  * @version 0.22.24 2026 05 20
  * - FIXED: runtime.refresh lagging (being tested)
@@ -377,7 +382,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 27],
+			version: [0, 22, 28],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260522"
 		};

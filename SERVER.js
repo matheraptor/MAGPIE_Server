@@ -1064,7 +1064,7 @@ MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
  */
 MAGPIE_COMPONENT.__get = function get(method, arguments)
 {
-	const callback = MAGPIE_DATABASE.sync[method]
+	const callback = MAGPIE_HIVE[method]
 	return callback(...arguments)
 }
 /**
@@ -1075,7 +1075,8 @@ MAGPIE_COMPONENT.__get = function get(method, arguments)
  */
 MAGPIE_COMPONENT.__set = async function set(method, arguments)
 {
-	return await MAGPIE_DATABASE.call(method, ...arguments);
+	const callback = MAGPIE_HIVE[method];
+	return await callback(...arguments);
 } 
 /**
  * 
@@ -1085,7 +1086,7 @@ MAGPIE_COMPONENT.__set = async function set(method, arguments)
  */
 MAGPIE_COMPONENT.__setSync = function setSync(method, arguments)
 {
-	const callback = MAGPIE_DATABASE[method];
+	const callback = MAGPIE_HIVE[method];
 	return callback(...arguments)
 } 
 // #endregion

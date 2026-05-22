@@ -1,6 +1,6 @@
 /**
- * @name INDEX
- * @version 0.22.26
+ * @name MAGPIE_ENTITY
+ * @version 0.22.27
  * @desc 
  * @param {{
  * name: String,
@@ -1490,17 +1490,12 @@ MAGPIE_ENTITY.prototype.processEmote = function processEmote(switchID, dt, exp, 
 			return this._act_emote(MAGPIE.KEY.EMOTE.INDEX[key.label], exp)
 		const emote = MAGPIE_EMOTE.INDEX.get(exp.emoteID);
 		if(!emote) 
-		{
 			return {exp: exp}
-		}
-		const output = emote.onAction(exp, this);
-		if(!output?.exp)
-			throw new Error(`${output} is invalid emote output`);
-		const stateIndex = 0; //@todo how do we figure out stateIndex from emote?
-		// this.addState([output.addState, stateIndex]);
-		this.removeState([output.removeState, stateIndex]);
-		this.switchState([output.switchState[0]], stateIndex, output.switchState[1]);
-		return output.exp
+		const index = exp._get_stamina_index();
+		if(!index)
+			return
+		const output = emote.onAction(exp, this, index);
+		return output
 	}
 	catch(e)
 	{
@@ -1720,7 +1715,7 @@ MAGPIE_ENTITY.prototype._key_processEmote = function _key_processEmote(label, ex
 //------------------------------------------------------------------------
 
 /**
- * @todo processKeys
+ * 
  * @param {MAGPIE_EXP} exp 
  * @returns {MAGPIE_KEY}
  */
@@ -1888,23 +1883,24 @@ MAGPIE_ENTITY.prototype._trait_getType = function getTypeTraits()
 		return []
 	}
 }
+
 /**
- * @todo blockTraitForState
- * @param {stateID} stateID 
- * @returns {fitness_index} fitness_index
+ * 
+ * @desc back to {@link }
+ *
  */
-MAGPIE_ENTITY.prototype._trait_blockState = function blockTraitForState(stateID)
-{
-	const ePrefix = `[ENTITY-${this.ID}].blockTraitForState: `;
-	try
-	{
-		return NaN
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - FITNESS
+//========================================================================
+
 /**
  * 
  * @desc back to {@link }
@@ -2192,9 +2188,9 @@ MAGPIE_ENTITY._get_key = function getKey(keyID)
  * @param {stamina_index} stamina_index
  * @returns {Boolean}
  */
-MAGPIE_ENTITY.prototype.onState = function onState(stamina_index)
+MAGPIE_ENTITY.prototype.addState = function addState(stamina_index)
 {
-	const ePrefix = `[ENTITY-${this.ID}].onState: `;
+	const ePrefix = `[ENTITY-${this.ID}].addState: `;
 	try
 	{
 		if(!this.isValidStamina(stamina_index))

@@ -2308,6 +2308,111 @@ MAGPIE_HIVE._get_context = function _get_context(contextID)
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > setters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {String} type 
+ * @param {*} entry 
+ */
+MAGPIE_HIVE._verify_buffer_entry = function verifyBufferEntry(type, entry)
+{
+	const map = MAGPIE_HIVE[`_${type}Buffer`];
+	const buffer = map.get(entry.ID)
+	if(buffer)
+	{
+		buffer.data = entry;
+		map.set(entry.ID, buffer)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_SYMBOL} symbol 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_HIVE._set_symbol = async function setSymbol(symbol)
+{
+	MAGPIE_HIVE._verify_buffer_entry("symbol", symbol);
+	return await MAGPIE_HIVE._set_database("saveSymbol", [symbol])
+}
+/**
+ * 
+ * @param {MAGPIE_SYMBOL} symbol 
+ * @returns {database_result}
+ */
+MAGPIE_HIVE._set_symbolSync = function setSymbolSync(symbol)
+{
+	MAGPIE_HIVE._verify_buffer_entry("symbol", symbol)
+	return MAGPIE_HIVE._set_databaseSync("saveSymbolSync", [symbol])
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_HIVE._set_exp = async function setExp(exp)
+{
+	MAGPIE_HIVE._verify_buffer_entry("exp", exp)
+	return await MAGPIE_HIVE._set_database("saveExp", [exp])
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @returns {database_result} 
+ */
+MAGPIE_HIVE._set_expSync = function setExpSync(exp)
+{
+	MAGPIE_HIVE._verify_buffer_entry("exp", exp)
+	return MAGPIE_HIVE._set_databaseSync("saveExpSync", [exp])
+}
+/**
+ * 
+ * @param {MAGPIE_KEY} key
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_HIVE._set_key = async function setKey(key)
+{
+	MAGPIE_HIVE._verify_buffer_entry("key", key)
+	return await MAGPIE_HIVE._set_database("saveKey", [key])
+}
+/**
+ * 
+ * @param {MAGPIE_KEY} key
+ * @returns {database_result} 
+ */
+MAGPIE_HIVE._set_keySync = function setKeySync(key)
+{
+	MAGPIE_HIVE._verify_buffer_entry("key", key)
+	return MAGPIE_HIVE._set_databaseSync("saveKeySync", [key])
+}
+/**
+ * 
+ * @param {MAGPIE_CONTEXT} context
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_HIVE._set_context = async function setContext(context)
+{
+	MAGPIE_HIVE._verify_buffer_entry("context", context)
+	return await MAGPIE_HIVE._set_database("saveContext", [context])
+}
+/**
+ * 
+ * @param {MAGPIE_CONTEXT} context
+ * @returns {database_result} 
+ */
+MAGPIE_HIVE._set_contextSync = function setContextSync(context)
+{
+	MAGPIE_HIVE._verify_buffer_entry("context", context)
+	return MAGPIE_HIVE._set_databaseSync("saveContextSync", [context])
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *

@@ -117,6 +117,8 @@ function MAGPIE_SYMBOL(data)
  * @typedef {import("./system").database_result} database_result
  * @typedef {import("./index").index} index
  * @typedef {import("./index").stamina_index} stamina_index
+ * @typedef {import("./index").vector3} vector3
+ * @typedef {import("./index").bivector} bivector
  * 
  * @name COMPONENT
  * @desc 
@@ -272,7 +274,7 @@ MAGPIE_SYMBOL.prototype.getTypeName = function getTypeName()
  */
 MAGPIE_SYMBOL.prototype.getKey = function getKey(keyID)
 {
-	return MAGPIE_COMPONENT.__get("loadKeySync", [keyID]);
+	return MAGPIE_COMPONENT.__get("_get_key", [keyID]);
 }
 /**
  * 
@@ -285,10 +287,11 @@ MAGPIE_SYMBOL.prototype._get_requirementIDs = function getRequirementIDs()
 	const end = this.STATS.indexOf(K.COMPOUNDS);
 	return this.STATS.slice(start + 1, end) || [];
 }
-MAGPIE_SYMBOL.prototype._get_requirements = function getRequirements()
+MAGPIE_SYMBOL.prototype._get_all_requirements = function getAllRequirements()
 {
 	const requirementIDs = this._get_requirementIDs();
-	return requirementIDs.map(ID => MAGPIE_COMPONENT.__get("loadSymbolSync", [ID]))
+	if(requirementIDs.length < 1) return []
+	return requirementIDs.map(ID => MAGPIE_COMPONENT.__get("_get_symbol", [ID]))
 }
 /**
  * 
@@ -300,6 +303,12 @@ MAGPIE_SYMBOL.prototype._get_compoundIDs = function getCompoundIDs()
 	const start = this.STATS.indexOf(K.COMPOUNDS);
 	const end = this.STATS.indexOf(K.STATS);
 	return this.STATS.slice(start + 1, end);
+}
+MAGPIE_SYMBOL.prototype._get_all_compounds = function getAllCompounds()
+{
+	const compoundIDs = this._get_compoundIDs();
+	if(compoundIDs.length < 1) return [];
+	return compoundIDs.map(ID => MAGPIE_COMPONENT.__get("_get_symbol", [ID]))
 }
 /**
  * 
@@ -425,7 +434,7 @@ MAGPIE_SYMBOL.prototype._get_keyID = function getKeyID(keyID)
  */
 MAGPIE_SYMBOL.prototype.set = async function set()
 {
-	return await MAGPIE_COMPONENT.__set("saveSymbol", this);
+	return await MAGPIE_COMPONENT.__set("_set_symbol", this);
 }
 /**
  * 
@@ -433,7 +442,87 @@ MAGPIE_SYMBOL.prototype.set = async function set()
  */
 MAGPIE_SYMBOL.prototype.setSync = function setSync()
 {
-	return MAGPIE_COMPONENT.__setSync("saveSymbolSync", [this]);
+	return MAGPIE_COMPONENT.__setSync("_set_symbolSync", [this]);
+}
+/**
+ * 
+ * @param {String} element 
+ * @param {symbolID} symbolID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_SYMBOL.prototype._addElement = async function addElement(element, symbolID)
+{
+	const ePrefix = `[SYMBOL-${this.ID}].addElement: `;
+	try
+	{
+		if(!symbolID || isNaN(symbolID))
+			throw new Error(`${symbolID} is invalid symbolID`)
+		const key = MAGPIE.KEY.INDEX[`${element.toUpperCase()}S`];
+		if(isNaN(key))
+			throw new Error(`${key} is invalid element key`)
+		const arr = new Array(...this.STATS);
+		const index = arr.indexOf(key);
+		if(isNaN(index))
+			throw new Error(`${index} is invalid STATS index`)
+		arr.splice(index, 0, symbolID);
+		this.STATS = new Float64Array(arr);
+		const result = this.set();
+		if(!result)
+			throw new Error(`unable to save [REQUIREMENT-${symbolID}]`)
+		return await result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_SYMBOL.prototype._addRequirement = async function addRequirement(symbolID)
+{
+	return await this._addElement("requirement", symbolID);
+}
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_SYMBOL.prototype._addCompound = async function addCompound(symbolID)
+{
+	return await this._addElement("requirement", symbolID);
+}
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_SYMBOL.prototype._addRecipe = async function addRecipe(symbolID)
+{
+	const symbol = MAGPIE_SYMBOL.__get("_get_symbol", [symbolID])
+	if(!(symbol instanceof MAGPIE_SYMBOL))
+		return
+	const result = symbol._addRequirement(this.ID);
+	if(!result)
+		return
+	return await result
+}
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_SYMBOL.prototype._addComponent = async function addComponent(symbolID)
+{
+	const symbol = MAGPIE_SYMBOL.__get("_get_symbol", [symbolID])
+	if(!(symbol instanceof MAGPIE_SYMBOL))
+		return
+	const result = symbol._addCompound(this.ID);
+	if(!result)
+		return
+	return await result
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -751,14 +840,12 @@ MAGPIE_EMOTE.setup = async function()
  * type: Enumerator<Number>,
  * description,
  * condition: (...args) => Boolean,
- * onAction: (...args) => {
- * exp: MAGPIE_EXP,
- * addState: [Number, Number],
- * removeState: [Number, Number],
- * switchState: [Number, Number, Number, Number],
- * value: Number
- * },
- * onPassive: Function
+ * onAction: (
+ * exp: MAGPIE_EXP, 
+ * entity: MAGPIE_ENTITY, 
+ * stamina_index: stamina_index
+ * ) => {callback: Function},
+ * onPassive: (exp: MAGPIE_EXP, entity: MAGPIE_ENTITY) => {}
  * }} data 
  * @returns {new MAGPIE_EMOTE}
  */
