@@ -1272,7 +1272,7 @@ MAGPIE_RUNTIME.prototype.refresh = function refresh()
 	if(!this.isActive) return
 	const FIXED_DELTA = MAGPIE.KEY.RUNTIME.LAYER.get(1).delta * 1000;
 	const delta = Date.now() - this._now;
-	this._now += delta;
+	this._now = Date.now();
 	this._lag += delta;
 	this._base += delta;
 	this._game += delta;
