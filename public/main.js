@@ -77,7 +77,9 @@ const inspector = {
 		update('val-vspeed', data.Vspeed.toFixed(3));
 		update('val-knots', Math.floor(data.Vknots));
 		update('val-accel', data.Acceleration?.toFixed(3));
-		update('val-heading', data.Heading?.toFixed(1));
+		update('val-heading', data.heading?.toFixed(1));
+		update("val-pitch", data.pitch?.toFixed(1));
+		update("val-roll", data?.roll?.toFixed(1));
 		update('val-body', data.CelestialBody);
 		update('val-meta', data.metadate);
 		update('val-Ct', `${Ct_lat}, ${Ct_lon}`)

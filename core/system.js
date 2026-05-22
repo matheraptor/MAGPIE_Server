@@ -1298,6 +1298,7 @@ MAGPIE_RUNTIME.prototype.TICK_base = function TICK_base(delta)
 	const layerBase = 0;
 	const switchBase = 0;
 	this.tick_layer(layerBase, switchBase, this._baseFrame);
+	this._now = Date.now();
 }
 MAGPIE_RUNTIME.prototype.TICK_game = function TICK_game(delta)
 {
@@ -1662,10 +1663,10 @@ MAGPIE_HIVE._get_entity_new = function newEntity(data)
 /**
  * 
  * @param {String} method 
- * @param {[]} arguments
- * @returns {*} 
+ * @param {[]} args
+ * @returns {*}
  */
-MAGPIE_HIVE.__get_serverSync = function __get_serverSync(method, arguments)
+MAGPIE_HIVE.__get_serverSync = function __get_serverSync(method, args)
 {
 	//
 }
