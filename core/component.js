@@ -116,6 +116,7 @@ function MAGPIE_SYMBOL(data)
 /**
  * @typedef {import("./system").database_result} database_result
  * @typedef {import("./index").index} index
+ * @typedef {Number} array_size
  * @typedef {import("./index").stamina_index} stamina_index
  * @typedef {import("./index").vector3} vector3
  * @typedef {import("./index").bivector} bivector
@@ -625,6 +626,15 @@ MAGPIE_STATE.validateChange = function validateChange(state)
 // #region - EXP
 //========================================================================
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Proto
+//------------------------------------------------------------------------
+
+/**
  * @typedef {{
  * subject: entityID,
  * target: entityID,
@@ -657,12 +667,22 @@ MAGPIE_EXP.__hiveSync = function __hiveSync(method, arguments)
 }
 /**
  * 
+ * @param {String} method 
+ * @param {[]} arguments
+ * @returns {Promise<*>} 
+ */
+MAGPIE_EXP.__hive = function __hive(method, arguments)
+{
+	//
+}
+/**
+ * 
  * 
  * @returns {Promise<database_result>} 
  */
 MAGPIE_EXP.prototype.set = async function save()
 {
-	//
+	return await MAGPIE_EXP.__hive("_set_exp", [this])
 }
 /**
  * 
@@ -671,33 +691,18 @@ MAGPIE_EXP.prototype.set = async function save()
  */
 MAGPIE_EXP.prototype.setSync = function saveSync()
 {
-	//
+	return MAGPIE_EXP.__hiveSync("_set_expSync", [this])
 }
+// #endregion
+//------------------------------------------------------------------------
 /**
- * @param {keyID} keyID
- * @returns {MAGPIE_KEY}
- */
-MAGPIE_EXP.prototype.getKey = function getKey(keyID)
-{
-	//
-}
-MAGPIE_EXP.__getKey = MAGPIE_EXP.prototype.getKey;
-/**
+ * @name 
+ * @desc 
  * 
- * @returns {STATS}
  */
-MAGPIE_EXP.prototype._get_subjectSTATS = function _get_subjectSTATS()
-{
-	return MAGPIE_EXP.__hiveSync("_get_entity", [this.subjectID])?.STATS
-}
-/**
- * 
- * @returns {STATS}
- */
-MAGPIE_EXP.prototype._get_targetSTATS = function _get_targetSTATS()
-{
-	return MAGPIE_EXP.__hiveSync("_get_entity", [this.targetID])?.STATS
-}
+//------------------------------------------------------------------------
+// #region > Keys
+//------------------------------------------------------------------------
 /**
  * 
  * @returns {MAGPIE_KEY[]}
@@ -708,31 +713,123 @@ MAGPIE_EXP.prototype.getKeys = function getKeys()
 }
 /**
  * 
- * @returns {import("./entity").entity_speeds}
+ * @param {keyID} keyID 
+ * @returns {keyID}
  */
-MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
+MAGPIE_EXP.prototype._key_remove = function _key_remove(keyID)
 {
-	const K = MAGPIE.KEY.INDEX;
-	const keys = this.getKeys();
-	if(keys.length < 1) return
-	const Vspeeds = {};
-	for(const key of keys)
-	{
-		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
-			Vspeeds[key.getOrigin()?.label] = Number(key.label)
-	}
-	return Vspeeds
+	const index = this.keys.findIndex(ID => ID === keyID);
+	if(isNaN(index) || index < 0)
+		return
+	this.keys.splice(index, 1);
+	this.set();
+	return keyID
 }
 /**
  * 
  * @param {keyID} keyID 
+ * @returns {array_size}
  */
-MAGPIE_EXP.prototype.removeKey = function removeKey(keyID)
+MAGPIE_EXP.prototype._key_add = function addKey(keyID)
 {
-	const index = this.keys.findIndex(ID => ID === keyID);
-	this.keys.splice(index, 1);
-	MAGPIE_EXP.__saveSync(this);
-	return keyID
+	if(isNaN(keyID))
+		return
+	this.keys.push(keyID);
+	this.set();
+	return this.keys.length;
+}
+/**
+ * 
+ * @param {keyID} keyID 
+ * @param {index} index 
+ * @returns {array_size}
+ */
+MAGPIE_EXP.prototype._key_splice = function spliceInKey(keyID, index)
+{
+	if(isNaN(keyID))
+		throw new Error(`${keyID} is invalid keyID`)
+	if(isNaN(index) || index < 0)
+		throw new Error(`${index} is invalid index`)
+	const lastIndex = this.keys.length - 1;
+	if(index > lastIndex)
+		this.keys.push(keyID);
+	else this.keys.splice(index, 0, keyID);
+	this.set();
+	return this.keys.length
+}
+/**
+ * 
+ * @param {keyID} keyID 
+ * @returns {Boolean}
+ */
+MAGPIE_EXP.prototype._get_hasKey = function hasKey(keyID)
+{
+	return this.keys.includes(keyID)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Subject
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {STATS}
+ */
+MAGPIE_EXP.prototype._get_subjectSTATS = function _get_subjectSTATS()
+{
+	return MAGPIE_EXP.__hiveSync("_get_entity", [this.subjectID])?.STATS
+}
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Target
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {STATS}
+ */
+MAGPIE_EXP.prototype._get_targetSTATS = function _get_targetSTATS()
+{
+	return MAGPIE_EXP.__hiveSync("_get_entity", [this.targetID])?.STATS
+}
+/**
+ * 
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_EXP.prototype._get_key_target = function getKeyTarget()
+{
+	return this.getKeys()?.find(key => {
+		key.originID === MAGPIE.KEY.INDEX.TARGET
+	});
+}
+/**
+ * @returns {entityID} entityID
+ */
+MAGPIE_EXP.prototype._emote_onTarget = function _emote_onTarget()
+{
+	const ePrefix = `[EXP-${this.ID}].emoteArrived: `;
+	try
+	{
+		const next = this._key_target_next()
+		if(isNaN(next))
+			return
+		return this.targetID = next;
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 /**
  * 
@@ -757,43 +854,16 @@ MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 		MAGPIE_SYSTEM(ePrefix + e.message, e)
 	}
 }
+// #endregion
+//------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
  * 
- * @returns {MAGPIE_KEY}
  */
-MAGPIE_EXP.prototype._get_key_target = function getKeyTarget()
-{
-	return this.getKeys()?.find(key => {
-		key.originID === MAGPIE.KEY.INDEX.TARGET
-	});
-}
-/**
- * 
- * @param {keyID} keyID 
- * @returns {Boolean}
- */
-MAGPIE_EXP.prototype._get_hasKey = function hasKey(keyID)
-{
-	return this.keys.includes(keyID)
-}
-/**
- * @returns {entityID} entityID
- */
-MAGPIE_EXP.prototype._emote_onTarget = function _emote_onTarget()
-{
-	const ePrefix = `[EXP-${this.ID}].emoteArrived: `;
-	try
-	{
-		const next = this._key_target_next()
-		if(isNaN(next))
-			return
-		return this.targetID = next;
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
+//------------------------------------------------------------------------
+// #region > Stamina
+//------------------------------------------------------------------------
 /**
  * @returns {stamina_index}
  */
@@ -804,6 +874,36 @@ MAGPIE_EXP.prototype._get_stamina_index = function getStaminaINdex()
 		if(index) return index
 	})
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Utils
+//------------------------------------------------------------------------
+
+/**
+ * 
+ * @returns {import("./entity").entity_speeds}
+ */
+MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
+{
+	const K = MAGPIE.KEY.INDEX;
+	const keys = this.getKeys();
+	if(keys.length < 1) return
+	const Vspeeds = {};
+	for(const key of keys)
+	{
+		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
+			Vspeeds[key.getOrigin()?.label] = Number(key.label)
+	}
+	return Vspeeds
+}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * 
  * @desc back to {@link }

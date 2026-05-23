@@ -2046,6 +2046,7 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp)
 	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
 	try
 	{
+		MAGPIE_SYSTEM._logging_debug(ePrefix)
 		const next = exp._emote_onTarget();
 		const states = this._get_states();
 		if(states.length < 1) return
@@ -2062,6 +2063,24 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ */
+MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}]._emote_approachTarget: `;
+	MAGPIE_SYSTEM._logging_debug(ePrefix)
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ */
+MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}]._emote_reachTarget: `;
+	MAGPIE_SYSTEM._logging_debug(ePrefix)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -2089,7 +2108,7 @@ MAGPIE_ENTITY.prototype._emote_schedule = function _emote_schedule(exp)
 		const triggered = Date.now() > trigger.ID;
 		MAGPIE_SYSTEM._logging_debug(triggered)
 		if(!triggered) return
-		exp.removeKey(MAGPIE.KEY.EMOTE.INDEX.SCHEDULE);
+		exp._key_remove(MAGPIE.KEY.EMOTE.INDEX.SCHEDULE);
 		const result = trigger._set_type(MAGPIE.KEY.TYPE.EMOTE);
 	}
 	catch(e)

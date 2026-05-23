@@ -1172,30 +1172,10 @@ MAGPIE_EXP.__hiveSync = function __hiveSync(method, arguments)
 	const callback = MAGPIE_HIVE[method];
 	return callback(...arguments)
 }
-/**
- * 
- * @returns {Promise<database_result>}
- */
-MAGPIE_EXP.prototype.set = async function set()
+MAGPIE_EXP.__hive = async function __hive(method, arguments)
 {
-	return await MAGPIE_DATABASE.saveExp(this);
-}
-/**
- * 
- * @returns {database_result}
- */
-MAGPIE_EXP.prototype.setSync = function setSync()
-{
-	return MAGPIE_DATABASE.saveExpSync(this);
-}
-/**
- * @param {keyID} keyID
- * @returns {MAGPIE_KEY}
- * {@link MAGPIE_EXP.__getKey}
- */
-MAGPIE_EXP.prototype.getKey = function getKey(keyID)
-{
-	return MAGPIE_DATABASE.loadKeySync(keyID)
+	const callback = MAGPIE_HIVE[method];
+	return await callback(...arguments)
 }
 // #endregion
 //------------------------------------------------------------------------
