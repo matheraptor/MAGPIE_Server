@@ -2062,7 +2062,8 @@ MAGPIE_HIVE._host_exp = function hostExp(exp, contextID)
 		data: exp,
 		owners: []
 	}
-	buffer.owners.push(contextID)
+	if(!isNaN(contextID))
+		buffer.owners.push(contextID);
 	return MAGPIE_HIVE._expBuffer.set(exp.ID, buffer).size
 }
 /**
@@ -2077,7 +2078,8 @@ MAGPIE_HIVE._host_key = function hostKey(key, contextID)
 		data: key,
 		owners: []
 	}
-	buffer.owners.push(contextID)
+	if(!isNaN(contextID))
+		buffer.owners.push(contextID)
 	return MAGPIE_HIVE._keyBuffer.set(key.ID, buffer).size
 }
 /**
@@ -2092,7 +2094,8 @@ MAGPIE_HIVE._host_symbol = function hostSymbol(symbol, contextID)
 		data: symbol,
 		owners: []
 	};
-	buffer.owners.push(contextID);
+	if(!isNaN(contextID))
+		buffer.owners.push(contextID);
 	return MAGPIE_HIVE._symbolBuffer.set(symbol.ID, buffer).size
 }
 /**

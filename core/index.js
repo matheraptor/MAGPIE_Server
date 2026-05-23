@@ -1544,17 +1544,17 @@ MAGPIE.KEY.FITNESS.DECKSIZE = 1;
 /** @type {index} */
 MAGPIE.KEY.FITNESS.TRAITS = 2;
 /** @type {offset_mult} */
-MAGPIE.KEY.FITNESS.STATES = 2;
+MAGPIE.KEY.FITNESS.STATES = 1;
 /** @type {offset_mult} */
-MAGPIE.KEY.FITNESS.EQUIPS = 3;
+MAGPIE.KEY.FITNESS.EQUIPS = 2;
 /** @type {offset_mult} */
-MAGPIE.KEY.FITNESS.WASTE = 4;
+MAGPIE.KEY.FITNESS.WASTE = 3;
 /** @type {offset_mult} */
-MAGPIE.KEY.FITNESS.INJURY = 5;
+MAGPIE.KEY.FITNESS.INJURY = 4;
 /** @type {offset_mult} */
-MAGPIE.KEY.FITNESS.STAMINA = 6;
+MAGPIE.KEY.FITNESS.STAMINA = 5;
 /** @type {offset_mult} */
-MAGPIE.KEY.FITNESS.ZONES = MAGPIE.KEY.FITNESS.INJURY;
+MAGPIE.KEY.FITNESS.ZONES = MAGPIE.KEY.FITNESS.INJURY + 1;
 // #endregion
 //------------------------------------------------------------------------
 /**

@@ -395,7 +395,7 @@ MAGPIE_ENTITY.prototype.isValid = function isValid()
 MAGPIE_ENTITY.prototype._stat_endurance = function _stat_endurance()
 {
 	const K = MAGPIE.KEY.STATS;
-	return this.STATS[K.END]
+	return this.STATS[K.END] || 1
 }
 /**
  * 
@@ -544,14 +544,15 @@ MAGPIE_ENTITY.prototype.setupFitness = function setupFitness(fitness_data)
 		const deckZones = FIT.ZONES;
 		const index_entityID = FIT.E_ID;
 		const index_deckSize = FIT.DECKSIZE;
-		const arraySize = 2 + deckSize * deckZones + this._stat_endurance();
+		const offset = FIT.TRAITS;
+		const arraySize = offset + deckSize * deckZones + this._stat_endurance();
 		this.fitness = new Float64Array(arraySize).fill(0);
 		if(!MAGPIE_ENTITY.isValidFitness(this.fitness))
 			throw new Error(`${fitness} is invalid fitness`)
 		this.fitness[index_entityID] = this.ID;
 		this.fitness[index_deckSize] = deckSize;
 		fitness.forEach((traitID, index) => {
-			this.fitness[index + 2] = traitID;
+			this.fitness[index + offset] = traitID;
 		})
 		return true
 	}

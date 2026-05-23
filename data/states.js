@@ -197,7 +197,7 @@ const SEEKING_TARGET = {
 	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target || !process) return {exp: exp}
-		const output = entity._seekTarget(exp);
+		const output = entity._emote_seekTarget(exp);
 		const purge = true;
 		const reaching = 303;
 		const approaching = 304;
@@ -224,7 +224,8 @@ const REACHING_TARGET = {
 	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target) return {exp: exp}
-		const output = entity._seekTarget(exp);
+		const output = entity._emote_seekTarget(exp);
+		console.log(Object.values(output))
 		const onTarget = 305;
 		if(output.arrived) entity.switchState(state_index, onTarget);
 		const approaching = 304
@@ -248,7 +249,7 @@ const APPROACHING_TARGET = {
 	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target) return {exp: exp}
-		const output = entity._seekTarget(exp);
+		const output = entity._emote_seekTarget(exp);
 		const reaching = REACHING_TARGET.ID;
 		if(output.proximity) entity.switchState(state_index, reaching)
 		const coasting = SEEKING_TARGET.ID;
@@ -274,7 +275,7 @@ const ON_TARGET = {
 	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target) return {exp: exp}
-		const output = entity._seekTarget(exp);
+		const output = entity._emote_seekTarget(exp);
 		const reaching = REACHING_TARGET.ID;
 		if(!output.arrived) entity.switchState(state_index, reaching);
 		//@todo onTarget effects
