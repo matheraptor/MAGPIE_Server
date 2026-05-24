@@ -2026,24 +2026,24 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		})
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, Pt, this.STATS, options);
-		const { At, Tt, arrived, proximity, braking, dR_mag, state } = output;
-		const states = { orientation: state, velocity: NaN }
-		if(arrived)
+		const { At, Tt, Vstate, Rstate, dR_mag } = output;
+		const states = { orientation: Rstate, velocity: Vstate }
+		if(Vstate === STATE.INDEX.ON_TARGET)
 		{
 			this._emote_onTarget(exp)
 			states.velocity = MAGPIE.KEY.INDEX.IDLE;
 		}
-		if(!arrived && proximity)
+		if(Vstate === STATE.INDEX.REACHING_TARGET)
 		{
 			this._emote_reachTarget(exp)
 			states.velocity = MAGPIE.KEY.INDEX.BRAKE;
 		}
-		if(!proximity && braking)
+		if(Vstate === STATE.INDEX.APPROACHING_TARGET)
 		{
 			this._emote_approachTarget(exp)
 			states.velocity = MAGPIE.KEY.INDEX.COAST;
 		}
-		else if (!braking && MAGPIE_PHYSICS.mag(V0) > 0)
+		else if (Vstate === STATE.INDEX.SEEKING_TARGET && MAGPIE_PHYSICS.mag(V0) > 0)
 			states.velocity = MAGPIE.KEY.INDEX.ACCELERATE;
 		else states.velocity = MAGPIE.KEY.INDEX.A_ERR
 		const raw = new Float64Array([states.orientation, states.velocity, dR_mag])

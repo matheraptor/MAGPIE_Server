@@ -207,14 +207,7 @@ const SEEKING_TARGET = {
 	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target || !process) return {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const reaching = 303;
-		const approaching = 304;
-		const onTarget = 305;
-		if(output.arrived) entity.switchState(state_index, onTarget);
-		if(output.proximity) entity.switchState(state_index, approaching);
-		if(output.braking) entity.switchState(state_index, reaching);
-		return output
+		return entity._emote_seekTarget(exp);
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -230,15 +223,18 @@ const REACHING_TARGET = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {state_index} state_index 
+	 * @returns {state_output}
+	 */
 	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target) return {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const onTarget = 305;
-		if(output.arrived) entity.switchState(state_index, onTarget);
-		const approaching = 304
-		if(!output.proximity) entity.switchState(state_index, approaching)
-		return output
+		if(!target || !process) return {exp: exp}
+		return entity._emote_reachTarget(exp)
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -254,15 +250,18 @@ const APPROACHING_TARGET = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {state_index} state_index 
+	 * @returns {state_output}
+	 */
 	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target) return {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const reaching = REACHING_TARGET.ID;
-		if(output.proximity) entity.switchState(state_index, reaching)
-		const coasting = SEEKING_TARGET.ID;
-		if(!output.braking) entity.switchState(state_index, coasting);
-		return output
+		if(!target || !process) return {exp: exp}
+		return entity._emote_approachTarget(exp);
 	}
 }
 states.push(APPROACHING_TARGET);
@@ -280,17 +279,14 @@ const ON_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
 	 * @param {state_index} state_index 
-	 * @return {state_output}
+	 * @returns {state_output}
 	 */
 	onUpdate: (exp, entity, process, state_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target) return {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const reaching = REACHING_TARGET.ID;
-		if(!output.arrived) entity.switchState(state_index, reaching);
-		//@todo onTarget effects
-		return output
+		if(!target || !process) return {exp: exp}
+		return entity._emote_onTarget(exp)
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -307,6 +303,14 @@ const IDLING = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {state_index} state_index 
+	 * @returns {state_output}
+	 */
 	onUpdate: () => {},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -323,6 +327,14 @@ const ALIGNING_TARGET = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {state_index} state_index 
+	 * @returns {state_output}
+	 */
 	onUpdate: () => {},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -339,6 +351,14 @@ const LOCKING_TARGET = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {state_index} state_index 
+	 * @returns {state_output}
+	 */
 	onUpdate: () => {},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -355,6 +375,14 @@ const FACING_TARGET = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {state_index} state_index 
+	 * @returns {state_output}
+	 */
 	onUpdate: () => {},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -371,6 +399,14 @@ const DRIFTING = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {state_index} state_index 
+	 * @returns {state_output}
+	 */
 	onUpdate: () => {},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -387,6 +423,14 @@ const SPOOFED = {
 	description: "",
 	stack: 1,
 	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {state_index} state_index 
+	 * @returns {state_output}
+	 */
 	onUpdate: () => {},
 	onRemove: () => {},
 	onExpire: () => {}

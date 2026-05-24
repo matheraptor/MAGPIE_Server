@@ -673,8 +673,8 @@ MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, 
  * 	pR: ratio
  * }} options 
  * @returns {{At: vector3, Tt: bivector, 
- * arrived: Boolean, proximity: Boolean, braking: Boolean, 
- * dR_mag: magnitude, state: keyID }} 
+ * Vstate: stateID, Rstate: keyID
+ * dR_mag: magnitude}} 
  */
 MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS, options)
 {
@@ -715,8 +715,8 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const dR = this._getDeltaR(dO);
 	// const dR = this.rotorApply(dO, [0,0,1])
 	// MAGPIE_SYSTEM._logging_debug(`dR: ${this.mag(dR)}`)
-	const pR = proximity 
-		? arrived ? 1 : 0.75 
+	const pR = Vstate === STATE_INDEX.REACHING_TARGET 
+		? Vstate === STATE_INDEX.ON_TARGET ? 1 : 0.75 
 		: options?.pR || this._getATpR(dO, P0, O0, options?.threshold);
 	options.pR = pR;
 	const { Tt, Rstate } = this._getTt(dR, R0, O0, options);
@@ -747,7 +747,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	return {
 		At: this.scaleVector(As, pR),
 		Tt: this.vector_clamp_mag(newTt, Tmax),
-		arrived, proximity, braking, dR_mag: this.mag(dR), state
+		Vstate, dR_mag: this.mag(dR), Rstate
 	}
 }
 // #endregion
@@ -1188,7 +1188,7 @@ MAGPIE_PHYSICS._getTt = function _getTt(dR, R0, O0, options)
 		// MAGPIE_SYSTEM._logging_debug(`Tt: ${this.mag(Tt_local)}`)
 		if(!this.isValidVector(Tt))
 			throw new Error(`${Tt} is invalid Tₜ bivector`);
-		return { Tt, state }
+		return { Tt, Rstate }
 	}
 	catch(e)
 	{
