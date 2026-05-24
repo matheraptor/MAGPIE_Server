@@ -1048,7 +1048,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 			ETA: ETA,
 			forces: forces
 		};
-		// MAGPIE_SERVER._debug(Object.entries(data))
+		// MAGPIE_SERVER._debug(data.Rstate)
 		const V0_mag = MAGPIE_PHYSICS.mag(V0);
 		const A0_mag = MAGPIE_PHYSICS.mag(A0);
 		if(!MAGPIE_ENTITY?._delta)

@@ -83,8 +83,8 @@ const inspector = {
 			update("val-Vstate", data.Vstate);
 		if(typeof data?.Rstate === 'string')
 			update("val-Rstate", data.Rstate)
-		if(!isNaN(data?.dR_mag) && data.dR_mag !== 1.0)
-			update("val-dR_mag", data.dR_mag?.toFixed(3));
+		if(!isNaN(data?.dR_mag))
+			update("val-dR_mag", Number(data.dR_mag)?.toFixed(3));
 		update('val-heading', data.heading?.toFixed(1));
 		update("val-pitch", data.pitch?.toFixed(1));
 		update("val-roll", data?.roll?.toFixed(1));

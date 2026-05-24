@@ -428,20 +428,20 @@ MAGPIE_PHYSICS.targetVelocity = function targetVelocity(P0, P1, options)
 		const solutions = {};
 		solutions.direction_absolute = this.normalizeVector(diff);
 		solutions.direction = solutions.direction_absolute
-		if(options?.surface)
-		{
-			const up = this.normalizeVector(P0);
-			const dir = solutions.direction_absolute
-			const dot = this.dotProduct(dir, up);
-			const projected_dir = this.subVectors(dir, this.scaleVector(up, dot));
-			if(!this.isValidVector(projected_dir) || this.mag(projected_dir) < 0.001)
-			{
-				const North = MAGPIE.KEY.POVART.UP;
-				const dotN = this.dotProduct(North, up);
-				solutions.direction = this.normalizeVector(this.subVectors(North, this.scaleVector(up, dotN)));
-			}
-			else solutions.direction = this.normalizeVector(projected_dir);
-		}
+		// if(options?.surface)
+		// {
+		// 	const up = this.normalizeVector(P0);
+		// 	const dir = solutions.direction_absolute
+		// 	const dot = this.dotProduct(dir, up);
+		// 	const projected_dir = this.subVectors(dir, this.scaleVector(up, dot));
+		// 	if(!this.isValidVector(projected_dir) || this.mag(projected_dir) < 0.001)
+		// 	{
+		// 		const North = MAGPIE.KEY.POVART.UP;
+		// 		const dotN = this.dotProduct(North, up);
+		// 		solutions.direction = this.normalizeVector(this.subVectors(North, this.scaleVector(up, dotN)));
+		// 	}
+		// 	else solutions.direction = this.normalizeVector(projected_dir);
+		// }
 		const Vt = this.scaleVector(solutions.direction, options.cruise);
 		if(!this.isValidVector(Vt))
 			throw new Error(`${Vt} is invalid Vₜ vector`)
@@ -769,7 +769,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const Tt_mag = this.vector_clamp_mag(newTt, Tmax);
 	// if(Tt_mag > 0)
 		// MAGPIE_SYSTEM._logging_debug(`Tt: ${Tt_mag}`)
-	// MAGPIE_SYSTEM._logging_debug(this.mag(As))
+	// MAGPIE_SYSTEM._logging_debug()
 	return {
 		At: this.scaleVector(As, pR),
 		Tt: this.vector_clamp_mag(newTt, Tmax),
@@ -928,6 +928,7 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		state.reachingTarget = state.onTarget ? false :  D0 <= tolerance;
 		state.approachingTarget = state.reachingTarget ? false : D0 <= Bdist + tolerance;;
 		state.seekingTarget = state.approachingTarget ? false : true;
+		// MAGPIE_SYSTEM._logging_debug(Object.entries(state))
 		if(state.onTarget)
 		{
 			return {
@@ -955,7 +956,9 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		{
 			const Vt = this.targetVelocity(P0, P1, Vcruise);
 			const dV = this.subVectors(Vt, V0);
-			const cruising = this.mag(dV) < options.tolerance * Amax;
+			const accelerate = S0 < this.mag(Vt);
+			const cruising = !accelerate && this.mag(dV) < options.tolerance * Amax;
+			// MAGPIE_SYSTEM._logging_debug(`Vt: ${Vt}`)
 			const A_transit = cruising ? [0,0,0] : this.vector_clamp_mag(dV, Asafe)
 			return {
 				At: A_transit, arrived: false, proximity: false, braking: false
@@ -1235,7 +1238,7 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 	{
 		const magDesired = this.mag(dR);
 		const seek_threshold = 0.001;
-		const hold_threshold = 0.001;
+		const hold_threshold = 0.002;
 		const transit = 0.001;
 		const magR0 = this.mag(R0);
 		const Rmin = 0.001;
@@ -1245,8 +1248,9 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		// const unit_R0 = this.normalizeVector(R0);
 		const unit_R0 = magR0 > 0.001 ? this.normalizeVector(R0) : unit_dR;
 		const Rt_error = Math.abs(magR0 - Rsafe);
-		const Rt = magR0 < Rsafe;
-		const accelerate = Rt_error > transit && Rt;
+		const getRt = magR0 < Rsafe;
+		const accelerate = Rt_error > transit && getRt;
+		// MAGPIE_SYSTEM._logging_debug(`getRt: ${getRt}`)
 		const seek = accelerate ? magDesired > hold_threshold : false;
 		const brakeDist = (magR0**2) / (2 * Tsafe);
 		const magBuffer = magDesired * 0.9
@@ -1261,8 +1265,9 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		if(hold)
 		{
 			// const hold_Rsafe = (Rsafe - magR0) * Tsafe;
-			const hold_Rsafe = this._U_clampRange(magDesired, Rmin, Tsafe) 
-			const Tt = this.scaleVector(unit_dR, hold_Rsafe)
+			const hold_Rsafe = this._U_clampRange(magDesired, -Rmin, Rmin)
+			MAGPIE_SYSTEM._logging_debug(hold_Rsafe) 
+			const Tt = this.scaleVector(unit_R0, hold_Rsafe)
 			if(!this.isValidVector(Tt))
 				throw new Error(`${Tt} is invalid Tt bivector`)
 			return { Tt_local: Tt, state: MAGPIE.KEY.INDEX.ALIGNED }
@@ -1270,7 +1275,7 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		if(seek)
 		{
 			const hold_Rt = this.scaleVector(Tt_brake, Rt_error);
-			const seeking =  Rt ? Tt_seek : hold_Rt;
+			const seeking =  getRt ? Tt_seek : hold_Rt;
 			const Tt = seeking;
 			if(!this.isValidVector(Tt))
 				throw new Error(`${Tt} is invalid Tt bivector`)
