@@ -34,11 +34,21 @@ const TYPE = {};
 /** @type {state_type} @desc permanent state type */
 TYPE.PERMANENT = 0;
 /** @type {state_type} @desc growth level state type */
-TYPE.G_LVL = TYPE.PERMANENT + 1;
+TYPE.G_LVL = 1;
 /** @type {state_type} @desc accumulator state type */
-TYPE.ACCUMULATOR = TYPE.G_LVL + 1;
+TYPE.ACCUMULATOR = 2;
 /** @type {state_type} @desc Finite-State-Machine type */
-TYPE.FSM = TYPE.ACCUMULATOR + 1;
+TYPE.FSM = 10;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_STATUS = 11;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_POSTURE = 12;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_MOVEMENT = 13;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_MOOD = 14;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_ENERGY = 15;
 //TEMPORARY STATES (1 turn)
 /** @type {state_type} @desc temporary state type */
 TYPE.TEMP = 100;
@@ -179,7 +189,7 @@ INDEX.FAT = FAT.ID
 
 const SEEKING_TARGET = {
 	ID: 302,
-	type: TYPE.FSM,
+	type: TYPE.FSM_POSTURE,
 	name: "SEEKING_TARGET",
 	description: `exp.keys.find(keyID => {
 			isTypeTARGET(keyID) ? seekTarget(exp) : return
@@ -215,7 +225,7 @@ INDEX.SEEKING_TARGET = SEEKING_TARGET.ID;
 //------------------------------------------------------------------------
 const REACHING_TARGET = {
 	ID: 303,
-	type: TYPE.FSM,
+	type: TYPE.FSM_POSTURE,
 	name: "REACHING_TARGET",
 	description: "",
 	stack: 1,
@@ -239,7 +249,7 @@ INDEX.REACHING_TARGET = REACHING_TARGET.ID;
 //------------------------------------------------------------------------
 const APPROACHING_TARGET = {
 	ID: 304,
-	type: TYPE.FSM,
+	type: TYPE.FSM_POSTURE,
 	name: "APPROACHING_TARGET",
 	description: "",
 	stack: 1,
@@ -255,10 +265,13 @@ const APPROACHING_TARGET = {
 		return output
 	}
 }
+states.push(APPROACHING_TARGET);
+/** @type {Enumerator<Number>}  */
+INDEX.APPROACHING_TARGET = APPROACHING_TARGET.ID;
 //------------------------------------------------------------------------
 const ON_TARGET = {
 	ID: 305,
-	type: TYPE.FSM,
+	type: TYPE.FSM_POSTURE,
 	name: "ON_TARGET",
 	description: "",
 	stack: 1,
@@ -285,6 +298,102 @@ const ON_TARGET = {
 states.push(ON_TARGET)
 /** @type {Enumerator<Number>}  */
 INDEX.ON_TARGET = ON_TARGET.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const IDLING = {
+	ID: 306,
+	type: TYPE.FSM_POSTURE,
+	name: "IDLING",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(IDLING);
+/** @type {Enumerator<Number>} */
+INDEX.IDLING = IDLING.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const ALIGNING_TARGET = {
+	ID: 311,
+	type: TYPE.FSM_POSTURE,
+	name: "ALIGNING_TARGET",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(ALIGNING_TARGET);
+/** @type {Enumerator<Number>} */
+INDEX.ALIGNING_TARGET = ALIGNING_TARGET.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const LOCKING_TARGET = {
+	ID: 312,
+	type: TYPE.FSM_POSTURE,
+	name: "LOCKING_TARGET",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(LOCKING_TARGET);
+/** @type {Enumerator<Number>} */
+INDEX.LOCKING_TARGET = LOCKING_TARGET.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const FACING_TARGET = {
+	ID: 313,
+	type: TYPE.FSM_POSTURE,
+	name: "FACING_TARGET",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(FACING_TARGET);
+/** @type {Enumerator<Number>} */
+INDEX.FACING_TARGET = FACING_TARGET.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const DRIFTING = {
+	ID: 314,
+	type: TYPE.FSM_POSTURE,
+	name: "DRIFTING",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(DRIFTING);
+/** @type {Enumerator<Number>} */
+INDEX.DRIFTING = DRIFTING.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const SPOOFED = {
+	ID: 315,
+	type: TYPE.FSM_POSTURE,
+	name: "SPOOFED",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(SPOOFED);
+/** @type {Enumerator<Number>} */
+INDEX.SPOOFED = SPOOFED.ID
 //------------------------------------------------------------------------
 // #endregion
 //------------------------------------------------------------------------

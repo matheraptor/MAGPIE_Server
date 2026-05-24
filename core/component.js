@@ -898,7 +898,7 @@ MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
 	for(const key of keys)
 	{
 		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
-			Vspeeds[key.getOrigin()?.label] = Number(key.label)
+			Vspeeds[key.getOrigin()?.label?.toUpperCase()] = Number(key.label)
 	}
 	return Vspeeds
 }
@@ -1202,9 +1202,9 @@ MAGPIE_KEY.prototype._set_type = async function setType(key_type)
  * @param {keyID} keyID 
  * @returns {MAGPIE_KEY}
  */
-MAGPIE_KEY.prototype.getKey = async function getKey(keyID)
+MAGPIE_KEY.prototype.getKey = function getKey(keyID)
 {
-	return await MAGPIE_KEY.__hiveSync(`_get_key`, [keyID])
+	return MAGPIE_KEY.__hiveSync(`_get_key`, [keyID])
 }
 /**
  * 

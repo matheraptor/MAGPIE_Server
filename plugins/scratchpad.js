@@ -42,6 +42,7 @@ const {
 // #endregion
 //========================================================================
 r.context.diego = r.context.HIVE._get_entity(1773811141134)
+6.944452, 79.848975
  diego._set_O1(PHYSICS._rotor_fromEulerAbs(180,0,0, diego._get_P0()))
 r.context.diego._get_target()._set_C1([12.420031, 43.544629,0])
 r.context.diego.exps.push(r.context.METASTATE.contents.exp)

@@ -2016,6 +2016,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 			Rsafe: 0.05 //@todo Rsafe key
 		}
 		const overrideVspeed = exp._key_mapVspeeds();
+		MAGPIE
 		const speeds = this._get_speeds(overrideVspeed);
 		Object.entries(speeds).forEach(entry => {
 			const key = entry[0];
@@ -2032,17 +2033,19 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 			this._emote_onTarget(exp)
 			states.velocity = MAGPIE.KEY.INDEX.IDLE;
 		}
-		if(proximity)
+		if(!arrived && proximity)
 		{
 			this._emote_reachTarget(exp)
 			states.velocity = MAGPIE.KEY.INDEX.BRAKE;
 		}
-		if(braking)
+		if(!proximity && braking)
 		{
 			this._emote_approachTarget(exp)
 			states.velocity = MAGPIE.KEY.INDEX.COAST;
 		}
-		else states.velocity = MAGPIE.KEY.INDEX.A_ERR;
+		else if (!braking && MAGPIE_PHYSICS.mag(V0) > 0)
+			states.velocity = MAGPIE.KEY.INDEX.ACCELERATE;
+		else states.velocity = MAGPIE.KEY.INDEX.A_ERR
 		const raw = new Float64Array([states.orientation, states.velocity, dR_mag])
 		return { At: At, Tt: Tt, exp: exp, raw }
  	}
@@ -2062,7 +2065,7 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp)
 	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
 	try
 	{
-		MAGPIE_SYSTEM._logging_debug(ePrefix)
+		// MAGPIE_SYSTEM._logging_debug(ePrefix)
 		const next = exp._emote_onTarget();
 		const states = this._get_states();
 		if(states.length < 1) return
@@ -2087,7 +2090,7 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp)
 MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(exp)
 {
 	const ePrefix = `[ENTITY-${this.ID}]._emote_approachTarget: `;
-	MAGPIE_SYSTEM._logging_debug(ePrefix)
+	// MAGPIE_SYSTEM._logging_debug(ePrefix)
 }
 /**
  * 
@@ -2096,7 +2099,7 @@ MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(e
 MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp)
 {
 	const ePrefix = `[ENTITY-${this.ID}]._emote_reachTarget: `;
-	MAGPIE_SYSTEM._logging_debug(ePrefix)
+	// MAGPIE_SYSTEM._logging_debug(ePrefix)
 }
 // #endregion
 //------------------------------------------------------------------------

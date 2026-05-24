@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.31
+ * @version 0.23.1
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,11 +20,13 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.23.0 2026 05 24
+ * @version 0.23.1 2026 05 24
+ * - ADDED: STATE.FSM_POSTURE
  * - ADDED: HIVE.saveBuffers
  * - ADDED: {@link MAGPIE.KEY.INDEX.ORIENTATION}
  * - ADDED: {@link MAGPIE.KEY.INDEX.VELOCITY} 
  * - TWEAKED: URGENCY and GRAVITY incremental
+ * - TWEAKED: changing Vstate and Rstate to FSM stateID
  * - FIXED: PHYSICS._getTt_local unable to seek target heading
  * - FIXED: PHYSICS._getTt_local unable to hold target heading
  * - FIXED: HIVE._host_context unreliable layerID
@@ -391,7 +393,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 23, 0],
+			version: [0, 23, 1],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260524"
 		};
@@ -1697,7 +1699,7 @@ MAGPIE.KEY.SYMBOL.INDEX = {};
 //------------------------------------------------------------------------
 /**
  * @desc {@link MAGPIE_STATE}
- * 
+ * @typedef {Number} stateID
  */
 //------------------------------------------------------------------------
 //#region > State
