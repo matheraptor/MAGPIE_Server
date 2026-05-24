@@ -1536,7 +1536,7 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 	try
 	{
 		const states = this._get_states();
-		if(states.length < 1) return
+		if(states.length < 1) return { exp, target }
 		states.sort((a, b) => b - a);
 		const standardSwitch = 0;
 		const K = MAGPIE.KEY.FITNESS;
