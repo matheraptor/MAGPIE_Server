@@ -1130,6 +1130,26 @@ MAGPIE_KEY.setup = async function setup()
 }
 /**
  * 
+ * @param {String} method 
+ * @param {[*]} arguments
+ * @returns {Promise<*>} 
+ */
+MAGPIE_KEY.__hive = async function __hive(method, arguments)
+{
+	//
+}
+/**
+ * 
+ * @param {String} method 
+ * @param {[]} arguments 
+ * @returns {*}
+ */
+MAGPIE_KEY.__hiveSync = function __hiveSync(method, arguments)
+{
+	//
+}
+/**
+ * 
  * @param {key_data} data 
  * @returns {database_result: new MAGPIE_KEY}
  */
@@ -1152,9 +1172,9 @@ MAGPIE_KEY.prototype.set = async function set()
  * 
  * @returns {database_result}
  */
-MAGPIE_KEY.prototype.setSync = function set()
+MAGPIE_KEY.prototype.setSync = function setSync()
 {
-	return  MAGPIE_KEY.__hive("_set_databaseSync", ["saveKeySync", [this]])
+	return  MAGPIE_KEY.__hiveSync("_set_databaseSync", ["saveKeySync", [this]])
 }
 /**
  * 

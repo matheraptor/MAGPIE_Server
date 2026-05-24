@@ -1793,6 +1793,13 @@ MAGPIE_HIVE.saveEntities = async function saveEntities()
 {
 	//
 }
+/**
+ * @returns {Promise<database_result[]>}
+ */
+MAGPIE_HIVE._save_buffers = async function _save_buffers()
+{
+	//
+}
 // #endregion
 //------------------------------------------------------------------------
 /**

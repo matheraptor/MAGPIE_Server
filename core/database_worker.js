@@ -493,6 +493,30 @@ worker.setServerRowTransaction = function setServerRowTransaction(tableName, row
 {
 	return this.setRowTransaction(tableName, rows, columns, this.server)
 }
+worker.saveBuffers = function saveBuffers(buffers)
+{
+	try
+	{
+		return worker.makeTransaction(worker.world, () => {
+			const results = [];
+			buffers.forEach(buffer => {
+				const payloads = buffer[1];
+				const table = buffer[0];
+				// console.log(table)
+				payloads.forEach(payload => {
+					const result = worker.saveWorldRow(table, payload);
+					results.push(result)
+					// console.log(result)
+				})
+			})
+			return results
+		})
+	}
+	catch(e)
+	{
+		console.error(e)
+	}
+}
 // #endregion
 //------------------------------------------------------------------------
 /**

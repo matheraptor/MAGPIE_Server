@@ -698,7 +698,7 @@ MAGPIE_HIVE.save = async function save()
 	const ePrefix = "[HIVE].save: ";
 	try
 	{
-		const result = await this.saveEntities()
+		MAGPIE_HIVE._save_buffers();
 		r.context.METASTATE.hive = {
 			registry: MAGPIE_HIVE._registry,
 			contexts: Array.from(MAGPIE_HIVE._contextBuffer.keys())
@@ -706,7 +706,10 @@ MAGPIE_HIVE.save = async function save()
 		const metastate = MAGPIE_DATABASE.saveMetastate(r.context.METASTATE);
 		if(!metastate) return
 		const state = r.context.METASTATE;
-		const message = `${result}x entities saved at `
+		results.forEach(result => {
+			MAGPIE_SERVER.log(ePrefix + Object.entries(result), "console", false);
+		})
+		const message = `${results}x buffers saved at `
 			+ `[${state.meta.updated}-${state.date.printDate()}]`
 		MAGPIE_SERVER.log(ePrefix + message, "console", false)
 		return result;
@@ -754,6 +757,51 @@ MAGPIE_HIVE.saveEntities = async function saveEntities()
 	{
 		MAGPIE_SERVER.error(ePrefix + e.messag, e)
 		return 0
+	}
+}
+/**
+ * @returns {Promise<database_result[]>}
+ */
+MAGPIE_HIVE._save_buffers = async function _save_buffers()
+{
+	const ePrefix = "[HIVE].saveBuffers: ";
+	try
+	{
+		const entity_buffer = [];
+		const entityIDs = Array.from(MAGPIE_HIVE._registry.entries())
+			.filter(entry => entry[0] > 10 && entry[1].layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE)
+			.map(entry => entry[0])
+		for(const entityID of entityIDs)
+		{
+			const entity = MAGPIE_HIVE._get_entity(entityID);
+			const payload = MAGPIE_DATABASE.prepareEntity(entity)
+			entity_buffer.push(payload);
+		}
+		// MAGPIE_SERVER._debug(entityIDs)
+		const exp_buffer = Array.from(MAGPIE_HIVE._expBuffer.values())
+			.map(value => MAGPIE_DATABASE.prepareExp(value.data))
+		const key_buffer = Array.from(MAGPIE_HIVE._keyBuffer.values())
+			.map(value => MAGPIE_DATABASE.prepareKey(value.data));
+		const symbol_buffer = Array.from(MAGPIE_HIVE._symbolBuffer.values())
+			.map(value => MAGPIE_DATABASE.prepareSymbol(value.data));
+		const context_buffer = Array.from(MAGPIE_HIVE._contextBuffer.values())
+			.map(value => MAGPIE_DATABASE.prepareContext(value))
+		const buffers = [
+			["MAGPIE_ENTITY", entity_buffer],
+			["MAGPIE_EXP", exp_buffer],
+			["MAGPIE_KEY", key_buffer],
+			["MAGPIE_SYMBOL", symbol_buffer],
+			["MAGPIE_CONTEXT", context_buffer]
+		]
+		// MAGPIE_SERVER._debug(buffers)
+		const results = await MAGPIE_DATABASE.call("saveBuffers", buffers)
+		if(!results)
+			throw new Error("unable to save buffers");
+		return results
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
 // #endregion
