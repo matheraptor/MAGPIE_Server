@@ -198,7 +198,6 @@ const SEEKING_TARGET = {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target || !process) return {exp: exp}
 		const output = entity._emote_seekTarget(exp);
-		const purge = true;
 		const reaching = 303;
 		const approaching = 304;
 		const onTarget = 305;
@@ -225,7 +224,6 @@ const REACHING_TARGET = {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target) return {exp: exp}
 		const output = entity._emote_seekTarget(exp);
-		console.log(Object.values(output))
 		const onTarget = 305;
 		if(output.arrived) entity.switchState(state_index, onTarget);
 		const approaching = 304

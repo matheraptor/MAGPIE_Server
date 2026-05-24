@@ -1362,13 +1362,20 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 		const key = this.processKeys(input);
 		const emote = this.processEmote(switchID, dt, input, key);
 		const { exp: state, target } = this.processStates(switchID, dt, emote?.exp || input);
+		// MAGPIE_SYSTEM._logging_debug(Object.entries(target))
 		this.processAgency(switchID, dt, state, input?.keys || []);
 		const { At, Tt } = emote?.target ? emote.target : target;
 		const POVART0 = this._get_POVART();
+		// if(MAGPIE_PHYSICS.mag(Tt) > 0)
+			// MAGPIE_SYSTEM._logging_debug(MAGPIE_PHYSICS.mag(Tt))
 		const C = this._get_celestial(POVART0[MAGPIE.KEY.POVART.P_C]);
 		const { output, POVART1 } = this.updatePhysics(switchID, dt, At, Tt, C, POVART0);
 		if(!output)
 			throw new Error(`${output} is invalid output`)
+		if(target)
+			output.target = target;
+		if(emote)
+			output.emote = emote;
 		MAGPIE_ENTITY.__socketEmit(output, input, this, C, POVART1, dt);
 		return true
 	}
@@ -1531,7 +1538,7 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 		const states = this._get_states();
 		if(states.length < 1) return
 		states.sort((a, b) => b - a);
-		const standardSwitch = 2;
+		const standardSwitch = 0;
 		const K = MAGPIE.KEY.FITNESS;
 		states.forEach((stateID, index) => {
 			try
@@ -1542,29 +1549,23 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 				const process = switchID >= standardSwitch ? true : false;
 				const state_index = this._get_index_state(index);
 				const output = state.onUpdate(exp, this, process, state_index);
-				if(output?.keyID)
-					exp.keys.push(keyID)
-				if(output?.target)
-				{
-					if(output.target?.At)
-						target.At = output.target.At;
-					if(output.target?.Tt)
-						target.Tt = output.target.Tt;
-				}
+				// MAGPIE_SYSTEM._logging_debug(Object.entries(output))
+				if(output?.exp)
+					Object.keys(output).forEach(k => {
+						target[k] = output[k]
+				})
 			}
 			catch(e)
 			{
 				MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 			}
 		})
+		return { exp, target }
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-	finally
-	{
-		return { exp, target }
+		return { exp, target}
 	}
 }
 /**
@@ -1682,8 +1683,6 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		const output = new Float64Array([lat,lon,ASL,r,...forces])
 		//
 		this._set_POVART({P1, O1, V1, A1, R1, T1 });
-		// const dist = MAGPIE_PHYSICS.distanceTo(P0, this._get_P0());
-		// MAGPIE_SYSTEM._logging_debug(`dP: ${MAGPIE_PHYSICS.mag(dP)}, dist: ${dist}, dt: ${dt}`)
 		return { output, POVART1: this._get_POVART() }
 	}
 	catch(e)
@@ -1711,7 +1710,6 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 MAGPIE_ENTITY.prototype._key_processEmote = function _key_processEmote(label, exp)
 {
 	const { At, Tt } = this[`_emote_${label}`](exp);
-	// MAGPIE_SYSTEM._logging_debug(`At: ${MAGPIE_PHYSICS.mag(At)}`)
 	if(!MAGPIE_PHYSICS.isValidVector(At) || !MAGPIE_PHYSICS.isValidVector(Tt))
 		return { exp }
 	return { exp, target: { At, Tt }}
@@ -1974,6 +1972,12 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 /**
  * 
  * @param {MAGPIE_EXP} exp 
+ * @returns {{
+ * At: vector3,
+ * Tt: bivector,
+ * exp: MAGPIE_EXP,
+ * raw: Float64Array
+ * }}
  */
 MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 {
@@ -2000,11 +2004,16 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		const pR = 1; //@todo dynamic seekTarget priority ratio
 		const intensity = exp.value;
 		const keys = exp.getKeys();
+		const geodetic = true; //@todo dynamic geodetic flag
+		const surface = true; //@todo dynamic surface flag
 		const options = {
 			intensity: intensity,
 			fwd: MAGPIE.KEY.POVART.FWD,
 			agility: this.STATS[MAGPIE.KEY.STATS.DEX],
-			tolerance: tolerance
+			tolerance: tolerance,
+			geodetic: geodetic,
+			surface: surface,
+			Rsafe: 0.05 //@todo Rsafe key
 		}
 		const overrideVspeed = exp._key_mapVspeeds();
 		const speeds = this._get_speeds(overrideVspeed);
@@ -2014,25 +2023,32 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 			if(key && value)
 				options[key] = value;
 		})
-		// MAGPIE_SYSTEM._logging_debug(options.Vcruise)
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, Pt, this.STATS, options);
-		const { At, Tt, arrived, proximity, braking } = output;
+		const { At, Tt, arrived, proximity, braking, dR_mag, state } = output;
+		const states = { orientation: state, velocity: NaN }
 		if(arrived)
-			return this._emote_onTarget(exp)
+		{
+			this._emote_onTarget(exp)
+			states.velocity = MAGPIE.KEY.INDEX.IDLE;
+		}
 		if(proximity)
-			return this._emote_reachTarget(exp)
+		{
+			this._emote_reachTarget(exp)
+			states.velocity = MAGPIE.KEY.INDEX.BRAKE;
+		}
 		if(braking)
-			return this._emote_approachTarget(exp)
-		output.At = At;
-		output.Tt = Tt;		
+		{
+			this._emote_approachTarget(exp)
+			states.velocity = MAGPIE.KEY.INDEX.COAST;
+		}
+		else states.velocity = MAGPIE.KEY.INDEX.A_ERR;
+		const raw = new Float64Array([states.orientation, states.velocity, dR_mag])
+		return { At: At, Tt: Tt, exp: exp, raw }
  	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-	finally
-	{
 		return output
 	}
 }

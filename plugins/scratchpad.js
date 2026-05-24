@@ -10,13 +10,39 @@
 const {  
     MAGPIE,
  } = require("../core/index");
+ const {
+    MAGPIE_PHYSICS
+ } = require("../core/physics");
+ const {
+    MAGPIE_SYSTEM,
+    MAGPIE_HIVE,
+    MAGPIE_CALENDAR,
+    MAGPIE_DATE,
+    MAGPIE_IO,
+    MAGPIE_LOG,
+    MAGPIE_RUNTIME,
+    MAGPIE_METASTATE
+ } = require("../core/system")
+ const {
+    MAGPIE_COMPONENT,
+    MAGPIE_SYMBOL,
+    MAGPIE_EXP,
+    MAGPIE_KEY,
+    MAGPIE_EMOTE,
+    MAGPIE_CONTEXT,
+    MAGPIE_STATE,
+    MAGPIE_TICKET
+ } = require("../core/component")
+ const {
+    MAGPIE_ENTITY
+ } = require("../core/entity")
 //========================================================================
 // #region - Scratchpad
 
 // #endregion
 //========================================================================
 r.context.diego = r.context.HIVE._get_entity(1773811141134)
- diego._set_O1(PHYSICS._rotor_fromEulerAbs(130,40,0, diego._get_P0()))
+ diego._set_O1(PHYSICS._rotor_fromEulerAbs(180,0,0, diego._get_P0()))
 r.context.diego._get_target()._set_C1([12.420031, 43.544629,0])
 r.context.diego.exps.push(r.context.METASTATE.contents.exp)
 r.context.exp = r.context.DATABASE

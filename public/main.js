@@ -74,9 +74,17 @@ const inspector = {
 		// update('val-lat', data.coords[0].toFixed(10));
 		// update('val-lon', data.coords[1].toFixed(10));
 		update('val-asl', Math.floor(data.coords[2]));
-		update('val-vspeed', data.Vspeed.toFixed(3));
+		update('val-Vmag', data.Vmag.toFixed(3));
 		update('val-knots', Math.floor(data.Vknots));
-		update('val-accel', data.Acceleration?.toFixed(3));
+		update('val-Amag', data.Amag?.toFixed(3));
+		update("val-Tmag", data.Tmag?.toFixed(3));
+		update("val-Rmag", data.Rmag.toFixed(3));
+		if(typeof data?.Vstate === 'string')
+			update("val-Vstate", data.Vstate);
+		if(typeof data?.Rstate === 'string')
+			update("val-Rstate", data.Rstate)
+		if(!isNaN(data?.dR_mag) && data.dR_mag !== 1.0)
+			update("val-dR_mag", data.dR_mag.toFixed(3));
 		update('val-heading', data.heading?.toFixed(1));
 		update("val-pitch", data.pitch?.toFixed(1));
 		update("val-roll", data?.roll?.toFixed(1));

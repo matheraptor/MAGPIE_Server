@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.29
+ * @version 0.22.30
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,12 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.22.30 2026 05 24
+ * - ADDED: {@link MAGPIE.KEY.INDEX.ORIENTATION}
+ * - ADDED: {@link MAGPIE.KEY.INDEX.VELOCITY} 
+ * - FIXED: PHYSICS._getTt_local unable to seek target heading
+ * - FIXED: PHYSICS._getTt_local unable to hold target heading
  * 
  * @version 0.22.29 2026 05 22
  * - ADDED: HIVE._set_${component} methods
@@ -382,9 +388,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 29],
+			version: [0, 22, 30],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260522"
+			firmwareDate: "20260524"
 		};
 	}
 }
@@ -636,6 +642,42 @@ MAGPIE.KEY.INDEX.TCREEP = 6003;
 MAGPIE.KEY.INDEX.TDOCK = 6004;
 MAGPIE.KEY.INDEX.VSPEEDS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("VMAX"));
 MAGPIE.KEY.INDEX.VSPEEDS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("TDOCK"));
+/**
+ * @type {Map<keyID, String>}
+ */
+MAGPIE.KEY.INDEX.VELOCITY = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.A_ERR = 8000;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.A_ERR, "A_err");
+MAGPIE.KEY.INDEX.CRUISE = 8001;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.CRUISE, "Cruise");
+MAGPIE.KEY.INDEX.ACCELERATE = 8002;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.ACCELERATE, "Accelerate");
+MAGPIE.KEY.INDEX.COAST = 8003;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.COAST, "Coast");
+MAGPIE.KEY.INDEX.BRAKE = 8004;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.BRAKE, "Brake")
+/**
+ * @type {Map<keyID, String>}
+ */
+MAGPIE.KEY.INDEX.ORIENTATION = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.T_ERR = 7000;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DEFAULT, "T_err")
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.ALIGNED = 7001;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.ALIGNED, "Aligned")
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.SEEK = 7002;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.SEEK, "Seek")
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DRIFT = 7003;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DRIFT, "Drift")
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.ALIGN = 7004;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.ALIGN, "Align")
+MAGPIE.KEY.INDEX.IDLE = 7005;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.IDLE, "Idle");
 /**
  * @typedef {Enumerator<Number>} urgency
  * @type {Map<keyID, {value: urgency, desc: String>}}
@@ -1321,6 +1363,8 @@ MAGPIE.KEY.POVART.ARRAY = MAGPIE.KEY.POVART.E_ID + 1;
 MAGPIE.KEY.POVART.FWD = [0,1,0];
 /** @type {vector3} default 'up' vector [x,y,z] */
 MAGPIE.KEY.POVART.UP = [0,0,1];
+/** @type {vector3} default 'right' vector */
+MAGPIE.KEY.POVART.RIGHT = [1,0,0];
 // #endregion
 //------------------------------------------------------------------------
 /**

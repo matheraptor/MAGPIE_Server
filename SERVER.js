@@ -958,9 +958,11 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const ASL = Number(output[2]);
 		const r = Number(output[3]);
 		const forces = output.slice(4);
-		const Vspeed = Number(MAGPIE_PHYSICS.mag(V1));
-		const Vknots = Number(MAGPIE_PHYSICS._U_MPStoKnots(Vspeed));
-		const Acc = Number(MAGPIE_PHYSICS.mag(A1) / dt);
+		const Vmag = Number(MAGPIE_PHYSICS.mag(V1));
+		const Vknots = Number(MAGPIE_PHYSICS._U_MPStoKnots(Vmag));
+		const Amag = Number(MAGPIE_PHYSICS.mag(A1) / dt);
+		const Rmag = Number(MAGPIE_PHYSICS.mag(R1));
+		const Tmag = Number(MAGPIE_PHYSICS.mag(T1) / dt);
 		const normP1 = MAGPIE_PHYSICS.normalizeVector(P1);
 		const hdg = Number(MAGPIE_PHYSICS._rotor_toHeadingAbs(O1, normP1));
 		const pitch = Number(MAGPIE_PHYSICS._rotor_toPitchAbs(O1, normP1));
@@ -970,17 +972,26 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const Ct = validTarget ? MAGPIE_PHYSICS.cartesianToGeodetic(Pt, r) : [NaN, NaN, NaN];
 		const dist = validTarget ? Number(MAGPIE_PHYSICS._geod_distanceTo(P1, Pt, r)) : NaN;
 		const dist2 = validTarget ? Number(MAGPIE_PHYSICS.distanceTo(P1, Pt)) : NaN;
-		const ETA_s = Number(Math.floor(dist / Vspeed));
+		const ETA_s = Number(Math.floor(dist / Vmag));
 		// MAGPIE_SERVER._debug(ETA_s)
 		const ETA = !isNaN(ETA_s) ? MAGPIE_SYSTEM.Utility.printETA(ETA_s) : "N/A";
+		const rawData = output?.emote?.raw || output?.target?.raw || [];
+		const Rstate = rawData[0] || NaN; 
+		const Vstate = rawData[1] || NaN;
+		const dR_mag = Number(rawData[2]) || NaN;
 		const data = {
 			entityID: entity.ID,
 			entityName: entity.name,
 			metadate: entity.updated,
 			coords: [lat,lon,ASL],
-			Vspeed: Vspeed,
+			Vstate: MAGPIE.KEY.INDEX.VELOCITY.get(Vstate),
+			Rstate: MAGPIE.KEY.INDEX.ORIENTATION.get(Rstate),
+			Vmag: Vmag,
 			Vknots: Vknots,
-			Acceleration: Acc,
+			Amag: Amag,
+			Rmag: Rmag,
+			Tmag: Tmag,
+			dR_mag: dR_mag,
 			heading: hdg,
 			pitch: pitch,
 			roll: roll,
@@ -1905,7 +1916,7 @@ MAGPIE_SERVER.scratchpad.load = async function load(fileName)
 	{
 		const { content, startMarker, startIndex, endIndex } = MAGPIE_SERVER.scratchpad.read();
 		if(startIndex === -1 || endIndex === -1)
-			return console.log(prefix = "regions not found. Skipping execution");
+			return console.log(prefix + "regions not found. Skipping execution");
 		const codeToRun = content
 			.substring(startIndex + startMarker.length, endIndex).trim();
 		if(!codeToRun) 
