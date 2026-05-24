@@ -21,6 +21,7 @@ function MAGPIE_SYSTEM()
  * @name LOG
  * @typedef {Enumerator<Number>} urgency
  * @typedef {Enumerator<Number>} gravity
+ * @typedef {Enumerator<Number>} layerID
  * @typedef {{
  * contents: String,
  * urgency: urgency,
@@ -2112,8 +2113,9 @@ MAGPIE_HIVE._host_context = function hostContext(context)
 	const symbols = context.symbols
 	if(entities.length < 1 && exps.length < 1 && keys.length < 1 && symbols.length < 1)
 		return
-	const layers = MAGPIE.KEY.RUNTIME.LAYER.size;
-	const layerID = layers - Math.max(layers, (context.urgency + context.gravity));
+	const urgency = Number(context.urgency) || 0;
+	const gravity = Number(context.gravity) || 0;
+	const layerID = MAGPIE_HIVE._offset_importance(urgency, gravity);
 	entities.forEach(entityID => {
 		MAGPIE_HIVE.host(MAGPIE_HIVE._get_entity(entityID), layerID)
 	})
@@ -2126,6 +2128,20 @@ MAGPIE_HIVE._host_context = function hostContext(context)
 	symbols.forEach(symbolID => {
 		MAGPIE_HIVE._host_symbol(MAGPIE_HIVE._get_symbol(symbolID), context.ID)
 	})
+}
+/**
+ * 
+ * @param {urgency} urgency 
+ * @param {gravity} gravity 
+ * @returns {layerID}
+ */
+MAGPIE_HIVE._offset_importance = function _offset_importance(urgency, gravity)
+{
+	const layers = MAGPIE.KEY.RUNTIME.LAYER.size;
+	const bottom_layer = 1;
+	const game_layer = layers - 1;
+	const weight = (urgency + gravity);
+	return MAGPIE_SYSTEM.Math.clampRange(weight, bottom_layer, game_layer);
 }
 /**
  * 

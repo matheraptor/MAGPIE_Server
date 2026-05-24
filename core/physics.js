@@ -1261,7 +1261,7 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		if(hold)
 		{
 			// const hold_Rsafe = (Rsafe - magR0) * Tsafe;
-			const hold_safe = this._U_clampRange(magDesired, Rmin, Tsafe) 
+			const hold_Rsafe = this._U_clampRange(magDesired, Rmin, Tsafe) 
 			const Tt = this.scaleVector(unit_dR, hold_Rsafe)
 			if(!this.isValidVector(Tt))
 				throw new Error(`${Tt} is invalid Tt bivector`)

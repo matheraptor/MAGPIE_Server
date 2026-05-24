@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.30
+ * @version 0.22.31
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,11 +20,13 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.22.30 2026 05 24
+ * @version 0.22.31 2026 05 24
  * - ADDED: {@link MAGPIE.KEY.INDEX.ORIENTATION}
  * - ADDED: {@link MAGPIE.KEY.INDEX.VELOCITY} 
+ * - TWEAKED: URGENCY and GRAVITY incremental
  * - FIXED: PHYSICS._getTt_local unable to seek target heading
  * - FIXED: PHYSICS._getTt_local unable to hold target heading
+ * - FIXED: HIVE._host_context unreliable layerID
  * 
  * @version 0.22.29 2026 05 22
  * - ADDED: HIVE._set_${component} methods
@@ -692,13 +694,13 @@ MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_STRATEGIC, {
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE = 10100;
 MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE, {
-	value: 0,
+	value: 4,
 	desc: "Must do NOW"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_DIRE = 10101;
 MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_DIRE, {
-	value: 1,
+	value: 3,
 	desc: "Must do NEXT"
 });
 /** @type {key_index} */
@@ -710,13 +712,13 @@ MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_CRITICAL, {
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_SIGNIFICANT = 10103;
 MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_SIGNIFICANT, {
-	value: 3,
+	value: 1,
 	desc: "Should do SOON"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_LATENT = 10104;
 MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_LATENT, {
-	value: 4,
+	value: 0,
 	desc: "Can do if and when possible"
 });
 /** 
@@ -734,13 +736,13 @@ MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TACTICAL, {
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_VITAL = 10200;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_VITAL, {
-	value: 0,
+	value: 4,
 	desc: "Must care about this ABOVE ALL"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_SEVERE = 10201;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_SEVERE, {
-	value: 1,
+	value: 3,
 	desc: "Must care about this AS MUCH AS POSSIBLE"
 });
 /** @type {key_index} */
@@ -752,13 +754,13 @@ MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_PRESSING, {
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT = 10203;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT, {
-	value: 3,
+	value: 1,
 	desc: "Might care sometimes; probably unsafe to ignore"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL = 10204;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL, {
-	value: 4,
+	value: 0,
 	desc: "Probably safe to ignore"
 });
 /** 
