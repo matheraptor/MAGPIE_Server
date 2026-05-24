@@ -1,7 +1,7 @@
 /**
  * @namespace database_worker
  * @author Matheraptor
- * @version 0.20.0
+ * @version 0.23.0
  * 
  * @typedef {import("better-sqlite3").RunResult} database_result
  * 

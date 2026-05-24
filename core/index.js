@@ -20,7 +20,8 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.22.31 2026 05 24
+ * @version 0.23.0 2026 05 24
+ * - ADDED: HIVE.saveBuffers
  * - ADDED: {@link MAGPIE.KEY.INDEX.ORIENTATION}
  * - ADDED: {@link MAGPIE.KEY.INDEX.VELOCITY} 
  * - TWEAKED: URGENCY and GRAVITY incremental
@@ -390,7 +391,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 22, 30],
+			version: [0, 23, 0],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260524"
 		};

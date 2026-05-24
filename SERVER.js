@@ -2,7 +2,7 @@
  * 
  * @namespace MAGPIE_Server
  * @author Matheraptor
- * @version 0.22.26
+ * @version 0.23.0
  * @desc server frontend
  * {@link MAGPIE}
  */
@@ -698,7 +698,9 @@ MAGPIE_HIVE.save = async function save()
 	const ePrefix = "[HIVE].save: ";
 	try
 	{
-		MAGPIE_HIVE._save_buffers();
+		const results = await MAGPIE_HIVE._save_buffers();
+		if(!results)
+			throw new Error("unable to save buffers")
 		r.context.METASTATE.hive = {
 			registry: MAGPIE_HIVE._registry,
 			contexts: Array.from(MAGPIE_HIVE._contextBuffer.keys())
@@ -712,7 +714,7 @@ MAGPIE_HIVE.save = async function save()
 		const message = `${results}x buffers saved at `
 			+ `[${state.meta.updated}-${state.date.printDate()}]`
 		MAGPIE_SERVER.log(ePrefix + message, "console", false)
-		return result;
+		return results;
 	}
 	catch(e)
 	{
@@ -794,10 +796,7 @@ MAGPIE_HIVE._save_buffers = async function _save_buffers()
 			["MAGPIE_CONTEXT", context_buffer]
 		]
 		// MAGPIE_SERVER._debug(buffers)
-		const results = await MAGPIE_DATABASE.call("saveBuffers", buffers)
-		if(!results)
-			throw new Error("unable to save buffers");
-		return results
+		return await MAGPIE_DATABASE.call("saveBuffers", buffers)
 	}
 	catch(e)
 	{
