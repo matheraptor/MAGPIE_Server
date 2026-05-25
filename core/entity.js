@@ -631,6 +631,14 @@ MAGPIE_ENTITY.prototype._get_celestial = function _get_celestial()
 }
 /**
  * 
+ * @returns {distance}
+ */
+MAGPIE_ENTITY.prototype._get_radius = function getRadius()
+{
+	return this.STATS[MAGPIE.KEY.CELESTIAL.R]
+}
+/**
+ * 
  * @returns {vector3}
  */
 MAGPIE_ENTITY.prototype._get_P0 = function getP0()
@@ -643,7 +651,7 @@ MAGPIE_ENTITY.prototype._get_P0 = function getP0()
  */
 MAGPIE_ENTITY.prototype._get_C0 = function getC0()
 {
-	const r = MAGPIE_ENTITY._get_celestialRadius(this);
+	const r = this._get_celestial()._get_radius();
 	return MAGPIE_PHYSICS.cartesianToGeodetic(this._get_P0(), r)
 }
 /**
@@ -1300,7 +1308,7 @@ MAGPIE_ENTITY.prototype._M_importSTATS = function importMateriaSTATS(STATS)
  */
 MAGPIE_ENTITY.prototype._set_C1 = function _set_C1(C1, r = null)
 {
-	if(isNaN(r)) r = MAGPIE_ENTITY._get_celestialRadius(this);
+	if(isNaN(r)) r = this._get_celestial()._get_radius();
 	return this._set_P1(MAGPIE_PHYSICS.geodeticToCartesian(C1, r))
 }
 // #endregion

@@ -1642,9 +1642,9 @@ MAGPIE_HIVE.setup = function setup()
 	const layerSuper = K.get(3).name;
 	const layerMega = K.get(4).name;
 	const layerUltra = K.get(5).name;
-	MAGPIE_HIVE[layerBase] = new Array(K.get(0).slots).fill(MAGPIE_HIVE._get_entity_new());
-	MAGPIE_HIVE[layerGame] = new Array(K.get(1).slots).fill(MAGPIE_HIVE._get_entity_new());
-	MAGPIE_HIVE[layerStandard] = new Array(K.get(2).slots).fill(MAGPIE_HIVE._get_entity_new());
+	MAGPIE_HIVE[layerBase] = new Array(K.get(0).slots).fill(MAGPIE_HIVE._set_new_entity());
+	MAGPIE_HIVE[layerGame] = new Array(K.get(1).slots).fill(MAGPIE_HIVE._set_new_entity());
+	MAGPIE_HIVE[layerStandard] = new Array(K.get(2).slots).fill(MAGPIE_HIVE._set_new_entity());
 	MAGPIE_HIVE._registry.set(0, {name: layerBase, 	nextSlot: 0});
 	MAGPIE_HIVE._registry.set(1, {name: layerGame, 	nextSlot: 0});
 	MAGPIE_HIVE._registry.set(2, {name: layerStandard, nextSlot: 0});
