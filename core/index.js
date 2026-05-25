@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.23.4
+ * @version 0.23.5
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,8 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.23.4 2026 05 25
+ * @version 0.23.5 2026 05 25
+ * - ADDED: context handling methods
  * - FIXED: seekTarget orchestration typos and flickering
  * - FIXED: SERVER.BOOT.shutdown hanging on HIVE.save()
  * 
@@ -713,6 +714,7 @@ MAGPIE.KEY.INDEX.VSTATE = 1;
 MAGPIE.KEY.INDEX.DRMAG = 2;
 /**
  * @typedef {Enumerator<Number>} urgency
+ * @typedef {{value: Number, desc: String}} urgency_record
  * @type {Map<keyID, {value: urgency, desc: String>}}
  */
 MAGPIE.KEY.INDEX.URGENCY = new Map();
@@ -754,6 +756,7 @@ MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_LATENT, {
 });
 /** 
  * @typedef {Enumerator<Number>} gravity
+ * @typedef {{value: Number, desc: String}} gravity_record
  * @type {Map<keyID, {value: gravity, desc: String>}} 
  * 
  * */
@@ -796,6 +799,7 @@ MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL, {
 });
 /** 
  * @typedef {Enumerator<Number>} ambiguity
+ * @typedef {{value: Number, desc: String}} ambiguity_record
  * @type {Map<keyID, {value: ambiguity, desc: String}>} 
  * */
 MAGPIE.KEY.INDEX.AMBIGUITY = new Map();
@@ -1723,6 +1727,30 @@ MAGPIE.KEY.SYMBOL.TYPE.INTERACTION = 8;
 /** @type {symbol_type} */
 MAGPIE.KEY.SYMBOL.TYPE.CONCEPT = 9;
 MAGPIE.KEY.SYMBOL.INDEX = {};
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name Context
+ * @desc 
+ * @typedef {Enumerator<Number>} context_type
+ * @typedef {{desc: String}} context_record
+ */
+//------------------------------------------------------------------------
+// #region > Context
+//------------------------------------------------------------------------
+MAGPIE.KEY.CONTEXT = {};
+/** @type {Map<context_type, {desc: String}} */
+MAGPIE.KEY.CONTEXT.TYPE = new Map();
+MAGPIE.KEY.CONTEXT.DEFAULT = 0;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.DEFAULT, {
+	name: "Default",
+	desc: ""
+});
+MAGPIE.KEY.CONTEXT.LOCAL = 100;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.LOCAL, {
+	name: "Local",
+	desc: ""
+});
 // #endregion
 //------------------------------------------------------------------------
 /**

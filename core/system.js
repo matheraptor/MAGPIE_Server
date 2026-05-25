@@ -2341,6 +2341,13 @@ MAGPIE_HIVE._get_context = function _get_context(contextID)
 		return context
 	return MAGPIE_HIVE._get_databaseSync("loadContextSync", [contextID])
 }
+/**
+ * @returns {MAGPIE_CONTEXT[]}
+ */
+MAGPIE_HIVE._get_all_contexts = function getAllContext()
+{
+	return Array.from(MAGPIE_HIVE._contextBuffer.values())
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -2433,7 +2440,11 @@ MAGPIE_HIVE._set_keySync = function setKeySync(key)
  */
 MAGPIE_HIVE._set_context = async function setContext(context)
 {
-	MAGPIE_HIVE._verify_buffer_entry("context", context)
+	let entry = MAGPIE_HIVE._contextBuffer.get(context.ID);
+	if(entry)
+	{
+		entry = context;
+	}
 	return await MAGPIE_HIVE._set_database("saveContext", [context])
 }
 /**
@@ -2443,7 +2454,11 @@ MAGPIE_HIVE._set_context = async function setContext(context)
  */
 MAGPIE_HIVE._set_contextSync = function setContextSync(context)
 {
-	MAGPIE_HIVE._verify_buffer_entry("context", context)
+	let entry = MAGPIE_HIVE._contextBuffer.get(context.ID);
+	if(entry)
+	{
+		entry = context;
+	}
 	return MAGPIE_HIVE._set_databaseSync("saveContextSync", [context])
 }
 // #endregion

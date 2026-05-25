@@ -1,7 +1,7 @@
 /**
  * @name INDEX
  * @desc 
- * @version 0.23.2
+ * @version 0.23.5
  */
 //========================================================================
 // #region - INDEX
@@ -986,8 +986,11 @@ MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
  * @typedef {import("./system").epoch_real} epoch_real
  * @typedef {import("./entity").MAGPIE_ENTITY} MAGPIE_ENTITY
  * @typedef {import("./index").urgency} urgency
+ * @typedef {import("./index").urgency_record} urgency_record
  * @typedef {import("./index").gravity} gravity
+ * @typedef {import("./index").gravity_record} gravity_record
  * @typedef {import("./index").ambiguity} ambiguity
+ * @typedef {import("./index").ambiguity_record} ambiguity_record
  * @typedef {{
  * ID: contextID,
  * type: context_type,
@@ -1053,14 +1056,6 @@ MAGPIE_CONTEXT.__hiveSync = function __hiveSync(method, arguments)
 MAGPIE_CONTEXT.__hive = async function __hive(method, arguments)
 {
 	//
-}
-/**
- * 
- * @returns {database_result}
- */
-MAGPIE_CONTEXT.prototype.setSync = function setSync()
-{
-	return MAGPIE_CONTEXT.__hiveSync("_set_databaseSync", ["saveContextSync", [this]])
 }
 /**
  * 
@@ -1164,6 +1159,114 @@ MAGPIE_CONTEXT.prototype._set_symbol = async function setSymbol(symbolID)
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Getters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {context_record}
+ */
+MAGPIE_CONTEXT.prototype._get_type = function getType()
+{
+	return MAGPIE.KEY.CONTEXT.TYPE.get(this.type)
+}
+/**
+ * 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_CONTEXT.prototype._get_all_entities = function getAllEntities()
+{
+	return Array.from(this.entities).map(entityID => this._get_entity(entityID))
+}
+/**
+ * 
+ * @param {entityID} entityID 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_CONTEXT.prototype._get_entity = function getEntity(entityID)
+{
+	return MAGPIE_CONTEXT.__hiveSync("_get_entity", [entityID])
+}
+/**
+ * @returns {MAGPIE_EXP[]}
+ */
+MAGPIE_CONTEXT.prototype._get_all_exps = function getAllExps()
+{
+	return Array.from(this.exps).map(expID => this._get_exp(expID))
+}
+/**
+ * 
+ * @param {expID} expID 
+ * @returns {MAGPIE_EXP}
+ */
+MAGPIE_CONTEXT.prototype._get_exp = function getExp(expID)
+{
+	return MAGPIE_CONTEXT.__hiveSync("_get_exp", [expID])
+}
+/**
+ * 
+ * @param {keyID} keyID 
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_CONTEXT.prototype._get_key = function getKey(keyID)
+{
+	return MAGPIE_CONTEXT.__hiveSync("_get_key", [keyID])
+}
+/**
+ * 
+ * @returns {MAGPIE_KEY[]}
+ */
+MAGPIE_CONTEXT.prototype._get_all_keys = function getAllKeys()
+{
+	return Array.from(this.keys).map(keyID => this._get_key(keyID))
+}
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {MAGPIE_SYMBOL}
+ */
+MAGPIE_CONTEXT.prototype._get_symbol = function getSymbol(symbolID)
+{
+	return MAGPIE_CONTEXT.__hiveSync("_get_symbol", [symbolID])
+}
+/**
+ * @returns {MAGPIE_SYMBOL[]}
+ */
+MAGPIE_CONTEXT.prototype._get_all_symbols = function getAllSymbols()
+{
+	return Array.from(this.symbols).map(symbolID => this._get_symbol(symbolID))
+}
+/**
+ * 
+ * @returns {urgency_record}
+ */
+MAGPIE_CONTEXT.prototype._get_urgency = function getUrgency()
+{
+	return MAGPIE.KEY.INDEX.URGENCY.get(this.urgency);
+}
+/**
+ * 
+ * @returns {gravity_record}
+ */
+MAGPIE_CONTEXT.prototype._get_gravity = function getGravity()
+{
+	return MAGPIE.KEY.INDEX.get(this.gravity);
+}
+/**
+ * 
+ * @returns {ambiguity_record}
+ */
+MAGPIE_CONTEXT.prototype._get_ambiguity = function getAmbiguity()
+{
+	return MAGPIE.KEY.INDEX.get(this.ambiguity);
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *
@@ -1208,6 +1311,15 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
 //========================================================================
 // #region - KEY
 //========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Proto
+//------------------------------------------------------------------------
+
 MAGPIE_KEY.prototype.initialize = function initialize(data)
 {
 	this._firmware = "MAGPIE_KEY";
@@ -1255,6 +1367,16 @@ MAGPIE_KEY._newKey = function newKey(data)
 	const key = new MAGPIE_KEY(data);
 	return key.setSync()
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Set
+//------------------------------------------------------------------------
 /**
  * 
  * 
@@ -1293,7 +1415,31 @@ MAGPIE_KEY.prototype._set_type = async function setType(key_type)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
-
+/**
+ * 
+ * @param {keyID} keyID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_KEY.prototype.setOrigin = async function setOrigin(keyID)
+{
+	this.originID = keyID;
+	return this.set();
+}
+MAGPIE_KEY.prototype.removeOrigin = async function removeOrigin()
+{
+	this.originID = null;
+	return this.set();
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Get
+//------------------------------------------------------------------------
 /**
  * 
  * @param {keyID} keyID 
@@ -1311,16 +1457,6 @@ MAGPIE_KEY.prototype.getOrigin = function getOrigin()
 {
 	return this.getKey(this.originID)
 }
-MAGPIE_KEY.prototype.setOrigin = async function setOrigin(keyID)
-{
-	this.originID = keyID;
-	return this.set();
-}
-MAGPIE_KEY.prototype.removeOrigin = async function removeOrigin()
-{
-	this.originID = null;
-	return this.set();
-}
 /**
  * 
  * @returns {String}
@@ -1329,6 +1465,42 @@ MAGPIE_KEY.prototype._get_type = function getType()
 {
 	return MAGPIE.KEY.TYPES.get(this.type)
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Utility
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {key_data}
+ */
+MAGPIE_KEY.prototype._get_data = function getData()
+{
+	const data = {};
+	Object.keys(this).forEach(key => {
+		if(key !== "_firmware" && key !== "ID")
+			data[key] = this[key];
+	})
+	return data
+}
+/**
+ * 
+ * @returns {new MAGPIE_KEY}
+ */
+MAGPIE_KEY.prototype._U_clone = async function clone()
+{
+	const data = this._get_data();
+	const key = new MAGPIE_KEY(data);
+	await key.set();
+	return key
+}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * 
  * @desc back to {@link }
