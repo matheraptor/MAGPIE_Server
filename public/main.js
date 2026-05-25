@@ -90,6 +90,8 @@ const inspector = {
 		update("val-roll", data?.roll?.toFixed(1));
 		update('val-body', data.CelestialBody);
 		update('val-meta', data.metadate);
+		update("val-targetID", data?.targetID);
+		update("val-targetName", data?.targetName);
 		update('val-Ct', `${Ct_lat}, ${Ct_lon}`)
 		// update('val-tlat', data.targetCoords[0].toFixed(10));
 		// update('val-tlon', data.targetCoords[1].toFixed(10));

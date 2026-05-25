@@ -1014,7 +1014,8 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const hdg = Number(MAGPIE_PHYSICS._rotor_toHeadingAbs(O1, normP1));
 		const pitch = Number(MAGPIE_PHYSICS._rotor_toPitchAbs(O1, normP1));
 		const roll = Number(MAGPIE_PHYSICS._rotor_toRollAbs(O1, normP1));
-		const Pt = entity._get_target()?.STATS?.slice(0, Kp.P_C) || [NaN,NaN,NaN]
+		const target = entity._get_target();
+		const Pt = target?.STATS?.slice(0, Kp.P_C) || [NaN,NaN,NaN]
 		const validTarget = MAGPIE_PHYSICS.isValidVector(Pt);
 		const Ct = validTarget ? MAGPIE_PHYSICS.cartesianToGeodetic(Pt, r) : [NaN, NaN, NaN];
 		const dist = validTarget ? Number(MAGPIE_PHYSICS._geod_distanceTo(P1, Pt, r)) : NaN;
@@ -1043,6 +1044,8 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 			pitch: pitch,
 			roll: roll,
 			CelestialBody: C.name,
+			targetID: target?.ID,
+			targetName: target?.name,
 			targetCoords: Ct,
 			distanceTo: dist,
 			ETA: ETA,
