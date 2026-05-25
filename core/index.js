@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.23.2
+ * @version 0.23.3
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,7 @@
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
  * 
- * @version 0.23.2 2026 05 25
+ * @version 0.23.3 2026 05 25
  * - FIXED: seekTarget orchestration typos and flickering
  * 
  * @version 0.23.1 2026 05 24
@@ -704,6 +704,12 @@ MAGPIE.KEY.INDEX.FACING_TARGET = 313;
 MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.FACING_TARGET, "Facing Target");
 MAGPIE.KEY.INDEX.DRIFTING = 314;
 MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DRIFT, "Drifting");
+/** @type {index} entity.emote.output.raw[index] */
+MAGPIE.KEY.INDEX.RSTATE = 0;
+/** @type {index} entity.emote.output.raw[index] */
+MAGPIE.KEY.INDEX.VSTATE = 1;
+/** @type {index} entity.emote.output.raw[index] */
+MAGPIE.KEY.INDEX.DRMAG = 2;
 /**
  * @typedef {Enumerator<Number>} urgency
  * @type {Map<keyID, {value: urgency, desc: String>}}

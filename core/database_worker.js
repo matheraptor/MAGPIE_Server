@@ -99,6 +99,13 @@ parentPort?.on("message", async ({ method, args, requestID }) => {
 		parentPort.postMessage({ requestID, error: e.message })
 	}
 })
+worker.close = function close()
+{
+	console.log("[DATABASE WORKER]: closing database connections...");
+	worker.world.close();
+	worker.server.close();
+	process.exit(0);
+}
 /**
  * 
  * @desc back to {@link }

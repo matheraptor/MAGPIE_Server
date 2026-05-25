@@ -3,12 +3,14 @@ const { MAGPIE } = require("../core/index");
  * @typedef {import("../core/entity").MAGPIE_ENTITY} MAGPIE_ENTITY
  * @typedef {import("../core/component").MAGPIE_EXP} MAGPIE_EXP
  * @typedef {import("../core/index").state_index} state_index
+ * @typedef {import("../core/entity").fitness_index} fitness_index
  * @typedef {import("../core/physics").vector3} vector3
  * @typedef {import("../core/physics").bivector} bivector
  * @typedef {{
  * At: vector3,
  * Tt: bivector,
- * exp: MAGPIE_EXP
+ * exp: MAGPIE_EXP,
+ * raw: Float64Array
  * }} state_output
  */
 /**
@@ -201,13 +203,13 @@ const SEEKING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index
+	 * @param {fitness_index} fitness_index
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, state_index) => {
+	onUpdate: (exp, entity, process, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target || !process) return {exp: exp}
-		return entity._emote_seekTarget(exp);
+		return entity._emote_seekTarget(exp, fitness_index);
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -228,13 +230,13 @@ const REACHING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, state_index) => {
+	onUpdate: (exp, entity, process, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target || !process) return {exp: exp}
-		return entity._emote_reachTarget(exp)
+		return entity._emote_reachTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -255,13 +257,13 @@ const APPROACHING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, state_index) => {
+	onUpdate: (exp, entity, process, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target || !process) return {exp: exp}
-		return entity._emote_approachTarget(exp);
+		return entity._emote_approachTarget(exp, fitness_index);
 	}
 }
 states.push(APPROACHING_TARGET);
@@ -280,13 +282,13 @@ const ON_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, state_index) => {
+	onUpdate: (exp, entity, process, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target || !process) return {exp: exp}
-		return entity._emote_onTarget(exp)
+		return entity._emote_onTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -308,10 +310,12 @@ const IDLING = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: () => {},
+	onUpdate: () => {
+
+	},
 	onRemove: () => {},
 	onExpire: () => {}
 }
@@ -332,7 +336,7 @@ const ALIGNING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
 	onUpdate: () => {},
@@ -356,7 +360,7 @@ const LOCKING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
 	onUpdate: () => {},
@@ -380,7 +384,7 @@ const FACING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
 	onUpdate: () => {},
@@ -404,7 +408,7 @@ const DRIFTING = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
 	onUpdate: () => {},
@@ -428,7 +432,7 @@ const SPOOFED = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index 
+	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
 	onUpdate: () => {},

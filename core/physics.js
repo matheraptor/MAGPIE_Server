@@ -300,7 +300,7 @@ MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(r, C0, POVART0
 		const Og = this._rotor_fromEulerAbs(hdg, 0, 0, Pg)
 		// const Og = O0
 		// MAGPIE_SYSTEM._logging_debug(`Og: ${this._rotor_toHeadingAbs(Og, Pg)}`)
-		return { clamped: true, Pg, Vg, Og: Og };
+		return { clamped: true, Pg, Vg, Og: O0 };
 	} 
 	catch(e)
 	{
