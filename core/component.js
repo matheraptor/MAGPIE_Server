@@ -811,9 +811,7 @@ MAGPIE_EXP.prototype._get_targetSTATS = function _get_targetSTATS()
  */
 MAGPIE_EXP.prototype._get_key_target = function getKeyTarget()
 {
-	return this.getKeys()?.find(key => {
-		key.originID === MAGPIE.KEY.INDEX.TARGET
-	});
+	return this.getKeys()?.find(key => key.originID === MAGPIE.KEY.INDEX.TARGET);
 }
 /**
  * @returns {entityID} entityID

@@ -2113,28 +2113,38 @@ MAGPIE_HIVE._host_symbol = function hostSymbol(symbol, contextID)
  */
 MAGPIE_HIVE._host_context = function hostContext(context)
 {
-	MAGPIE_HIVE._contextBuffer.set(context.ID, context);
-	const entities = context.entities;
-	const exps = context.exps;
-	const keys = context.keys;
-	const symbols = context.symbols
-	if(entities.length < 1 && exps.length < 1 && keys.length < 1 && symbols.length < 1)
-		return
-	const urgency = Number(context.urgency) || 0;
-	const gravity = Number(context.gravity) || 0;
-	const layerID = MAGPIE_HIVE._offset_importance(urgency, gravity);
-	entities.forEach(entityID => {
-		MAGPIE_HIVE.host(MAGPIE_HIVE._get_entity(entityID), layerID)
-	})
-	exps.forEach(expID => {
-		MAGPIE_HIVE._host_exp(MAGPIE_HIVE._get_exp(expID), context.ID)
-	})
-	keys.forEach(keyID => {
-		MAGPIE_HIVE._host_key(MAGPIE_HIVE._get_key(keyID), context.ID)
-	})
-	symbols.forEach(symbolID => {
-		MAGPIE_HIVE._host_symbol(MAGPIE_HIVE._get_symbol(symbolID), context.ID)
-	})
+	const ePrefix = "[HIVE].hostContext: ";
+	try
+	{
+		if(context?.constructor?.name !== 'MAGPIE_CONTEXT')
+			throw new Error(`${context} is invalid MAGPIE_CONTEXT`)
+		MAGPIE_HIVE._contextBuffer.set(context.ID, context);
+		const entities = context.entities;
+		const exps = context.exps;
+		const keys = context.keys;
+		const symbols = context.symbols
+		if(entities.length < 1 && exps.length < 1 && keys.length < 1 && symbols.length < 1)
+			return
+		const urgency = Number(context.urgency) || 0;
+		const gravity = Number(context.gravity) || 0;
+		const layerID = MAGPIE_HIVE._offset_importance(urgency, gravity);
+		entities.forEach(entityID => {
+			MAGPIE_HIVE.host(MAGPIE_HIVE._get_entity(entityID), layerID)
+		})
+		exps.forEach(expID => {
+			MAGPIE_HIVE._host_exp(MAGPIE_HIVE._get_exp(expID), context.ID)
+		})
+		keys.forEach(keyID => {
+			MAGPIE_HIVE._host_key(MAGPIE_HIVE._get_key(keyID), context.ID)
+		})
+		symbols.forEach(symbolID => {
+			MAGPIE_HIVE._host_symbol(MAGPIE_HIVE._get_symbol(symbolID), context.ID)
+		})
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 /**
  * 

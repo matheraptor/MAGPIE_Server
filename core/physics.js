@@ -1079,7 +1079,7 @@ MAGPIE_PHYSICS._calculate_localDir = function calculateLocalDIr(P0, P1)
 		const localDir = this._get_localDir(localNorth, localEast, up, absoluteDir);
 		if(!this.isValidVector(localDir))
 			throw new Error(`${localDir} is invalid vector`)
-		return localDir
+		return this.normalizeVector(localDir)
 	}
 	catch(e)
 	{

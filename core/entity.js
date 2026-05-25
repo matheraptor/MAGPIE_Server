@@ -2052,6 +2052,8 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp, fitness_
 	try
 	{
 		// MAGPIE_SYSTEM._logging_debug(ePrefix)
+		if(exp._get_key_target())
+			return this._target_next()
 		const next = exp._emote_onTarget();
 		//@todo entity._emote_onTarget
 		return this._emote_seekTarget(exp, fitness_index);
@@ -2069,9 +2071,18 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp, fitness_
  */
 MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(exp, fitness_index)
 {
-	if(exp._get_key_target())
-		return this._target_next()
-	return this._emote_seekTarget(exp, fitness_index)
+	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
+	try
+	{
+		// MAGPIE_SYSTEM._logging_debug(ePrefix)
+		if(exp._get_key_target())
+			return this._target_next()
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 /**
  * 
@@ -2081,7 +2092,18 @@ MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(e
  */
 MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp, fitness_index)
 {
-	return this._emote_seekTarget(exp, fitness_index)
+	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
+	try
+	{
+		// MAGPIE_SYSTEM._logging_debug(ePrefix)
+		if(exp._get_key_target())
+			return this._target_next()
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -2576,6 +2598,7 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 		const targetID = await exp._key_target_next();
 		if(isNaN(targetID))
 			throw new Error(`unable to resolve targetID`)
+		/** @type {MAGPIE_ENTITY} */
 		const target = MAGPIE_ENTITY.__hiveSync("_get_entity", [targetID])
 		if(!(target instanceof MAGPIE_ENTITY))
 			throw new Error(`${target} is invalid entity`)
@@ -2590,6 +2613,7 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 		this.exps[index] = this.exps[0];
 		this.exps[0] = exp.ID;
 		//@todo centralized entity.exps manipulation
+		MAGPIE_SYSTEM.log(ePrefix + `[ENTITY-${targetID}].name[${target.name}]`)
 		return targetID
 	}
 	catch(e)
