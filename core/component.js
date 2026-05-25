@@ -1180,7 +1180,12 @@ MAGPIE_CONTEXT.prototype._get_type = function getType()
  */
 MAGPIE_CONTEXT.prototype._get_all_entities = function getAllEntities()
 {
-	return Array.from(this.entities).map(entityID => this._get_entity(entityID))
+	const arr = [];
+	for(let i = 0; i < this.entities.length; i++)
+	{
+		arr.push(this._get_entity(this.entities[i]))
+	}
+	return arr
 }
 /**
  * 
@@ -1196,7 +1201,12 @@ MAGPIE_CONTEXT.prototype._get_entity = function getEntity(entityID)
  */
 MAGPIE_CONTEXT.prototype._get_all_exps = function getAllExps()
 {
-	return Array.from(this.exps).map(expID => this._get_exp(expID))
+	const arr = [];
+	for(let i = 0; i < this.exps.length; i++)
+	{
+		arr.push(this._get_exp(this.exps[i]))
+	}
+	return arr
 }
 /**
  * 
@@ -1222,7 +1232,12 @@ MAGPIE_CONTEXT.prototype._get_key = function getKey(keyID)
  */
 MAGPIE_CONTEXT.prototype._get_all_keys = function getAllKeys()
 {
-	return Array.from(this.keys).map(keyID => this._get_key(keyID))
+	const arr = [];
+	for(let i = 0; i < this.keys.length; i++)
+	{
+		arr.push(this._get_key(this.keys[i]))
+	}
+	return arr
 }
 /**
  * 
@@ -1238,7 +1253,12 @@ MAGPIE_CONTEXT.prototype._get_symbol = function getSymbol(symbolID)
  */
 MAGPIE_CONTEXT.prototype._get_all_symbols = function getAllSymbols()
 {
-	return Array.from(this.symbols).map(symbolID => this._get_symbol(symbolID))
+	const arr = [];
+	for(let i = 0; i < this.symbols.length; i++)
+	{
+		arr.push(this._get_symbol(this.symbols[i]))
+	}
+	return arr
 }
 /**
  * 
