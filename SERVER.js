@@ -1023,9 +1023,9 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		// MAGPIE_SERVER._debug(ETA_s)
 		const ETA = !isNaN(ETA_s) ? MAGPIE_SYSTEM.Utility.printETA(ETA_s) : "N/A";
 		const rawData = output?.emote?.raw || output?.target?.raw || [];
-		const Rstate = rawData[0] || NaN; 
-		const Vstate = rawData[1] || NaN;
-		const dR_mag = Number(rawData[2]) || NaN;
+		const Rstate = rawData[MAGPIE.KEY.INDEX.RSTATE] || NaN; 
+		const Vstate = rawData[MAGPIE.KEY.INDEX.VSTATE] || NaN;
+		const dR_mag = Number(rawData[MAGPIE.KEY.INDEX.DRMAG]) || NaN;
 		const data = {
 			entityID: entity.ID,
 			entityName: entity.name,
@@ -1048,7 +1048,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 			ETA: ETA,
 			forces: forces
 		};
-		// MAGPIE_SERVER._debug(Object.entries(data))
+		// MAGPIE_SERVER._debug(data.Rstate)
 		const V0_mag = MAGPIE_PHYSICS.mag(V0);
 		const A0_mag = MAGPIE_PHYSICS.mag(A0);
 		if(!MAGPIE_ENTITY?._delta)
@@ -1691,6 +1691,8 @@ MAGPIE_SERVER.BOOT.shutdown = async function shutdown(signal = 0)
 		try
 		{
 			await MAGPIE_HIVE.save();
+			MAGPIE_SERVER.log(ePrefix + "save complete; terminating database worker...")
+			MAGPIE_DATABASE.worker.postMessage({method: "close"})
 			MAGPIE_SERVER.CLI._incrementLoadBar(10);
 			await new Promise((resolve) => {
 				io.close((err) => {

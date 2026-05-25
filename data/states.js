@@ -3,12 +3,14 @@ const { MAGPIE } = require("../core/index");
  * @typedef {import("../core/entity").MAGPIE_ENTITY} MAGPIE_ENTITY
  * @typedef {import("../core/component").MAGPIE_EXP} MAGPIE_EXP
  * @typedef {import("../core/index").state_index} state_index
+ * @typedef {import("../core/entity").fitness_index} fitness_index
  * @typedef {import("../core/physics").vector3} vector3
  * @typedef {import("../core/physics").bivector} bivector
  * @typedef {{
  * At: vector3,
  * Tt: bivector,
- * exp: MAGPIE_EXP
+ * exp: MAGPIE_EXP,
+ * raw: Float64Array
  * }} state_output
  */
 /**
@@ -34,11 +36,21 @@ const TYPE = {};
 /** @type {state_type} @desc permanent state type */
 TYPE.PERMANENT = 0;
 /** @type {state_type} @desc growth level state type */
-TYPE.G_LVL = TYPE.PERMANENT + 1;
+TYPE.G_LVL = 1;
 /** @type {state_type} @desc accumulator state type */
-TYPE.ACCUMULATOR = TYPE.G_LVL + 1;
+TYPE.ACCUMULATOR = 2;
 /** @type {state_type} @desc Finite-State-Machine type */
-TYPE.FSM = TYPE.ACCUMULATOR + 1;
+TYPE.FSM = 10;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_STATUS = 11;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_POSTURE = 12;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_MOVEMENT = 13;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_MOOD = 14;
+/** @type {state_type} @desc Finite-State-Machine type */
+TYPE.FSM_ENERGY = 15;
 //TEMPORARY STATES (1 turn)
 /** @type {state_type} @desc temporary state type */
 TYPE.TEMP = 100;
@@ -179,7 +191,7 @@ INDEX.FAT = FAT.ID
 
 const SEEKING_TARGET = {
 	ID: 302,
-	type: TYPE.FSM,
+	type: TYPE.FSM_POSTURE,
 	name: "SEEKING_TARGET",
 	description: `exp.keys.find(keyID => {
 			isTypeTARGET(keyID) ? seekTarget(exp) : return
@@ -191,20 +203,13 @@ const SEEKING_TARGET = {
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
 	 * @param {Boolean} process 
-	 * @param {state_index} state_index
+	 * @param {fitness_index} fitness_index
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, state_index) => {
+	onUpdate: (exp, entity, process, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
 		if(!target || !process) return {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const reaching = 303;
-		const approaching = 304;
-		const onTarget = 305;
-		if(output.arrived) entity.switchState(state_index, onTarget);
-		if(output.proximity) entity.switchState(state_index, approaching);
-		if(output.braking) entity.switchState(state_index, reaching);
-		return output
+		return entity._emote_seekTarget(exp, fitness_index);
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -215,20 +220,23 @@ INDEX.SEEKING_TARGET = SEEKING_TARGET.ID;
 //------------------------------------------------------------------------
 const REACHING_TARGET = {
 	ID: 303,
-	type: TYPE.FSM,
+	type: TYPE.FSM_POSTURE,
 	name: "REACHING_TARGET",
 	description: "",
 	stack: 1,
 	onApply: () => {},
-	onUpdate: (exp, entity, process, state_index) => {
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: (exp, entity, process, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target) return {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const onTarget = 305;
-		if(output.arrived) entity.switchState(state_index, onTarget);
-		const approaching = 304
-		if(!output.proximity) entity.switchState(state_index, approaching)
-		return output
+		if(!target || !process) return {exp: exp}
+		return entity._emote_reachTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -239,26 +247,32 @@ INDEX.REACHING_TARGET = REACHING_TARGET.ID;
 //------------------------------------------------------------------------
 const APPROACHING_TARGET = {
 	ID: 304,
-	type: TYPE.FSM,
+	type: TYPE.FSM_POSTURE,
 	name: "APPROACHING_TARGET",
 	description: "",
 	stack: 1,
 	onApply: () => {},
-	onUpdate: (exp, entity, process, state_index) => {
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: (exp, entity, process, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target) return {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const reaching = REACHING_TARGET.ID;
-		if(output.proximity) entity.switchState(state_index, reaching)
-		const coasting = SEEKING_TARGET.ID;
-		if(!output.braking) entity.switchState(state_index, coasting);
-		return output
+		if(!target || !process) return {exp: exp}
+		return entity._emote_approachTarget(exp, fitness_index);
 	}
 }
+states.push(APPROACHING_TARGET);
+/** @type {Enumerator<Number>}  */
+INDEX.APPROACHING_TARGET = APPROACHING_TARGET.ID;
 //------------------------------------------------------------------------
 const ON_TARGET = {
 	ID: 305,
-	type: TYPE.FSM,
+	type: TYPE.FSM_POSTURE,
 	name: "ON_TARGET",
 	description: "",
 	stack: 1,
@@ -267,17 +281,14 @@ const ON_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {state_index} state_index 
-	 * @return {state_output}
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, state_index) => {
+	onUpdate: (exp, entity, process, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target) return {exp: exp}
-		const output = entity._emote_seekTarget(exp);
-		const reaching = REACHING_TARGET.ID;
-		if(!output.arrived) entity.switchState(state_index, reaching);
-		//@todo onTarget effects
-		return output
+		if(!target || !process) return {exp: exp}
+		return entity._emote_onTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -285,6 +296,152 @@ const ON_TARGET = {
 states.push(ON_TARGET)
 /** @type {Enumerator<Number>}  */
 INDEX.ON_TARGET = ON_TARGET.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const IDLING = {
+	ID: 306,
+	type: TYPE.FSM_POSTURE,
+	name: "IDLING",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: () => {
+
+	},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(IDLING);
+/** @type {Enumerator<Number>} */
+INDEX.IDLING = IDLING.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const ALIGNING_TARGET = {
+	ID: 311,
+	type: TYPE.FSM_POSTURE,
+	name: "ALIGNING_TARGET",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(ALIGNING_TARGET);
+/** @type {Enumerator<Number>} */
+INDEX.ALIGNING_TARGET = ALIGNING_TARGET.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const LOCKING_TARGET = {
+	ID: 312,
+	type: TYPE.FSM_POSTURE,
+	name: "LOCKING_TARGET",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(LOCKING_TARGET);
+/** @type {Enumerator<Number>} */
+INDEX.LOCKING_TARGET = LOCKING_TARGET.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const FACING_TARGET = {
+	ID: 313,
+	type: TYPE.FSM_POSTURE,
+	name: "FACING_TARGET",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(FACING_TARGET);
+/** @type {Enumerator<Number>} */
+INDEX.FACING_TARGET = FACING_TARGET.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const DRIFTING = {
+	ID: 314,
+	type: TYPE.FSM_POSTURE,
+	name: "DRIFTING",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(DRIFTING);
+/** @type {Enumerator<Number>} */
+INDEX.DRIFTING = DRIFTING.ID;
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const SPOOFED = {
+	ID: 315,
+	type: TYPE.FSM_POSTURE,
+	name: "SPOOFED",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(SPOOFED);
+/** @type {Enumerator<Number>} */
+INDEX.SPOOFED = SPOOFED.ID
 //------------------------------------------------------------------------
 // #endregion
 //------------------------------------------------------------------------

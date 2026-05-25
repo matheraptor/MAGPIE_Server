@@ -1,7 +1,7 @@
 /** 
  * @namespace scratchpad
  * @author Matheraptor
- * @version 0.23.0
+ * @version 0.23.2
  * 
  * 
  * 

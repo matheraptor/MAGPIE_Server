@@ -1,6 +1,6 @@
 /**
  * @name MAGPIE_ENTITY
- * @version 0.23.0
+ * @version 0.23.2
  * @desc 
  * @param {{
  * name: String,
@@ -351,7 +351,9 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * host: entityID,
  * equip: entityID[]
  * }} entity_data
+ * 
  * @typedef {Number} fitness_index this.fitness[index]
+ * @typedef {import("../data/states").state_output} state_output
  * 
  * 
  * @typedef {import("./system").database_result} database_result
@@ -1110,26 +1112,26 @@ MAGPIE_ENTITY.prototype._get_speeds = function getSpeed(overrideVspeed)
 	const Vspeeds = symbol.getVspeeds();
 	/** @type {entity_speeds} */
 	const speeds = {
-		Vmax: overrideVspeed?.Vmax || Vspeeds?.Vmax,
-		Vcruise: overrideVspeed?.Vcruise || Vspeeds?.Vcruise,
-		Vsafe: overrideVspeed?.Vsafe || Vspeeds?.Vsafe,
-		Vcreep: overrideVspeed?.Vcreep || Vspeeds?.Vcreep,
-		Vdock: overrideVspeed?.Vdock || Vspeeds?.Vdock,
-		Amax: overrideVspeed?.Amax || Vspeeds?.Amax,
-		Asafe: overrideVspeed?.Asafe || Vspeeds?.Asafe,
-		Acruise: overrideVspeed?.Acruise || Vspeeds?.Acruise,
-		Acreep: overrideVspeed?.Acreep || Vspeeds?.Acreep,
-		Adock: overrideVspeed?.Adock || Vspeeds?.Adock,
-		Rmax: overrideVspeed?.Rmax || Vspeeds?.Rmax,
-		Rsafe: overrideVspeed?.Rsafe || Vspeeds?.Rsafe,
-		Rcruise: overrideVspeed?.Rcruise || Vspeeds?.Rcruise,
-		Rcreep: overrideVspeed?.Rcreep || Vspeeds?.Rcreep,
-		Rdock: overrideVspeed?.Rdock || Vspeeds?.Rdock,
-		Tmax: overrideVspeed?.Tmax || Vspeeds?.Tmax,
-		Tsafe: overrideVspeed?.Tsafe || Vspeeds?.Tsafe,
-		Tcruise: overrideVspeed?.Tcruise || Vspeeds?.Tcruise,
-		Tcreep: overrideVspeed?.Tcreep || Vspeeds?.Tcreep,
-		Tdock: overrideVspeed?.Tdock || Vspeeds?.Tdock
+		Vmax: overrideVspeed?.VMAX || Vspeeds?.Vmax,
+		Vcruise: overrideVspeed?.VCRUISE || Vspeeds?.Vcruise,
+		Vsafe: overrideVspeed?.VSAFE || Vspeeds?.Vsafe,
+		Vcreep: overrideVspeed?.VCREEP || Vspeeds?.Vcreep,
+		Vdock: overrideVspeed?.VDOCK || Vspeeds?.Vdock,
+		Amax: overrideVspeed?.AMAX || Vspeeds?.Amax,
+		Asafe: overrideVspeed?.ASAFE || Vspeeds?.Asafe,
+		Acruise: overrideVspeed?.ACRUISE || Vspeeds?.Acruise,
+		Acreep: overrideVspeed?.ACREEP || Vspeeds?.Acreep,
+		Adock: overrideVspeed?.ADOCK || Vspeeds?.Adock,
+		Rmax: overrideVspeed?.RMAX || Vspeeds?.Rmax,
+		Rsafe: overrideVspeed?.RSAFE || Vspeeds?.Rsafe,
+		Rcruise: overrideVspeed?.RCRUISE || Vspeeds?.Rcruise,
+		Rcreep: overrideVspeed?.RCREEP || Vspeeds?.Rcreep,
+		Rdock: overrideVspeed?.RDOCK || Vspeeds?.Rdock,
+		Tmax: overrideVspeed?.TMAX || Vspeeds?.Tmax,
+		Tsafe: overrideVspeed?.TSAFE || Vspeeds?.Tsafe,
+		Tcruise: overrideVspeed?.TCRUISE || Vspeeds?.Tcruise,
+		Tcreep: overrideVspeed?.TCREEP || Vspeeds?.Tcreep,
+		Tdock: overrideVspeed?.TDOCK || Vspeeds?.Tdock
 	}
 	return speeds
 }
@@ -1571,7 +1573,7 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 /**
  * 
  * @param {index} state_index 
- * @returns {state_index}
+ * @returns {fitness_index}
  */
 MAGPIE_ENTITY.prototype._get_index_state = function getStateIndex(state_index)
 {
@@ -1674,7 +1676,7 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		//
 		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
 		const dV = MAGPIE_PHYSICS.addVectors(V0, A1);
-		const V1 = MAGPIE_PHYSICS.mag(dV) > 1e-9 ? dV : [0,0,0];
+		const V1 = MAGPIE_PHYSICS.mag(dV) > 1e-6 ? dV : [0,0,0];
 		//
 		const dP = MAGPIE_PHYSICS.scaleVector(V1, dt);
 		const P1 = MAGPIE_PHYSICS.addVectors(P0, dP);
@@ -1972,23 +1974,19 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 /**
  * 
  * @param {MAGPIE_EXP} exp 
- * @returns {{
- * At: vector3,
- * Tt: bivector,
- * exp: MAGPIE_EXP,
- * raw: Float64Array
- * }}
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
  */
-MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
+MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp, fitness_index)
 {
 	const ePrefix = `[ENTITY-${this.ID}]._emote_seekTarget: `;
-	const output = { At: [0,0,0], Tt: [0,0,0] }
+	const output = { At: [0,0,0], Tt: [0,0,0], exp: exp, raw: [] }
 	try
 	{
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error(`${exp} is invalid EXP`)
 		const POVART0 = this._get_POVART();
-		const { P0 } = MAGPIE_ENTITY._get_decomp_POVART(POVART0)
+		const { P0, V0 } = MAGPIE_ENTITY._get_decomp_POVART(POVART0)
 		const targetID = exp.targetID
 		if(isNaN(targetID))
 			throw new Error(`${targetID} is invalid targetID`)
@@ -2023,27 +2021,17 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 			if(key && value)
 				options[key] = value;
 		})
+		// MAGPIE_SYSTEM._logging_debug(Object.entries(options))
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, Pt, this.STATS, options);
-		const { At, Tt, arrived, proximity, braking, dR_mag, state } = output;
-		const states = { orientation: state, velocity: NaN }
-		if(arrived)
-		{
-			this._emote_onTarget(exp)
-			states.velocity = MAGPIE.KEY.INDEX.IDLE;
-		}
-		if(proximity)
-		{
-			this._emote_reachTarget(exp)
-			states.velocity = MAGPIE.KEY.INDEX.BRAKE;
-		}
-		if(braking)
-		{
-			this._emote_approachTarget(exp)
-			states.velocity = MAGPIE.KEY.INDEX.COAST;
-		}
-		else states.velocity = MAGPIE.KEY.INDEX.A_ERR;
-		const raw = new Float64Array([states.orientation, states.velocity, dR_mag])
+		const { At, Tt, Vstate, Rstate, dR_mag } = output;
+		// MAGPIE_SYSTEM._logging_debug(MAGPIE_STATE.INDEX.get(Vstate).name)
+		const rawData = [];
+		rawData[MAGPIE.KEY.INDEX.RSTATE] = Rstate;
+		rawData[MAGPIE.KEY.INDEX.VSTATE] = Vstate;
+		rawData[MAGPIE.KEY.INDEX.DRMAG] = dR_mag;
+		const raw = new Float64Array(rawData);
+		this.switchState(fitness_index, Vstate)
 		return { At: At, Tt: Tt, exp: exp, raw }
  	}
 	catch(e)
@@ -2055,25 +2043,18 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 /**
  * 
  * @param {MAGPIE_EXP} exp 
- * @returns {{At: vector3, Tt: bivector}}
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
  */
-MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp)
+MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp, fitness_index)
 {
 	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
 	try
 	{
-		MAGPIE_SYSTEM._logging_debug(ePrefix)
+		// MAGPIE_SYSTEM._logging_debug(ePrefix)
 		const next = exp._emote_onTarget();
-		const states = this._get_states();
-		if(states.length < 1) return
-		const stateA_ID = STATE.INDEX.APPROACHING_TARGET;
-		const stateA_index = states.findIndex(n => n === stateA_ID)
-		if(!stateA_index)
-			throw new Error(`unable to get index for [STATE-${stateA_ID}]`)
-		const stateA = [stateA_ID, stateA_index]
-		this.switchState(stateA, next 
-			? STATE.INDEX.SEEKING_TARGET 
-			: STATE.INDEX.ON_TARGET);
+		//@todo entity._emote_onTarget
+		return this._emote_seekTarget(exp, fitness_index);
 	}
 	catch(e)
 	{
@@ -2082,21 +2063,25 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp)
 }
 /**
  * 
- * @param {MAGPIE_EXP} exp 
+ * @param {MAGPIE_EXP} exp
+ * @param {fitness_index} fitness_index
+ * @returns {state_output} 
  */
-MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(exp)
+MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(exp, fitness_index)
 {
-	const ePrefix = `[ENTITY-${this.ID}]._emote_approachTarget: `;
-	MAGPIE_SYSTEM._logging_debug(ePrefix)
+	if(exp._get_key_target())
+		return this._target_next()
+	return this._emote_seekTarget(exp, fitness_index)
 }
 /**
  * 
  * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
  */
-MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp)
+MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp, fitness_index)
 {
-	const ePrefix = `[ENTITY-${this.ID}]._emote_reachTarget: `;
-	MAGPIE_SYSTEM._logging_debug(ePrefix)
+	return this._emote_seekTarget(exp, fitness_index)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -2341,16 +2326,27 @@ MAGPIE_ENTITY.prototype.isValidStamina = function isValidStamina(index)
 }
 /**
  * 
- * @param {stamina_index} stamina_index 
+ * @param {fitness_index} fitness_index 
  * @param {stateID} stateID 
  * @returns {Boolean}
  */
-MAGPIE_ENTITY.prototype.switchState = function switchState(stamina_index, stateID)
+MAGPIE_ENTITY.prototype.switchState = function switchState(fitness_index, stateID)
 {
 	const ePrefix = `[ENTITY-${this.ID}].switchState: `;
 	try
 	{
-		this.fitness[stamina_index] = stateID;
+		const state = MAGPIE_STATE.INDEX.get(stateID);
+		if(!(state instanceof MAGPIE_STATE))
+			throw new Error(`[STATE-${stateID}] is invalid MAGPIE_STATE`)
+		if(isNaN(fitness_index) || fitness_index < 0 || fitness_index >= this.fitness.length)
+			throw new Error(`${fitness_index} is invalid fitness_index`)
+		const current = this.fitness[fitness_index];
+		if(!(MAGPIE_STATE.INDEX.get(current) instanceof MAGPIE_STATE))
+			throw new Error(`this.fitness[${current}] is invalid state`)
+		if(current === stateID)
+			return current
+		this.fitness[fitness_index] = stateID;
+		return stateID
 	}
 	catch(e)
 	{
@@ -2552,6 +2548,54 @@ MAGPIE_ENTITY.prototype._target_getDistance = function getDistanceToTarget(P0, P
 MAGPIE_ENTITY.prototype._target_isSensed = function isTargetSensed(target, dist)
 {
 	return true
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Set
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {Promise<entityID>}
+ */
+MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
+{
+	const ePrefix = `[ENTITY-${this.ID}].nextTarget: `;
+	try
+	{
+		const exp = this._get_exps().find(exp => {
+			exp._get_key_target()
+		})
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error("unable to find target exp")
+		const targetID = await exp._key_target_next();
+		if(isNaN(targetID))
+			throw new Error(`unable to resolve targetID`)
+		const target = MAGPIE_ENTITY.__hiveSync("_get_entity", [targetID])
+		if(!(target instanceof MAGPIE_ENTITY))
+			throw new Error(`${target} is invalid entity`)
+		exp.targetID = targetID;
+		const result = await exp.set();
+		if(!result)
+			throw new Error(`unable to save [EXP-${exp.ID}]`)
+		const index = this.exps.findIndex(expID => expID === exp.ID);
+		const entry = this.exps[index];
+		if(isNaN(entry))
+			throw new Error(`unable to swap [EXP-${exp.ID}] with [EXP-${this.exps[0]}]`);
+		this.exps[index] = this.exps[0];
+		this.exps[0] = exp.ID;
+		//@todo centralized entity.exps manipulation
+		return targetID
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------

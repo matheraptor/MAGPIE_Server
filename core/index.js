@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.22.31
+ * @version 0.23.4
  * 
  * @depdendencies 
  * - Node.js 
@@ -18,13 +18,19 @@
  * - jsonwebtoken 
  * - cli-spinner
  * ------------------------------------------------------------------------
- * @changelog 20260302 {@link MAGPIE.meta.desc}
+ * {@link MAGPIE.meta.desc}
  * 
- * @version 0.23.0 2026 05 24
+ * @version 0.23.4 2026 05 25
+ * - FIXED: seekTarget orchestration typos and flickering
+ * - FIXED: SERVER.BOOT.shutdown hanging on HIVE.save()
+ * 
+ * @version 0.23.1 2026 05 24
+ * - ADDED: STATE.FSM_POSTURE
  * - ADDED: HIVE.saveBuffers
  * - ADDED: {@link MAGPIE.KEY.INDEX.ORIENTATION}
  * - ADDED: {@link MAGPIE.KEY.INDEX.VELOCITY} 
  * - TWEAKED: URGENCY and GRAVITY incremental
+ * - TWEAKED: changing Vstate and Rstate to FSM stateID
  * - FIXED: PHYSICS._getTt_local unable to seek target heading
  * - FIXED: PHYSICS._getTt_local unable to hold target heading
  * - FIXED: HIVE._host_context unreliable layerID
@@ -391,9 +397,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 23, 0],
+			version: [0, 23, 4],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260524"
+			firmwareDate: "20260525"
 		};
 	}
 }
@@ -659,7 +665,17 @@ MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.ACCELERATE, "Accelerate");
 MAGPIE.KEY.INDEX.COAST = 8003;
 MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.COAST, "Coast");
 MAGPIE.KEY.INDEX.BRAKE = 8004;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.BRAKE, "Brake")
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.BRAKE, "Brake");
+MAGPIE.KEY.INDEX.ON_TARGET = 305;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.ON_TARGET, "On Target");
+MAGPIE.KEY.INDEX.REACHING_TARGET = 303;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.REACHING_TARGET, "Reaching Target");
+MAGPIE.KEY.INDEX.APPROACHING_TARGET = 304;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.APPROACHING_TARGET, "Approaching Targeet");
+MAGPIE.KEY.INDEX.SEEKING_TARGET = 302;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.SEEKING_TARGET, "Seeking Target");
+MAGPIE.KEY.INDEX.IDLING = 206;
+MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.IDLING, "Idling");
 /**
  * @type {Map<keyID, String>}
  */
@@ -681,6 +697,20 @@ MAGPIE.KEY.INDEX.ALIGN = 7004;
 MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.ALIGN, "Align")
 MAGPIE.KEY.INDEX.IDLE = 7005;
 MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.IDLE, "Idle");
+MAGPIE.KEY.INDEX.ALIGNING_TARGET = 311;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.ALIGNING_TARGET, "Alinging Target");
+MAGPIE.KEY.INDEX.LOCKING_TARGET = 312;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.LOCKING_TARGET, "Locking Target");
+MAGPIE.KEY.INDEX.FACING_TARGET = 313;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.FACING_TARGET, "Facing Target");
+MAGPIE.KEY.INDEX.DRIFTING = 314;
+MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DRIFT, "Drifting");
+/** @type {index} entity.emote.output.raw[index] */
+MAGPIE.KEY.INDEX.RSTATE = 0;
+/** @type {index} entity.emote.output.raw[index] */
+MAGPIE.KEY.INDEX.VSTATE = 1;
+/** @type {index} entity.emote.output.raw[index] */
+MAGPIE.KEY.INDEX.DRMAG = 2;
 /**
  * @typedef {Enumerator<Number>} urgency
  * @type {Map<keyID, {value: urgency, desc: String>}}
@@ -1697,7 +1727,7 @@ MAGPIE.KEY.SYMBOL.INDEX = {};
 //------------------------------------------------------------------------
 /**
  * @desc {@link MAGPIE_STATE}
- * 
+ * @typedef {Number} stateID
  */
 //------------------------------------------------------------------------
 //#region > State
