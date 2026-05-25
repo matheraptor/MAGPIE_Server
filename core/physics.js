@@ -236,7 +236,7 @@ MAGPIE_PHYSICS.geodeticDDtoDMS = function geodeticDDtoDMS(lat = "", lon = "")
  */
 MAGPIE_PHYSICS.geodeticToCartesian = function geodeticToCartesian(C0, r)
 {
-	if(!r) r = MAGPIE.KEY.PHYSICS.EARTH.RADIUS;
+	if(isNaN(r)) r = MAGPIE.KEY.PHYSICS.EARTH.RADIUS;
 	const [lat,lon,ASL] = C0;
 	const R = r + ASL;
 	const phi = lat * (Math.PI / 180);
@@ -255,7 +255,7 @@ MAGPIE_PHYSICS.geodeticToCartesian = function geodeticToCartesian(C0, r)
 MAGPIE_PHYSICS.cartesianToGeodetic = function cartesianToGeodetic(P0, R)
 {
 	if(!this.isValidVector(P0)) return
-	if(!R) R = MAGPIE.KEY.PHYSICS.EARTH.RADIUS;
+	if(isNaN(R)) R = MAGPIE.KEY.PHYSICS.EARTH.RADIUS;
 	const [x,y,z] = P0;
 	const totR = Math.sqrt(x**2 + y**2 + z**2);
 	const lat = Math.asin(z / totR) * (180 / Math.PI);

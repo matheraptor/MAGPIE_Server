@@ -2348,6 +2348,15 @@ MAGPIE_HIVE._get_all_contexts = function getAllContext()
 {
 	return Array.from(MAGPIE_HIVE._contextBuffer.values())
 }
+/**
+ * 
+ * @param {entityID} entityID 
+ * @returns {MAGPIE_CONTEXT[]}
+ */
+MAGPIE_HIVE._get_entity_contexts = function getEntityContexts(entityID)
+{
+	return MAGPIE_HIVE._registry.get(entityID).contexts
+}
 // #endregion
 //------------------------------------------------------------------------
 /**

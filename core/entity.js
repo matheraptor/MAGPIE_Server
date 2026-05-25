@@ -639,6 +639,14 @@ MAGPIE_ENTITY.prototype._get_P0 = function getP0()
 	return [this.STATS[K.P_X], this.STATS[K.P_Y], this.STATS[K.P_Z]]
 }
 /**
+ * @returns {coords}
+ */
+MAGPIE_ENTITY.prototype._get_C0 = function getC0()
+{
+	const r = MAGPIE_ENTITY._get_celestialRadius(this);
+	return MAGPIE_PHYSICS.cartesianToGeodetic(this._get_P0(), r)
+}
+/**
  * 
  * @returns {rotor}
  */
@@ -813,9 +821,21 @@ MAGPIE_ENTITY.prototype.getEquips = async function getEquips()
 {
 	return await MAGPIE_ENTITY._hive_getRelatives("entity_equips", "hostID", "equipID")
 }
+/**
+ * 
+ * @returns {POVART}
+ */
 MAGPIE_ENTITY.prototype._get_POVART = function _get_POVART()
 {
 	return MAGPIE_ENTITY._get_POVART(this)
+}
+/**
+ * 
+ * @returns {MAGPIE_CONTEXT[]}
+ */
+MAGPIE_ENTITY.prototype._get_contexts = function getContexts()
+{
+	return MAGPIE_ENTITY.__hiveSync("_get_entity_contexts", [this.ID])
 }
 /**
  * @name 
@@ -1272,6 +1292,7 @@ MAGPIE_ENTITY.prototype._M_importSTATS = function importMateriaSTATS(STATS)
  */
 MAGPIE_ENTITY.prototype._set_C1 = function _set_C1(C1, r = null)
 {
+	if(isNaN(r)) r = MAGPIE_ENTITY._get_celestialRadius(this);
 	return this._set_P1(MAGPIE_PHYSICS.geodeticToCartesian(C1, r))
 }
 // #endregion
