@@ -1662,12 +1662,14 @@ MAGPIE_HIVE.setup = function setup()
 	return true
 }
 /**
+ * @desc {@link MAGPIE_SERVER._hive_new_entity}
  * @typedef {import("./entity").entity_data} entity_data
  * @param {entity_data} data 
+ * @returns {Promise<new MAGPIE_ENTITY>}
  */
-MAGPIE_HIVE._get_entity_new = function newEntity(data)
+MAGPIE_HIVE._set_new_entity = async function newEntity(data)
 {
-	return MAGPIE_HIVE.__get_serverSync("_hive_new_entity", [data])
+	//
 }
 /**
  * 
@@ -1816,7 +1818,7 @@ MAGPIE_HIVE._save_buffers = async function _save_buffers()
  * @param {Number} layerID 
  * @param {Number} targetLayerID 
  * @param {contextID} contextID
- * @returns {entityID} 
+ * @returns {MAGPIE_ENTITY} 
  */
 MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID, contextID)
 {
@@ -1876,7 +1878,7 @@ MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID, contextID)
 		const message = `[HIVE].hosting [ENTITY-${entity.ID}] on `
 			+ `[${layerName}][${slot}] with target [LAYER-${targetLayerID}]`
 		MAGPIE_SYSTEM.log(ePrefix + message + stale, "console", true)
-		return entity.ID 
+		return entity
 	}
 	catch(e)
 	{

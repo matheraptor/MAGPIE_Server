@@ -619,6 +619,7 @@ MAGPIE_STATE.validateChange = function validateChange(state)
  * @desc 
  * @typedef {Number} emoteID
  * @typedef {import("./entity").entityID} entityID
+ * @typedef {import("./entity").entity_data} entity_data
  * @typedef {import(".").keyID} keyID
  * @typedef {Number} key_value
  */
@@ -1122,12 +1123,49 @@ MAGPIE_CONTEXT.prototype._set_element = async function _set_element(elementType,
 }
 /**
  * 
+ * @param {String} type 
+ * @param {Number} elementID
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_CONTEXT.prototype._set_remove_element = async function removeElement(type, elementID)
+{
+	const ePrefix = `[CONTEXT-${this.ID}].set${elementType}: `;
+	try
+	{
+		const record = this[elementType];
+		if(!record) 
+			throw new Error(`${elementType} is invalid elementType`)
+		const arr = new Array(...record);
+		const index = arr.indexOf(elementID);
+		if(isNaN(index) || index < 0)
+			throw new Error(`${elementID} is invalid entityID`)
+		arr[index] = arr[arr.length - 1];
+		arr.pop();
+		this[elementType] = new Float64Array(arr);
+		return await this.set();
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
  * @param {entityID} entityID 
  * @returns {Promise<database_result>}
  */
 MAGPIE_CONTEXT.prototype._set_entity = async function setEntity(entityID)
 {
 	return await this._set_element("entities", entityID);
+}
+/**
+ * 
+ * @param {entityID} entityID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_CONTEXT.prototype._set_remove_entity = async function removeEntity(entityID)
+{
+	return await this._set_remove_element("entities", entityID);
 }
 /**
  * 
@@ -1140,6 +1178,15 @@ MAGPIE_CONTEXT.prototype._set_exp = async function setExp(expID)
 }
 /**
  * 
+ * @param {expID} expID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_CONTEXT.prototype._set_remove_exp = async function removeExp(expID)
+{
+	return await this._set_remove_element("exps", expID)
+}
+/**
+ * 
  * @param {keyID} keyID
  * @returns {Promise<database_result>} 
  */
@@ -1149,12 +1196,30 @@ MAGPIE_CONTEXT.prototype._set_key = async function setKey(keyID)
 }
 /**
  * 
+ * @param {keyID} keyID
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_CONTEXT.prototype._set_remove_key = async function removeKey(keyID)
+{
+	return await this._set_remove_element("keys", keyID);
+}
+/**
+ * 
  * @param {symbolID} symbolID
  * @returns {Promise<database_result>} 
  */
 MAGPIE_CONTEXT.prototype._set_symbol = async function setSymbol(symbolID)
 {
 	return await this._set_element("symbols", symbolID)
+}
+/**
+ * 
+ * @param {symbolID} symbolID
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_CONTEXT.prototype._set_remove_symbol = async function removeSymbol(symbolID)
+{
+	return await this._set_remove_element("symbols", symbolID)
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1283,6 +1348,26 @@ MAGPIE_CONTEXT.prototype._get_gravity = function getGravity()
 MAGPIE_CONTEXT.prototype._get_ambiguity = function getAmbiguity()
 {
 	return MAGPIE.KEY.INDEX.get(this.ambiguity);
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Add
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {entity_data} entity_data 
+ */
+MAGPIE_CONTEXT.prototype._add_new_entity = async function addNewEntity(entity_data)
+{
+	const entity = await MAGPIE_CONTEXT.__hive("_set_new_entity", [entity_data]);
+	if(entity?.constructor?.name === "MAGPIE_ENTITY")
+		this._set_entity(entity.ID);
 }
 // #endregion
 //------------------------------------------------------------------------

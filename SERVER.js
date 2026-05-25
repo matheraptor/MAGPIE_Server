@@ -591,9 +591,17 @@ MAGPIE_HIVE.__get_serverSync = function __get_serverSync(method, arguments)
 	const callback = MAGPIE_SERVER[method];
 	return callback(...arguments);
 }
-MAGPIE_SERVER._hive_new_entity = function newEntity(data)
+/**
+ * 
+ * @param {import("./core/entity").entity_data} data 
+ * @param {Number} layerID
+ * @returns {Promise<new MAGPIE_ENTITY>}
+ */
+MAGPIE_HIVE._set_new_entity = async function newEntity(data, layerID)
 {
-	return new MAGPIE_ENTITY(data)
+	const entity = new MAGPIE_ENTITY(data);
+	await entity.set();
+	return MAGPIE_HIVE.host(entity, layerID)
 }
 // #endregion
 //------------------------------------------------------------------------
