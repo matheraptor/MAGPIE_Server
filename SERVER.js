@@ -73,7 +73,8 @@ MAGPIE_SERVER.registry = {
 	MAGPIE_DATABASE,
 	MAGPIE_SYMBOL,
 	MAGPIE_CONTEXT,
-	MAGPIE_TICKET
+	MAGPIE_TICKET,
+	MAGPIE_STATE
 };
 MAGPIE_SERVER.meta = {}
 MAGPIE_SERVER.perf = {};
@@ -593,15 +594,24 @@ MAGPIE_HIVE.__get_serverSync = function __get_serverSync(method, arguments)
 }
 /**
  * 
- * @param {import("./core/entity").entity_data} data 
+ * @param {entityID} data 
  * @param {Number} layerID
  * @returns {Promise<new MAGPIE_ENTITY>}
  */
 MAGPIE_HIVE._set_new_entity = async function newEntity(data, layerID)
 {
-	const entity = new MAGPIE_ENTITY(data);
+	const entity = MAGPIE_HIVE._new_entity(data);
 	await entity.set();
 	return MAGPIE_HIVE.host(entity, layerID)
+}
+/**
+ * 
+ * @param {entity_data} data
+ * @returns {new MAGPIE_ENTITY} 
+ */
+MAGPIE_HIVE._new_entity = function(data)
+{
+	return new MAGPIE_ENTITY(data);
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -817,6 +827,7 @@ MAGPIE_HIVE._save_buffers = async function _save_buffers()
  * @name 
  * @desc 
  * @typedef {import("./core/entity").entityID} entityID
+ * @typedef {import("./core/entity").entity_data} entity_data
  */
 //------------------------------------------------------------------------
 // #region database

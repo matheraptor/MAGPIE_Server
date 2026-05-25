@@ -1306,10 +1306,22 @@ MAGPIE_ENTITY.prototype._M_importSTATS = function importMateriaSTATS(STATS)
  * @param {coords} C1 
  * @param {distance} r 
  */
-MAGPIE_ENTITY.prototype._set_C1 = function _set_C1(C1, r = null)
+MAGPIE_ENTITY.prototype._set_C1 = function _set_C1(C1, r = NaN)
 {
-	if(isNaN(r)) r = this._get_celestial()._get_radius();
-	return this._set_P1(MAGPIE_PHYSICS.geodeticToCartesian(C1, r))
+	const ePrefix = `[ENTITY-${this.ID}].setC1: `;
+	try
+	{
+		if(!Array.isArray(C1) || C1.some(n => isNaN(n)) || C1.length !== 3)
+			throw new Error(`${C1} is invalid coords [lat,lon,ASL]`)
+		if(!r || isNaN(r)) r = this._get_celestial()._get_radius();
+		if(isNaN(r) || r < 1)
+			throw new Error(`${r} is invalid radius`)
+		return this._set_P1(MAGPIE_PHYSICS.geodeticToCartesian(C1, r))
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -2588,6 +2600,26 @@ MAGPIE_ENTITY.prototype._target_getDistance = function getDistanceToTarget(P0, P
 {
 	return MAGPIE_PHYSICS.distanceTo(P0, Pt);
 }
+/**
+ * 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_ENTITY.prototype._target_get_queue = function getTargetQueue()
+{
+	return this._get_exps().map(exp => exp.getKeys()).flat(Infinity)
+		.flatMap(key => {
+			if(key.originID === MAGPIE.KEY.INDEX.TARGET)
+				return [Number(key.label)];
+			return []
+		})
+}
+MAGPIE_ENTITY.prototype._target_queue_geodetic = function()
+{
+	this._target_get_queue().map(targetID => {
+		return {}
+	})
+}
+MAGPIE_ENTITY.prototype._target_all_from
 // #endregion
 //------------------------------------------------------------------------
 /**

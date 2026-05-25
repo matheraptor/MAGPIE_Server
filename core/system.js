@@ -1569,6 +1569,7 @@ MAGPIE_HIVE.meta.desc = "";
  * @typedef {import("./index").keyID} keyID
  * @typedef {import("./component").symbolID} symbolID
  * @typedef {Number} contextID
+ * @typedef {import("./core/entity").entity_data} entity_data
  * @typedef {{
  * registry: hive_registry,
  * exps: expID[],
@@ -1642,9 +1643,9 @@ MAGPIE_HIVE.setup = function setup()
 	const layerSuper = K.get(3).name;
 	const layerMega = K.get(4).name;
 	const layerUltra = K.get(5).name;
-	MAGPIE_HIVE[layerBase] = new Array(K.get(0).slots).fill(MAGPIE_HIVE._set_new_entity());
-	MAGPIE_HIVE[layerGame] = new Array(K.get(1).slots).fill(MAGPIE_HIVE._set_new_entity());
-	MAGPIE_HIVE[layerStandard] = new Array(K.get(2).slots).fill(MAGPIE_HIVE._set_new_entity());
+	MAGPIE_HIVE[layerBase] = new Array(K.get(0).slots).fill(MAGPIE_HIVE._new_entity());
+	MAGPIE_HIVE[layerGame] = new Array(K.get(1).slots).fill(MAGPIE_HIVE._new_entity());
+	MAGPIE_HIVE[layerStandard] = new Array(K.get(2).slots).fill(MAGPIE_HIVE._new_entity());
 	MAGPIE_HIVE._registry.set(0, {name: layerBase, 	nextSlot: 0});
 	MAGPIE_HIVE._registry.set(1, {name: layerGame, 	nextSlot: 0});
 	MAGPIE_HIVE._registry.set(2, {name: layerStandard, nextSlot: 0});
@@ -1668,6 +1669,15 @@ MAGPIE_HIVE.setup = function setup()
  * @returns {Promise<new MAGPIE_ENTITY>}
  */
 MAGPIE_HIVE._set_new_entity = async function newEntity(data)
+{
+	//
+}
+/**
+ * 
+ * @param {entity_data} data
+ * @returns {new MAGPIE_ENTITY} 
+ */
+MAGPIE_HIVE._new_entity = function(data)
 {
 	//
 }

@@ -1570,6 +1570,14 @@ MAGPIE_KEY.prototype._get_type = function getType()
 {
 	return MAGPIE.KEY.TYPES.get(this.type)
 }
+/**
+ * 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_KEY.prototype._get_entity_label = function getEntityFromLabel()
+{
+	return MAGPIE_KEY.__hiveSync("_get_entity", [Number(this.label)])
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
