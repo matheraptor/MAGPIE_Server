@@ -1248,7 +1248,9 @@ MAGPIE_CONTEXT.prototype._get_all_entities = function getAllEntities()
 	const arr = [];
 	for(let i = 0; i < this.entities.length; i++)
 	{
-		arr.push(this._get_entity(this.entities[i]))
+		const entity = this._get_entity(this.entities[i])
+		if(entity?.constructor?.name === "MAGPIE_ENTITY")
+		arr.push(entity)
 	}
 	return arr
 }

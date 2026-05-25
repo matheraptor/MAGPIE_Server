@@ -1,12 +1,10 @@
 /**
  * @name MAGPIE_ENTITY
- * @version 0.23.2
+ * @version 0.23.6
  * @desc 
  * @param {{
  * name: String,
  * type: Enumerator<Number>,
- * parents: entityID[],
- * children: entityID[],
  * STATS: entity_stats,
  * fitness: entity_fitness,
  * exps: MAGPIE_EXP[],
@@ -343,8 +341,6 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {{
  * name: String,
  * type: Enumerator<Number>,
- * parents: entityID[],
- * children: entityID[],
  * STATS: [...entity_povart, ...entity_stats],
  * fitness: entity_fitness,
  * exps: MAGPIE_EXP[],
@@ -414,7 +410,7 @@ MAGPIE_ENTITY.prototype.setup = async function setup(data)
 	this.setupFitness(fitness);
 }
 /**
- * 
+ * @audit-issue git-issue #12
  * @param {[...entity_povart, ...entity_stats]} STATS 
  * @returns 
  */
@@ -628,6 +624,15 @@ MAGPIE_ENTITY.prototype._get_celestial = function _get_celestial()
 {
 	const celestialID = this.STATS[MAGPIE.KEY.POVART.P_C];
 	return MAGPIE_ENTITY.__hiveSync("_get_celestial", [celestialID])
+}
+/**
+ * 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_ENTITY.prototype._get_host = function _get_host()
+{
+	const hostID = this.STATS[MAGPIE.KEY.STATS.HOST];
+	return MAGPIE_ENTITY.__hiveSync("_get_entity", [hostID])
 }
 /**
  * 
@@ -852,6 +857,22 @@ MAGPIE_ENTITY.prototype._get_contextIDs = function getContextIDs()
 MAGPIE_ENTITY.prototype._get_contexts = function getContexts()
 {
 	return MAGPIE_ENTITY.__hiveSync("_get_entity_contexts", [this.ID])
+}
+/**
+ * @returns {entity_data}
+ */
+MAGPIE_ENTITY.prototype._get_data = function getData()
+{
+	/** @type {entity_data} */
+	return data = {
+		ID: this.ID,
+		type: this.type,
+		name: this.name,
+		updated: this.updated,
+		STATS: this.STATS,
+		fitness: this.fitness,
+		exps: this.exps
+	}
 }
 /**
  * @name 

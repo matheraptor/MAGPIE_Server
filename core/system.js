@@ -1556,6 +1556,10 @@ MAGPIE_HIVE.meta.desc = "";
  * retain: Boolean,
  * contexts: contextID[]
  * }} hive_entry
+ * @typedef {{
+ * name: String
+ * nextSlot: Number
+ * }} hive_record
  * @typedef {Map<Number, hive_entry>} hive_registry
  * @typedef {import("../SERVER").hive_buffer} hive_buffer
  * @typedef {Number} buffer_size
@@ -1825,6 +1829,83 @@ MAGPIE_HIVE._save_buffers = async function _save_buffers()
 /**
  * 
  * @param {MAGPIE_ENTITY} entity 
+ * @param {layerID} layerID 
+ * @param {layerID} targetLayerID 
+ * @param {contextID} contextID 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID, contextID)
+{
+	const ePrefix = "[HIVE].host: ";
+	try
+	{
+		const valid = this.isValidGuest(entity, layerID, targetLayerID)
+		if(!valid)	
+			return
+		/** @type {hive_record} */
+		const layer = this._registry.get(layerID);
+		if(layer.nextSlot >= MAGPIE.KEY.RUNTIME.LAYER.get(layerID).slots)
+			throw new Error(`[ENTITY-${entity.ID}] failed because [LAYER-${layerID}] is full`)
+		/** @type {hive_entry} */
+		this._registry.set(entity.ID, {
+			layerID: valid.layerID,
+			slot: layer.nextSlot,
+			target: valid.targetLayerID,
+			retain: true,
+			context: Number(contextID) ? [contextID] : []
+		})
+		const record = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? entity : entity.ID
+		this[MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name][entry.slot] = record;
+		layer.nextSlot++
+		return MAGPIE_HIVE._get_entity(entity.ID)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {layerID} layerID 
+ * @param {layerID} targetLayerID 
+ * @returns {{layerID: layerID, targetLayerID: layerID}}
+ */
+MAGPIE_HIVE.isValidGuest = function isValidGUest(entity, layerID, targetLayerID)
+{
+	const ePrefix = "[HIVE].isValidGuest: ";
+	try
+	{
+		if(entity?.constructor?.name !== "MAGPIE_ENTITY")
+			throw new Error(`${entity} is invalid MAGPIE_ENTITY`)
+		if(typeof this._registry.get(layerID)?.name !== 'string')
+			layerID = 2;
+		if(isNaN(targetLayerID) || layerID == null)
+			targetLayerID = layerID;
+		const record = MAGPIE_HIVE._registry.get(entity.ID)
+		if(record)
+		{
+			if(record.layerID === layerID)
+				throw new Error(`[ENTITY-${entity.ID}] is already at [LAYER-${layerID}][${record.slot}]`)
+			return MAGPIE_HIVE.move(entity.ID, layerID, targetLayerID);
+		}
+		const celestial = entity._get_celestial();
+		if(!celestial)
+			throw new Error(`${celestial} is invalid celestial`)
+		const host = entity._get_host();
+		if(!host)
+			throw new Error(`${host} is invalid host`)
+		return { layerID: layerID, targetLayerID: targetLayerID }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return false
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
  * @param {Number} layerID 
  * @param {Number} targetLayerID 
  * @param {contextID} contextID
@@ -2053,7 +2134,7 @@ MAGPIE_HIVE.kick = function kick(entityID, reason = "dev")
 		const nextSlot = layerRecord.nextSlot - 1;
 		const entity = MAGPIE_HIVE[layerName][index];
 		MAGPIE_HIVE[layerName][index] = MAGPIE_HIVE[layerName][lastSlot];
-		MAGPIE_HIVE[layerName][lastSlot] = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? MAGPIE_HIVE._get_entity_new() : 0;
+		MAGPIE_HIVE[layerName][lastSlot] = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? MAGPIE_HIVE._new_entity() : 0;
 		layerRecord.nextSlot = nextSlot;
 		MAGPIE_HIVE._registry.delete(entityID);
 		MAGPIE_HIVE._registry.set(layerID, layerRecord);

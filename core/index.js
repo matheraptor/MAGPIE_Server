@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.23.5
+ * @version 0.23.6
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,7 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.23.5 2026 05 25
+ * @version 0.23.6 2026 05 25
  * - ADDED: context handling methods
  * - FIXED: seekTarget orchestration typos and flickering
  * - FIXED: SERVER.BOOT.shutdown hanging on HIVE.save()
@@ -398,7 +398,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 23, 4],
+			version: [0, 23, 6],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260525"
 		};
