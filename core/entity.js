@@ -1988,7 +1988,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp)
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error(`${exp} is invalid EXP`)
 		const POVART0 = this._get_POVART();
-		const { P0 } = MAGPIE_ENTITY._get_decomp_POVART(POVART0)
+		const { P0, V0 } = MAGPIE_ENTITY._get_decomp_POVART(POVART0)
 		const targetID = exp.targetID
 		if(isNaN(targetID))
 			throw new Error(`${targetID} is invalid targetID`)
