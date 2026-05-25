@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.23.3
+ * @version 0.23.4
  * 
  * @depdendencies 
  * - Node.js 
@@ -18,10 +18,11 @@
  * - jsonwebtoken 
  * - cli-spinner
  * ------------------------------------------------------------------------
- * @changelog 20260302 {@link MAGPIE.meta.desc}
+ * {@link MAGPIE.meta.desc}
  * 
- * @version 0.23.3 2026 05 25
+ * @version 0.23.4 2026 05 25
  * - FIXED: seekTarget orchestration typos and flickering
+ * - FIXED: SERVER.BOOT.shutdown hanging on HIVE.save()
  * 
  * @version 0.23.1 2026 05 24
  * - ADDED: STATE.FSM_POSTURE
@@ -396,7 +397,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 23, 2],
+			version: [0, 23, 4],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260525"
 		};

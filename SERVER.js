@@ -1691,6 +1691,8 @@ MAGPIE_SERVER.BOOT.shutdown = async function shutdown(signal = 0)
 		try
 		{
 			await MAGPIE_HIVE.save();
+			MAGPIE_SERVER.log(ePrefix + "save complete; terminating database worker...")
+			MAGPIE_DATABASE.worker.postMessage({method: "close"})
 			MAGPIE_SERVER.CLI._incrementLoadBar(10);
 			await new Promise((resolve) => {
 				io.close((err) => {
