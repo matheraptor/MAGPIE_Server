@@ -1106,6 +1106,29 @@ MAGPIE_DATABASE.saveContextSync = function saveContextSync(context)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+/**
+ * 
+ * @param {MAGPIE_CONTEXT} context
+ * @returns {Promise<worker_result>} 
+ */
+MAGPIE_DATABASE.saveContext = async function saveContext(context)
+{
+	const ePrefix = "[DATABASE].saveContext: ";
+	try
+	{
+		if(!(context instanceof MAGPIE_CONTEXT))
+			throw new Error(`${context} is invalid MAGPIE_CONTEXT`)
+		const payload = MAGPIE_DATABASE.prepareContext(context);
+		const result = await MAGPIE_DATABASE.call("saveWorldRow", "MAGPIE_CONTEXT", payload);
+		if(!result)
+			throw new Error(`unable to save [CONTEXT-${context.ID}`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
 // #endregion
 //------------------------------------------------------------------------
 /**

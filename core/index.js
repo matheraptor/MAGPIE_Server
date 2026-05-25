@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.23.1
+ * @version 0.23.2
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,9 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * @changelog 20260302 {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.23.2 2026 05 25
+ * - FIXED: seekTarget orchestration typos and flickering
  * 
  * @version 0.23.1 2026 05 24
  * - ADDED: STATE.FSM_POSTURE
@@ -393,9 +396,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 23, 1],
+			version: [0, 23, 2],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260524"
+			firmwareDate: "20260525"
 		};
 	}
 }

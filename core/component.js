@@ -1,7 +1,7 @@
 /**
  * @name INDEX
  * @desc 
- * @version 0.22.26
+ * @version 0.23.2
  */
 //========================================================================
 // #region - INDEX
@@ -642,6 +642,8 @@ MAGPIE_STATE.validateChange = function validateChange(state)
  * keys: keyID[]
  * }} exp_data
  * 
+ * @typedef {Number} expID
+ * 
  * @param {exp_data} data 
  * @returns {new MAGPIE_EXP}
  */
@@ -1007,6 +1009,15 @@ MAGPIE_EMOTE.prototype.onPassive = function onPassive(...args)
 // #region - CONTEXT
 //========================================================================
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Proto
+//------------------------------------------------------------------------
+
+/**
  * 
  * @param {context_data} data 
  * @returns {new MAGPIE_CONTEXT}
@@ -1066,6 +1077,95 @@ MAGPIE_CONTEXT.prototype._sleep = async function _sleep()
 {
 	return await MAGPIE_CONTEXT.__hive("_kick_context", [this, "context_sleep"])
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Setters
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_CONTEXT.prototype.set = async function set()
+{
+	return await MAGPIE_CONTEXT.__hive("_set_context", [this])
+}
+/**
+ * 
+ * @returns {database_result}
+ */
+MAGPIE_CONTEXT.prototype.setSync = function setSync()
+{
+	return MAGPIE_CONTEXT.__hiveSync("_set_contextSync", [this])
+}
+/**
+ * @param {String} elementType
+ * @param {Number} elementID
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_CONTEXT.prototype._set_element = async function _set_element(elementType, elementID)
+{
+	const ePrefix = `[CONTEXT-${this.ID}].set${elementType}: `;
+	try
+	{
+		if(isNaN(elementID))
+			throw new Error(`${elementID} is invalid entityID`)
+		const record = this[elementType];
+		if(!record) 
+			throw new Error(`${elementType} is invalid elementType`)
+		const arr = new Array(...record);
+		arr.push(elementID)
+		this[elementType] = new Float64Array(arr);
+		return await this.set();
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {entityID} entityID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_CONTEXT.prototype._set_entity = async function setEntity(entityID)
+{
+	return await this._set_element("entities", entityID);
+}
+/**
+ * 
+ * @param {expID} expID 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_CONTEXT.prototype._set_exp = async function setExp(expID)
+{
+	return await this._set_element("exps", expID)
+}
+/**
+ * 
+ * @param {keyID} keyID
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_CONTEXT.prototype._set_key = async function setKey(keyID)
+{
+	return await this._set_element("keys", keyID);
+}
+/**
+ * 
+ * @param {symbolID} symbolID
+ * @returns {Promise<database_result>} 
+ */
+MAGPIE_CONTEXT.prototype._set_symbol = async function setSymbol(symbolID)
+{
+	return await this._set_element("symbols", symbolID)
+}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * 
  * @desc back to {@link }
