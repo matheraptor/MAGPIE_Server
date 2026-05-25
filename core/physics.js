@@ -716,7 +716,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const dR = this._getDeltaR(dO);
 	// const dR = this.rotorApply(dO, [0,0,1])
 	// MAGPIE_SYSTEM._logging_debug(`dR: ${this.mag(dR)}`)
-	const pR_dR = 1 - Math.min(this.mag(dR), 1);
+	// const pR_dR = 1 - Math.min(this.mag(dR), 1);
 	const pR = this._getATpR(dR, V0, R0, Vstate, options)
 	options.pR = pR;
 	const { Tt, Rstate } = this._getTt(dR, R0, O0, Vstate, options);
@@ -832,7 +832,7 @@ MAGPIE_PHYSICS._getATpR = function getATpR(dR, V0, R0, Vstate, options)
 	const dRpR = Math.min(dRmag, 1);
 	if(Vstate === STATE_INDEX.APPROACHING_TARGET)
 		return 1 - (dRpR * split);
-	if(Vstate === STATE_INDEX.FACING_TARGET)
+	if(Vstate === STATE_INDEX.SEEKING_TARGET)
 	{
 		if(S0 < 0.001)
 			return rotate
