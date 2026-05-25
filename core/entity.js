@@ -831,6 +831,14 @@ MAGPIE_ENTITY.prototype._get_POVART = function _get_POVART()
 }
 /**
  * 
+ * @returns {contextID[]}
+ */
+MAGPIE_ENTITY.prototype._get_contextIDs = function getContextIDs()
+{
+	return MAGPIE_ENTITY.__hiveSync("_get_entity_contextIDs", [this.ID])
+}
+/**
+ * 
  * @returns {MAGPIE_CONTEXT[]}
  */
 MAGPIE_ENTITY.prototype._get_contexts = function getContexts()

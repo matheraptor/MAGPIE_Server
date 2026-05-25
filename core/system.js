@@ -2351,11 +2351,21 @@ MAGPIE_HIVE._get_all_contexts = function getAllContext()
 /**
  * 
  * @param {entityID} entityID 
- * @returns {MAGPIE_CONTEXT[]}
+ * @returns {contextID[]}
  */
-MAGPIE_HIVE._get_entity_contexts = function getEntityContexts(entityID)
+MAGPIE_HIVE._get_entity_contextIDs = function getEntityContextIDs(entityID)
 {
 	return MAGPIE_HIVE._registry.get(entityID).contexts
+}
+/**
+ * 
+ * @param {entityID} entityID
+ * @returns {MAGPIE_CONTEXT[]} 
+ */
+MAGPIE_HIVE._get_entity_context = function getEntityContexts(entityID)
+{
+	return MAGPIE_HIVE._get_entity_contextIDs(entityID)
+		.map(contextID => MAGPIE_HIVE._get_context(contextID))
 }
 // #endregion
 //------------------------------------------------------------------------
