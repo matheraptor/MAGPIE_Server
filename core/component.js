@@ -841,17 +841,16 @@ MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 	try
 	{
 		const key = this._get_key_target();
-		if(!key) return
+		if(!key) 
+			return 
 		const result = await key.removeOrigin();
 		if(!result) 
 			throw new Error(`unable to remove 'target' origin from [KEY-${key.ID}]`)
-		const next = this._get_key_target();
-		if(!next) return
-		return Number(next.label);
+		return Number(key.label);
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM(ePrefix + e.message, e)
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
 // #endregion

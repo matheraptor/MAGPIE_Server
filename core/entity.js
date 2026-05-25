@@ -2590,9 +2590,7 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 	const ePrefix = `[ENTITY-${this.ID}].nextTarget: `;
 	try
 	{
-		const exp = this._get_exps().find(exp => {
-			exp._get_key_target()
-		})
+		const exp = this._get_exps().find(exp => exp._get_key_target())
 		if(!(exp instanceof MAGPIE_EXP))
 			throw new Error("unable to find target exp")
 		const targetID = await exp._key_target_next();
