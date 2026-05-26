@@ -2623,7 +2623,7 @@ MAGPIE_ENTITY.prototype._target_getDistance = function getDistanceToTarget(P0, P
 }
 /**
  * 
- * @returns {MAGPIE_ENTITY}
+ * @returns {entityID}
  */
 MAGPIE_ENTITY.prototype._target_get_queue = function getTargetQueue()
 {
@@ -2634,11 +2634,46 @@ MAGPIE_ENTITY.prototype._target_get_queue = function getTargetQueue()
 			return []
 		})
 }
-MAGPIE_ENTITY.prototype._target_queue_geodetic = function()
+/**
+ * 
+ * @returns {Promise<MAGPIE_ENTITY[]>}
+ */
+MAGPIE_ENTITY.prototype._target_fetch_queue = async function()
 {
-	this._target_get_queue().map(targetID => {
-		return {}
-	})
+	return await this._target_get_queue()
+		.map(targetID => MAGPIE_ENTITY.__hiveSync("_get_entity", [targetID]))
+}
+/**
+ * @todo target_queue_geodetic
+ */
+MAGPIE_ENTITY.prototype._target_queue_geodetic = async function()
+{
+	const ePrefix = `[ENTITY-${this.ID}].targetQueue: `;
+	try
+	{
+		const queue = await this._target_fetch_queue();
+		const route = new Map();
+		for(let i = 0; i < queue.length; i++)
+		{
+			const P0 = queue[i]._get_P0();
+			const P1 = queue[i + 1]?._get_P0();
+			const course = P1 ? MAGPIE_PHYSICS._geod_getCourse(P0, P1) : undefined;
+			const distance = P1 ? MAGPIE_PHYSICS._geod_distanceTo(P0, P1) : undefined;
+			route.set(i + 1, {
+				leg: i + 1,
+				ID: queue[i].ID,
+				name: queue[i].name,
+				course: course,
+				distance: distance,
+				coords: queue[i]._get_C0()
+			})
+		}
+		return route
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 MAGPIE_ENTITY.prototype._target_all_from
 // #endregion

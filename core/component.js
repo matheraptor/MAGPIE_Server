@@ -1103,7 +1103,7 @@ MAGPIE_CONTEXT.prototype.setSync = function setSync()
  */
 MAGPIE_CONTEXT.prototype._set_element = async function _set_element(elementType, elementID)
 {
-	const ePrefix = `[CONTEXT-${this.ID}].set${elementType}: `;
+	const ePrefix = `[CONTEXT-${this.ID}].set_${elementType}: `;
 	try
 	{
 		if(isNaN(elementID))
