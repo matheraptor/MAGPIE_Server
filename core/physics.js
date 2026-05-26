@@ -722,7 +722,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const { Tt, Rstate } = this._getTt(dR, R0, O0, Vstate, options);
 	// MAGPIE_SYSTEM._logging_debug(`pR: ${pR}`)
 	// const Tt = this.scaleVector(Tt_raw, steerIntensity);
-	// MAGPIE_SYSTEM._logging_debug(`state: ${MAGPIE.KEY.INDEX.ORIENTATION.get(state)}`)
+	// MAGPIE_SYSTEM._logging_debug(`Rstate: ${Rstate}`)
 	// const Tt = this._getTt(dR, R0, O0, options);
 	if(!this.isValidVector(Tt))
 		throw new Error(`${Tt} is invalid Tₜ bivector`)
