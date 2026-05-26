@@ -28,15 +28,19 @@ function MAGPIE_PHYSICS()
  * @typedef {import("./index").orbit} orbit [a,e,i,raan,aop,nu,T0,M0]
  * @typedef {import("./index").duration} duration in s
  * @typedef {import("./index").distance} distance in m
+ * @typedef {Number} radius distance from center point
  * @typedef {Number} volume in L
  * @typedef {Number} mass in kg
  * @typedef {Number} velocity in m/s
  * @typedef {Number} acceleration m/s²
  * @typedef {Number} index
  * @typedef {Number} magnitude
- * @typedef {[x<Number>, y<Number>, z<Number>]} vector3 3D vector [x,y,z]
- * @typedef {[yz<Number>, xz<Number>, xy<Number>]} bivector 3D bivector [yz, xz, xy]
- * @typedef {[yz<Number>, xz<Number>, xy<Number>, w<Number>]} rotor
+ * @typedef {angle_deg} heading hdg 0/360°
+ * @typedef {angle_euler} pitch pitch -180/180°
+ * @typedef {angle_euler} roll roll -180/180°
+ * @typedef {[Number, Number, Number]} vector3 3D vector [x,y,z]
+ * @typedef {[Number, Number, Number]} bivector 3D bivector [yz, xz, xy]
+ * @typedef {[Number, Number, Number, Number]} rotor [yz, xz, xy, w]
  * @typedef {Number} theta (θ) angular displacement in rad
  * @typedef {Number} omega (ω) angular velocity in rad/s
  * @typedef {Number} alpha (α) angular acceleration in rad/s²
@@ -1132,7 +1136,7 @@ MAGPIE_PHYSICS._rotor_clampToSurface = function _rotor_clampToSurface(Ot, P0)
  * 
  * @param {POVART_P} P0 
  * @param {POVART_V} V0 
- * @returns 
+ * @returns {heading}
  */
 MAGPIE_PHYSICS._get_V0_heading = function _get_V0_heading(P0, V0)
 {
@@ -1514,16 +1518,49 @@ MAGPIE_PHYSICS._geod_distanceTo = function _geod_distanceTo(P0, P1, r)
 			throw new Error(`${P0} is invalid vector P₀`);
 		if(!this.isValidVector(P1)) 
 			throw new Error(`${P1} is invalid vector P₁`);
-		if(!r || isNaN(r))
-			throw new Error(`${r} is invalid radius`);
+		const celestial_radius = this._geod_verifyRadius(r);
 		const u0 = MAGPIE_PHYSICS.normalizeVector(P0);
 		const u1 = MAGPIE_PHYSICS.normalizeVector(P1);
 		const angle = Math.acos(MAGPIE_PHYSICS.dotProduct(u0, u1));
-		return Number(r * angle)
+		return Number(celestial_radius * angle)
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+	}
+}
+/**
+ * 
+ * @param {distance} r 
+ * @returns {radius} distance from celestial body center
+ */
+MAGPIE_PHYSICS._geod_verifyRadius = function(r)
+{
+	if(!r || isNaN(r))
+		return MAGPIE.KEY.PHYSICS.EARTH.R;
+	return r
+}
+/**
+ * 
+ * @param {POVART_P} P0 
+ * @param {POVART_P} P1 
+ * @param {radius} r 
+ */
+MAGPIE_PHYSICS._geod_getCourse = function getCourse(P0, P1)
+{
+	const ePrefix = "[PHYSICS].getCourse: ";
+	try
+	{
+		if(!this.isValidVector(P0))
+			throw new Error(`${P0} is invalid P₀`)
+		if(!this.isValidVector(P1))
+			throw new Error(`${P1} is invalid P₁`)
+		const unitVt = this.normalizeVector(this.targetVelocity(P0, P1, 1));
+		return this._get_V0_heading(P0, unitVt)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
 // #endregion

@@ -2657,14 +2657,15 @@ MAGPIE_ENTITY.prototype._target_queue_geodetic = async function()
 		{
 			const P0 = queue[i]._get_P0();
 			const P1 = queue[i + 1]?._get_P0();
+			const r = queue[i]._get_celestial()._get_radius();
 			const course = P1 ? MAGPIE_PHYSICS._geod_getCourse(P0, P1) : undefined;
-			const distance = P1 ? MAGPIE_PHYSICS._geod_distanceTo(P0, P1) : undefined;
+			const distance = P1 ? MAGPIE_PHYSICS._geod_distanceTo(P0, P1, r) : undefined;
 			route.set(i + 1, {
 				leg: i + 1,
 				ID: queue[i].ID,
 				name: queue[i].name,
-				course: course,
-				distance: distance,
+				course: Math.floor(course),
+				distance: Math.floor(distance),
 				coords: queue[i]._get_C0()
 			})
 		}
