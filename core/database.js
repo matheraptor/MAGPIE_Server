@@ -1334,7 +1334,6 @@ MAGPIE_DATABASE.initializeTableSchema = function initializeTableSchema(tableName
 	// 	return `${name.includes("fk") ? "" : name} ${type}`
 	// })
 	// const noRowID = schema["PRIMARY KEY"] ? " WITHOUT ROWID " : "";
-
 	// const schema = `${columnDefs.join(", ")}`
 	db.transaction(() => {
         // 1. Ensure the core prototype table exists
