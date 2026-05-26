@@ -20,6 +20,9 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
+ * @version 0.23.7 2026 05 26
+ * - FIXED: hive hiccups
+ * 
  * @version 0.23.6 2026 05 25
  * - ADDED: context handling methods
  * - FIXED: seekTarget orchestration typos and flickering
@@ -398,9 +401,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 23, 6],
+			version: [0, 23, 7],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260525"
+			firmwareDate: "20260526"
 		};
 	}
 }
