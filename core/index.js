@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.23.6
+ * @version 0.24.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,9 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.23.7 2026 05 26
+ * @version 0.24.0 2026 05 26
+ * - ADDED: Entity.agency scaffolding
+ * - TWEAKED: reverted away from db.fts5 due to corruption
  * - FIXED: hive hiccups
  * 
  * @version 0.23.6 2026 05 25
@@ -401,7 +403,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 23, 7],
+			version: [0, 24, 0],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260526"
 		};
