@@ -1678,6 +1678,9 @@ MAGPIE_ENTITY.prototype.processAgency = function processAgency(switchID, dt, exp
 			throw new Error(`${exp} is invalid MAGPIE_EXP`)
 		if(!keys || keys.length < 1)
 			return
+		const S1 = this.processS1(switchID, dt, exp, keys)
+		const S2 = this.processS2(switchID, S1, keys);
+		const S3 = this.processS3(switchID, S1, S2, keys)
 	}
 	catch(e)
 	{
@@ -2745,6 +2748,143 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - AGENCY
+//========================================================================
+/**
+ * @name INSTINCT
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > S1
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} switchID 
+ * @param {duration} dt 
+ * @param {MAGPIE_EXP} exp 
+ * @param {MAGPIE_KEY[]} keys 
+ * @returns {MAGPIE_EXP}
+ */
+MAGPIE_ENTITY.prototype.processS1 = function processS1(switchID, dt, exp, keys)
+{
+	const ePrefix = `[ENTITY-${this.ID}].processS1: `;
+	try
+	{
+		return exp
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name IMPULSE
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > S2
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} switchID 
+ * @param {MAGPIE_EXP} exp 
+ * @param {MAGPIE_KEY[]} keys 
+ * @returns {MAGPIE_EXP}
+ */
+MAGPIE_ENTITY.prototype.processS2 = function processS2(switchID, exp, keys)
+{
+	const ePrefix = `[ENTITY-${this.ID}].processS2: `;
+	try
+	{
+		return exp
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name CONSCIENCE
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > S3
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} switchID 
+ * @param {MAGPIE_EXP} exp1
+ * @param {MAGPIE_EXP} exp2 
+ * @param {MAGPIE_KEY[]} keys 
+ */
+MAGPIE_ENTITY.prototype.processS3 = function processS3(switchID, exp1, exp2, keys)
+{
+	const ePrefix = `[ENTITY-${this.ID}].processS3: `;
+	try
+	{
+		//
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name AFFINITY
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > S4
+//------------------------------------------------------------------------
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name HARMONY
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > S5
+//------------------------------------------------------------------------
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name TELEPATHY
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > S6
+//------------------------------------------------------------------------
+
 // #endregion
 //------------------------------------------------------------------------
 /**
