@@ -1850,44 +1850,48 @@ MAGPIE_HIVE._save_buffers = async function _save_buffers()
 //------------------------------------------------------------------------
 // #region > Host
 //------------------------------------------------------------------------
-/**
- * 
- * @param {MAGPIE_ENTITY} entity 
- * @param {layerID} layerID 
- * @param {layerID} targetLayerID 
- * @param {contextID} contextID 
- * @returns {MAGPIE_ENTITY}
- */
-MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID, contextID)
-{
-	const ePrefix = "[HIVE].host: ";
-	try
-	{
-		const valid = this.isValidGuest(entity, layerID, targetLayerID)
-		if(!valid)	
-			return
-		/** @type {hive_record} */
-		const layer = this._registry.get(layerID);
-		if(layer.nextSlot >= MAGPIE.KEY.RUNTIME.LAYER.get(layerID).slots)
-			throw new Error(`[ENTITY-${entity.ID}] failed because [LAYER-${layerID}] is full`)
-		/** @type {hive_entry} */
-		this._registry.set(entity.ID, {
-			layerID: valid.layerID,
-			slot: layer.nextSlot,
-			target: valid.targetLayerID,
-			retain: true,
-			context: Number(contextID) ? [contextID] : []
-		})
-		const record = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? entity : entity.ID
-		this[MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name][entry.slot] = record;
-		layer.nextSlot++
-		return MAGPIE_HIVE._get_entity(entity.ID)
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
+// /**
+//  * @audit-issue broken
+//  * @param {MAGPIE_ENTITY} entity 
+//  * @param {layerID} layerID 
+//  * @param {layerID} targetLayerID 
+//  * @param {contextID} contextID 
+//  * @returns {MAGPIE_ENTITY}
+//  */
+// MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID, contextID)
+// {
+// 	const ePrefix = "[HIVE].host: ";
+// 	try
+// 	{
+// 		const valid = this.isValidGuest(entity, layerID, targetLayerID)
+// 		if(!valid)	
+// 			return
+// 		const material = entity.type >= MAGPIE.KEY.ENTITY.TYPE.get("MATERIA").type;
+// 		const buffer = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE;
+// 		if(!material && buffer)
+// 			layerID = 2
+// 		/** @type {hive_record} */
+// 		const layer = this._registry.get(layerID);
+// 		if(layer.nextSlot >= MAGPIE.KEY.RUNTIME.LAYER.get(layerID).slots)
+// 			throw new Error(`[ENTITY-${entity.ID}] failed because [LAYER-${layerID}] is full`)
+// 		/** @type {hive_entry} */
+// 		this._registry.set(entity.ID, {
+// 			layerID: valid.layerID,
+// 			slot: layer.nextSlot,
+// 			target: valid.targetLayerID,
+// 			retain: true,
+// 			context: Number(contextID) ? [contextID] : []
+// 		})
+// 		const record = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? entity : entity.ID
+// 		this[MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name][entry.slot] = record;
+// 		layer.nextSlot++
+// 		return MAGPIE_HIVE._get_entity(entity.ID)
+// 	}
+// 	catch(e)
+// 	{
+// 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+// 	}
+// }
 /**
  * 
  * @param {MAGPIE_ENTITY} entity 
@@ -1928,7 +1932,7 @@ MAGPIE_HIVE.isValidGuest = function isValidGUest(entity, layerID, targetLayerID)
 	}
 }
 /**
- * 
+ * @audit somewhat functional
  * @param {MAGPIE_ENTITY} entity 
  * @param {Number} layerID 
  * @param {Number} targetLayerID 
@@ -1945,6 +1949,11 @@ MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID, contextID)
 			throw new Error(`${entity} is invalid MAGPIE_ENTITY`);
 		if(isNaN(targetLayerID))
 			targetLayerID = layerID
+		// MAGPIE_SYSTEM._logging_debug(ePrefix)
+		const material = entity.type >= MAGPIE.KEY.ENTITY.TYPE.get("MATERIA").type;
+		const buffer = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE;
+		if(!material && buffer)
+			layerID = 2
 		const exists = MAGPIE_HIVE._registry.get(entity.ID);
 		if(exists)
 		{
