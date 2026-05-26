@@ -1012,7 +1012,7 @@ MAGPIE_DATABASE.loadSymbolSync = function loadSymbolSync(symbolID)
 	}
 }
 /**
- * 
+ * @audit dependent on disabled fts5
  * @param {String} tableName 
  * @param {String} name 
  * @returns {*}

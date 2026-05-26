@@ -1054,7 +1054,7 @@ MAGPIE_ENTITY.prototype._set_POVART = function _set_POVART(POVART1)
 /**
  * 
  * @param {vector3} P1 
- * @returns {Boolean}
+ * @returns {vector3} [x,y,z]
  */
 MAGPIE_ENTITY.prototype._set_P1 = function _set_P1(P1)
 {
@@ -1065,7 +1065,7 @@ MAGPIE_ENTITY.prototype._set_P1 = function _set_P1(P1)
 	this.STATS[K.P_X] = x;
 	this.STATS[K.P_Y] = y;
 	this.STATS[K.P_Z] = z;
-	return true
+	return [x,y,z]
 }
 /**
  * 
@@ -1326,6 +1326,7 @@ MAGPIE_ENTITY.prototype._M_importSTATS = function importMateriaSTATS(STATS)
  * 
  * @param {coords} C1 
  * @param {distance} r 
+ * @returns {vector3} P₁ [x,y,z]
  */
 MAGPIE_ENTITY.prototype._set_C1 = function _set_C1(C1, r = NaN)
 {
@@ -1337,7 +1338,9 @@ MAGPIE_ENTITY.prototype._set_C1 = function _set_C1(C1, r = NaN)
 		if(!r || isNaN(r)) r = this._get_celestial()._get_radius();
 		if(isNaN(r) || r < 1)
 			throw new Error(`${r} is invalid radius`)
-		return this._set_P1(MAGPIE_PHYSICS.geodeticToCartesian(C1, r))
+		const P1 = this._set_P1(MAGPIE_PHYSICS.geodeticToCartesian(C1, r))
+		if(MAGPIE_PHYSICS.isValidVector(P1))
+			return P1 
 	}
 	catch(e)
 	{
@@ -2552,6 +2555,36 @@ MAGPIE_ENTITY.prototype._set_exp_value = function _set_exp_value(expID, value)
 /**
  * 
  * @desc back to {@link MAGPIE_ENTITY.exp}
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - PHYSICS
+//========================================================================
+/**
+ * 
+ * @param {distance} meters
+ * @returns {coords} 
+ */
+MAGPIE_ENTITY.prototype._set_ASL = function setASL(meters)
+{
+	if(!meters || !isNaN(meter))
+		return
+	const [lat,lon,ASL] = this._get_C0();
+	const P1 = this._set_C1([lat,lon,meters])
+	if(P1)
+		return [lat,lon,ASL]
+} 
+/**
+ * 
+ * @desc back to {@link }
  *
  */
 //========================================================================
