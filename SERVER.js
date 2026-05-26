@@ -684,25 +684,11 @@ MAGPIE_HIVE.awake = async function awake()
 		})
 		MAGPIE_SERVER.CLI._incrementLoadBar()
 		MAGPIE_SERVER.log(ePrefix + `loaded ${entities.length}x entities`)
-		// hive.exps.forEach(expID => {
-		// 	MAGPIE_HIVE._host_exp(MAGPIE_DATABASE.loadExpSync(expID), );
-		// })
-		// MAGPIE_SERVER.CLI._incrementLoadBar()
-		// MAGPIE_SERVER.log(ePrefix + `loaded ${hive.exps.length}x exps`)
-		// hive.keys.forEach(keyID => {
-		// 	MAGPIE_HIVE._keyBuffer.set(keyID, MAGPIE_DATABASE.loadKeySync(keyID));
-		// })
-		// MAGPIE_SERVER.CLI._incrementLoadBar()
-		// MAGPIE_SERVER.log(ePrefix + `loaded ${hive.keys.length}x keys`)
-		// hive.symbols.forEach(symbolID => {
-		// 	MAGPIE_HIVE._symbolBuffer.set(symbolID, MAGPIE_DATABASE.loadSymbolSync(symbolID));
-		// })
-		// MAGPIE_SERVER.CLI._incrementLoadBar()
-		// MAGPIE_SERVER.log(ePrefix + `loaded ${hive.symbols.length}x symbols`)
 		hive.contexts.forEach(contextID => {
 			MAGPIE_HIVE._host_context(MAGPIE_DATABASE.loadContextSync(contextID))
 		})
 		MAGPIE_SERVER.CLI._incrementLoadBar()
+		MAGPIE_HIVE._validate_layers();
 		MAGPIE_SERVER.log(ePrefix + `loaded ${hive.contexts.length}x contexts`)
 	}
 	catch(e)
@@ -791,11 +777,21 @@ MAGPIE_HIVE._save_buffers = async function _save_buffers()
 		const entityIDs = Array.from(MAGPIE_HIVE._registry.entries())
 			.filter(entry => entry[0] > 10 && entry[1].layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE)
 			.map(entry => entry[0])
-		for(const entityID of entityIDs)
+		for(let i = 0; i < entityIDs.length; i++)
 		{
-			const entity = MAGPIE_HIVE._get_entity(entityID);
-			const payload = MAGPIE_DATABASE.prepareEntity(entity)
-			entity_buffer.push(payload);
+			try
+			{
+				const entityID = entityIDs[i]
+				const entity = MAGPIE_HIVE._get_entity(entityID);
+				if(entity?.constructor?.name !== "MAGPIE_ENTITY")
+					throw new Error(`[ENTITY-${entityID}] @ ${entity} is invalid entity`)
+				const payload = MAGPIE_DATABASE.prepareEntity(entity)
+				entity_buffer.push(payload);
+			}
+			catch(e)
+			{
+				MAGPIE_SERVER.error(ePrefix + e.message, e)
+			}
 		}
 		// MAGPIE_SERVER._debug(entityIDs)
 		const exp_buffer = Array.from(MAGPIE_HIVE._expBuffer.values())
@@ -1022,7 +1018,6 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const lat = Number(output[0]);
 		const lon = Number(output[1]);
 		const ASL = Number(output[2]);
-		const r = Number(output[3]);
 		const forces = output.slice(4);
 		const Vmag = Number(MAGPIE_PHYSICS.mag(V1));
 		const Vknots = Number(MAGPIE_PHYSICS._U_MPStoKnots(Vmag));
@@ -1036,9 +1031,10 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const target = entity._get_target();
 		const Pt = target?.STATS?.slice(0, Kp.P_C) || [NaN,NaN,NaN]
 		const validTarget = MAGPIE_PHYSICS.isValidVector(Pt);
-		const Ct = validTarget ? MAGPIE_PHYSICS.cartesianToGeodetic(Pt, r) : [NaN, NaN, NaN];
-		const dist = validTarget ? Number(MAGPIE_PHYSICS._geod_distanceTo(P1, Pt, r)) : NaN;
-		const dist2 = validTarget ? Number(MAGPIE_PHYSICS.distanceTo(P1, Pt)) : NaN;
+		const r = Number(output[3]);
+		const Ct = validTarget && r > 1 ? MAGPIE_PHYSICS.cartesianToGeodetic(Pt, r) : [NaN, NaN, NaN];
+		const dist = validTarget && r > 1 ? Number(MAGPIE_PHYSICS._geod_distanceTo(P1, Pt, r)) : NaN;
+		const dist2 = validTarget && r > 1 ? Number(MAGPIE_PHYSICS.distanceTo(P1, Pt)) : NaN;
 		const ETA_s = Number(Math.floor(dist / Vmag));
 		// MAGPIE_SERVER._debug(ETA_s)
 		const ETA = !isNaN(ETA_s) ? MAGPIE_SYSTEM.Utility.printETA(ETA_s) : "N/A";

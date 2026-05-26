@@ -1486,7 +1486,8 @@ MAGPIE_RUNTIME.prototype.kick = function kick(guestFirmwareName, layerID)
 			throw new Error(`${layer} is invalid layer`);
 		const index = this._registry.get(guestFirmwareName)?.index;
 		const lastGuest = this[layer][layer.length - 1];
-		this[layer][index] = lastGuest;
+		if(lastGuest)
+			this[layer][index] = lastGuest;
 		if(!lastGuest)
 			throw new Error(`${lastGuest} is invalid guest`)
 		this._registry.set(lastGuest, {layerID: layerID, index: index});
@@ -1665,6 +1666,29 @@ MAGPIE_HIVE.setup = function setup()
 	record.nextSlot++;
 	MAGPIE_HIVE._registry.set(universe_entry.layerID, record)
 	return true
+}
+MAGPIE_HIVE._validate_layers = function validateLayers()
+{
+	const hive_layers = MAGPIE.KEY.HIVE.BUFFER_SIZE + MAGPIE.KEY.HIVE.REMOTE_SIZE;
+	for(let i = 0; i < hive_layers; i++)
+	{
+		const layer = MAGPIE.KEY.RUNTIME.LAYER.get(i);
+		MAGPIE_HIVE[layer.name].forEach((n, index) => {
+			try
+			{
+				if(i < MAGPIE.KEY.HIVE.BUFFER_SIZE)
+				if(n?.constructor?.name !== "MAGPIE_ENTITY")
+				{
+					n = new MAGPIE_ENTITY()
+					throw new Error(`${layer.name}[${index}] is invalid entity`)
+				}
+			}
+			catch(e)
+			{
+				MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+			}
+		})
+	}
 }
 /**
  * @desc {@link MAGPIE_SERVER._hive_new_entity}
@@ -2138,7 +2162,7 @@ MAGPIE_HIVE.kick = function kick(entityID, reason = "dev")
 		layerRecord.nextSlot = nextSlot;
 		MAGPIE_HIVE._registry.delete(entityID);
 		MAGPIE_HIVE._registry.set(layerID, layerRecord);
-		MAGPIE_HIVE[layerRecord.name][layerRecord.nextSlot] = null;
+		MAGPIE_HIVE[layerRecord.name][layerRecord.nextSlot] = MAGPIE_HIVE._new_entity();
 		const message = `[ENTITY-${entityID}] kicked from ${layerName}, reason: `
 		let logToConsole = false;
 		if(reason === "move")
@@ -2222,7 +2246,7 @@ MAGPIE_HIVE._host_context = function hostContext(context)
 		const gravity = Number(context.gravity) || 0;
 		const layerID = MAGPIE_HIVE._offset_importance(urgency, gravity);
 		entities.forEach(entityID => {
-			MAGPIE_HIVE.host(MAGPIE_HIVE._get_entity(entityID), layerID)
+			MAGPIE_HIVE.host(MAGPIE_HIVE._get_entity(entityID), layerID, layerID, context.ID)
 		})
 		exps.forEach(expID => {
 			MAGPIE_HIVE._host_exp(MAGPIE_HIVE._get_exp(expID), context.ID)
@@ -2335,7 +2359,7 @@ MAGPIE_HIVE._kick_context = function kickContext(contextID, reason = "dev")
 		const result = context.setSync();
 		if(!result)
 			throw new Error(`unable to save [CONTEXT-${contextID}]`)
-		MAGPIE_HIVE._contextBuffer.delete(contexID)
+		MAGPIE_HIVE._contextBuffer.delete(contextID)
 		return result
 	}
 	catch(e)
