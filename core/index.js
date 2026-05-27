@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.24.0
+ * @version 0.25.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,10 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.25.0 2026 05 26
+ * - ADDED: dedicated runtime dt
+ * - FIXED: HIVE dt tied to runtime layer delta 
  * 
  * @version 0.24.0 2026 05 26
  * - ADDED: Entity.agency scaffolding
@@ -853,14 +857,45 @@ MAGPIE.KEY.RUNTIME.meta = {
 	firmwareName: "MAGPIE_RUNTIME",
 	name: "M.A.G.P.I.E. runtime"
 };
+MAGPIE.KEY.RUNTIME.DELTA = new Float64Array([0.001,0.033,1,60,60**2,60**2*24])
 /** @type {Map<Number, {name: String, delta: Number, slots: Number}} */
 MAGPIE.KEY.RUNTIME.LAYER = new Map();
-MAGPIE.KEY.RUNTIME.LAYER.set(0, { name: "_GuestsBase", delta: 0.001, slots: 100 });
-MAGPIE.KEY.RUNTIME.LAYER.set(1, { name: "_GuestsGame", delta: 0.033, slots: 1000 });
-MAGPIE.KEY.RUNTIME.LAYER.set(2, { name: "_GuestsStandard", delta: 1, slots: 5000 });
-MAGPIE.KEY.RUNTIME.LAYER.set(3, { name: "_GuestsSuper", delta: 60, slots: 10000 });
-MAGPIE.KEY.RUNTIME.LAYER.set(4, { name: "_GuestsMega", delta: 60 ** 2, slots: 50000 });
-MAGPIE.KEY.RUNTIME.LAYER.set(5, { name: "_GuestsUltra", delta: 60 ** 2 * 24, slots: 100000 });
+MAGPIE.KEY.RUNTIME.LAYER.set(0, { 
+	name: "_GuestsBase", 		
+	delta: MAGPIE.KEY.RUNTIME.DELTA[0], 	
+	dt: MAGPIE.KEY.RUNTIME.DELTA[0],
+	slots: 100 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(1, { 
+	name: "_GuestsGame", 		
+	delta: MAGPIE.KEY.RUNTIME.DELTA[1], 	
+	dt: MAGPIE.KEY.RUNTIME.DELTA[1],
+	slots: 1000 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(2, { 
+	name: "_GuestsStandard", 	
+	delta: MAGPIE.KEY.RUNTIME.DELTA[2], 		
+	dt: MAGPIE.KEY.RUNTIME.DELTA[2],
+	slots: 5000 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(3, { 
+	name: "_GuestsSuper", 	
+	delta: MAGPIE.KEY.RUNTIME.DELTA[3], 		
+	dt: MAGPIE.KEY.RUNTIME.DELTA[3],
+	slots: 10000 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(4, { 
+	name: "_GuestsMega", 		
+	delta: MAGPIE.KEY.RUNTIME.DELTA[4], 	
+	dt: MAGPIE.KEY.RUNTIME.DELTA[4],
+	slots: 50000 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(5, { 
+	name: "_GuestsUltra", 	
+	delta: MAGPIE.KEY.RUNTIME.DELTA[5],
+	dt: MAGPIE.KEY.RUNTIME.DELTA[5],
+	slots: 100000 
+});
 // #endregion
 //------------------------------------------------------------------------
 /**

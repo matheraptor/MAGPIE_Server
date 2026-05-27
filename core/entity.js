@@ -1,6 +1,6 @@
 /**
  * @name MAGPIE_ENTITY
- * @version 0.24.0
+ * @version 0.25.0
  * @desc 
  * @param {{
  * name: String,
@@ -1428,7 +1428,6 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 			throw new Error(`${switchID} is invalid switchID`);
 		if(isNaN(dt))
 			throw new Error(`${dt} is invalid dT`);
-		// MAGPIE_SYSTEM._logging_debug(dt);
 		this.updated = Date.now();
 		// @todo different refresh methods according on type?
 		if(this.type < MAGPIE.KEY.ENTITY.TYPE.get("MATERIA").type)
@@ -1437,12 +1436,9 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 		const key = this.processKeys(input);
 		const emote = this.processEmote(switchID, dt, input, key);
 		const { exp: state, target } = this.processStates(switchID, dt, emote?.exp || input);
-		// MAGPIE_SYSTEM._logging_debug(Object.entries(target))
 		this.processAgency(switchID, dt, state, input?.keys || []);
 		const { At, Tt } = emote?.target ? emote.target : target;
 		const POVART0 = this._get_POVART();
-		// if(MAGPIE_PHYSICS.mag(Tt) > 0)
-			// MAGPIE_SYSTEM._logging_debug(MAGPIE_PHYSICS.mag(Tt))
 		const C = this._get_celestial(POVART0[MAGPIE.KEY.POVART.P_C]);
 		const { output, POVART1 } = this.updatePhysics(switchID, dt, At, Tt, C, POVART0);
 		if(!output)

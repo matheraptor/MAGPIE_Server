@@ -354,42 +354,42 @@ MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID, layer_frame)
 		const layerUltra = layer.get(Ultra);
 		const f = layer_frame
 		if(switchID === 0)
-			this.tick_buffer(layerBase.name, Base, Base, layerBase.delta, f);
+			this.tick_buffer(layerBase.name, Base, Base, layerBase.dt, f);
 		if(switchID === 1)
 		{
-			this.tick_buffer(layerBase.name, Base, Game, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, Game, layerGame.delta, f);
+			this.tick_buffer(layerBase.name, Base, Game, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, Game, layerGame.dt, f);
 		}
 		if(switchID === 2)
 		{
-			this.tick_buffer(layerBase.name, Base, TICK, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, TICK, layerBase.delta, f);
-			this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.delta, f);
+			this.tick_buffer(layerBase.name, Base, TICK, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, TICK, layerBase.dt, f);
+			this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.dt, f);
 		}
 		if(switchID === 3)
 		{
-			this.tick_buffer(layerBase.name, Base, Super, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, Super, layerBase.delta, f);
-			this.tick_buffer(layerTICK.name, TICK, Super, layerBase.delta, f);
-			this.tick_remote(layerSuper.name, Super, Super, layerSuper.delta, f);
+			this.tick_buffer(layerBase.name, Base, Super, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, Super, layerBase.dt, f);
+			this.tick_buffer(layerTICK.name, TICK, Super, layerBase.dt, f);
+			this.tick_remote(layerSuper.name, Super, Super, layerSuper.dt, f);
 			this.save()
 		}
 		if(switchID === 4)
 		{
-			this.tick_buffer(layerBase.name, Base, Mega, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, Mega, layerBase.delta, f);
-			this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.delta, f);
-			this.tick_remote(layerSuper.name, Super, Mega, layerBase.delta, f);
-			this.tick_remote(layerMega.name, Mega, Mega, layerMega.delta, f);
+			this.tick_buffer(layerBase.name, Base, Mega, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, Mega, layerBase.dt, f);
+			this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.dt, f);
+			this.tick_remote(layerSuper.name, Super, Mega, layerBase.dt, f);
+			this.tick_remote(layerMega.name, Mega, Mega, layerMega.dt, f);
 		}
 		if(switchID === 5)
 		{
-			this.tick_buffer(layerBase.name, Base, Ultra, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, Ultra, layerBase.delta, f);
-			this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.delta, f);
-			this.tick_remote(layerSuper.name, Super, Ultra, layerBase.delta, f);
-			this.tick_remote(layerMega.name, Mega, Ultra, layerBase.delta, f);
-			this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.delta, f);
+			this.tick_buffer(layerBase.name, Base, Ultra, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, Ultra, layerBase.dt, f);
+			this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.dt, f);
+			this.tick_remote(layerSuper.name, Super, Ultra, layerBase.dt, f);
+			this.tick_remote(layerMega.name, Mega, Ultra, layerBase.dt, f);
+			this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.dt, f);
 		}
 		return true
 	}
