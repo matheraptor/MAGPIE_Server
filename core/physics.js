@@ -688,6 +688,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	if(!options?.fwd)
 		options.fwd = MAGPIE.KEY.POVART.FWD;
 	const { P0, O0, V0, A0, R0, T0 } = this.decomp_POVART(POVART0)
+	const raw = {};
 	// MAGPIE_SYSTEM._logging_debug(`a1: ${a1}`)
 	if(!options.Tmax)
 	{
@@ -725,7 +726,12 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const pR = this._getATpR(dRmag, V0, R0, Vstate, options)
 	options.pR = pR;
 	options.Vstate = Vstate;
-	const { Tt, Rstate } = this._getTt(dR, R0, O0, options);
+	const getTt = this._getTt(dR, R0, O0, options);
+	const Tt = getTt.Tt;
+	const Rstate = getTt.Rstate
+	raw.Tt = Tt;
+	raw.Rstate = Rstate;
+	raw.Bdist = getTt?.Bdist
 	// MAGPIE_SYSTEM._logging_debug(`pR: ${pR}`)
 	// const Tt = this.scaleVector(Tt_raw, steerIntensity);
 	// MAGPIE_SYSTEM._logging_debug(`Rstate: ${Rstate}`)
@@ -755,7 +761,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	return {
 		At: this.scaleVector(As, pR),
 		Tt: this.vector_clamp_mag(newTt, Tmax),
-		Vstate, dR_mag: dRmag, Rstate, dR: dR
+		Vstate, dR_mag: dRmag, Rstate, dR: dR, Bdist: raw.Bdist
 	}
 }
 // #endregion
@@ -1226,7 +1232,7 @@ MAGPIE_PHYSICS._getTt = function _getTt(dR, R0, O0, options)
 		// }
 		// MAGPIE_SYSTEM._logging_debug(`dRmag: ${this.mag(dR)}`)
 		const raw = this._getTt_local(dR, R0, O0, options);
-		const { Tt_local, Rstate } = raw;
+		const { Tt: Tt_local, Rstate } = raw;
 		if(!this.isValidVector(Tt_local))
 			throw new Error(`${Tt_local} is invalid Tt_local bivector`)
 		// const Tt = this.rotorApply(O0, Tt_local);
@@ -1237,7 +1243,7 @@ MAGPIE_PHYSICS._getTt = function _getTt(dR, R0, O0, options)
 		// MAGPIE_SYSTEM._logging_debug(`Tt: ${this.mag(Tt_local)}`)
 		if(!this.isValidVector(Tt))
 			throw new Error(`${Tt} is invalid Tₜ bivector`);
-		return { Tt, Rstate }
+		return raw
 	}
 	catch(e)
 	{
@@ -1349,39 +1355,6 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		|| brake_threshold > magDesired;
 		const hold = hold_threshold > magDesired;
 		const seek = !hold && accelerate ? magDesired > seek_threshold : false;
-		//#region old FSM
-		// const Tt_seek = this.scaleVector(unit_dR, Tsafe);
-		// 	const Tt_brake = this.scaleVector(unit_R0, -1);
-		// 	if(!this.isValidVector(Tt_brake))
-		// 		throw new Error(`${Tt_brake} is invalid Tt_brake bivector`)
-		// 	MAGPIE_SYSTEM._logging_debug(`[getTt_local] dR=[${dR_roll.toFixed(6)}, ${dR_pitch.toFixed(6)}, ${dR_heading.toFixed(6)}] R0=[${R0_roll.toFixed(6)}, ${R0_pitch.toFixed(6)}, ${R0_heading.toFixed(6)}] | Tt=[${Tt_roll.toFixed(6)}, ${Tt_pitch.toFixed(6)}, ${Tt_heading.toFixed(6)}] | state=${brake?'brake':hold?'hold':seek?'seek':'drift'} magDesired=${magDesired.toFixed(6)} magR0=${magR0.toFixed(6)}`)
-		// 	if(brake)
-		// 		return { Tt_local: Tt_local, state: STATE_INDEX.ALIGNING_TARGET }
-		// 	if(hold)
-		// 	{
-		// 		// const hold_Rsafe = (Rsafe - magR0) * Tsafe;
-		// 		// const hold_Rsafe = this._U_clampRange(magDesired, -Rmin, Rmin)
-		// 		// const Rsafe_brake = magR0 > seek_threshold ? -Tsafe : 0;
-		// 		// // MAGPIE_SYSTEM._logging_debug(hold_Rsafe) 
-		// 		// const Tt = this.scaleVector(unit_R0, hold_Rsafe + Rsafe_brake)
-		// 		// if(!this.isValidVector(Tt))
-		// 		// 	throw new Error(`${Tt} is invalid Tt bivector`)
-		// 		const Tt = Tt_local;
-		// 		return { Tt_local: Tt, Rstate: STATE_INDEX.LOCKING_TARGET }
-		// 	}
-		// 	if(seek)
-		// 	{
-		// 		// const hold_Rt = this.scaleVector(Tt_brake, Rt_error);
-		// 		// const seeking =  getRt ? Tt_seek : hold_Rt;
-		// 		// const Tt = seeking;
-		// 		// if(!this.isValidVector(Tt))
-		// 		// 	throw new Error(`${Tt} is invalid Tt bivector`)
-		// 		const Tt = Tt_local
-		// 		return { Tt_local: Tt, Rstate: STATE_INDEX.FACING_TARGET }
-		// 	}
-		//#endregion
-		// Unified state machine — determines state once for all three axes
-		// MAGPIE_SYSTEM._logging_debug(`Rt_err: ${Rt_error}, transit: ${transit}, getRt: ${getRt}`)
 		if(hold)
 			options.Rstate = STATE_INDEX.LOCKING_TARGET;
 		else if(brake)
@@ -1403,7 +1376,11 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		//@audit-ok [0,0,Tt_heading]
 		// if(options?.Rstate)
 		// 	MAGPIE_SYSTEM._logging_debug(`state: ${options.Rstate}`)
-		return { Rstate: options.Rstate, Tt_local }
+		return { 
+			Rstate: options.Rstate, 
+			Tt: Tt_local, 
+			Bdist: brakeDist 
+		}
 	}
 	catch(e)
 	{

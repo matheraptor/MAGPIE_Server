@@ -100,6 +100,8 @@ const inspector = {
 		//
 		if(data?.dR && data.dR.every(n => !isNaN(n)))
 			update("val-dR", data.dR);
+		if(data?.Bdist && !isNaN(data.Bdist))
+			update("val-Bdist", data.Bdist)
 		if(data?.R1)
 			update("val-R1", data.R1);
 		if(data?.T1)

@@ -1044,6 +1044,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const Vstate = raw[index.VSTATE] || NaN;
 		const dR_mag = Number(raw[index.DRMAG]) || NaN;
 		const dR = raw[index.DR] || [NaN, NaN, NaN];
+		const Bdist = raw[index.BDIST];
 		// MAGPIE_SYSTEM._logging_debug(raw)
 		const form = MAGPIE_SYSTEM.Utility._format_num;
 		const data = {
@@ -1063,6 +1064,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 			dR: dR.map(n => form(n, 5, true)),
 			R1: R1.map(n => form(n, 5, true)),
 			T1: T1.map(n => form(n, 5, true)),
+			Bdist: form(Bdist, 5, true),
 			heading: hdg,
 			pitch: pitch,
 			roll: roll,

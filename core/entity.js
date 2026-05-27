@@ -2103,13 +2103,14 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp, fitn
 		// MAGPIE_SYSTEM._logging_debug(Object.entries(options))
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, Pt, this.STATS, options);
-		const { At, Tt, Vstate, Rstate, dR_mag, dR } = output;
+		const { At, Tt, Vstate, Rstate, dR_mag, dR, Bdist } = output;
 		// MAGPIE_SYSTEM._logging_debug(Tt)
 		const raw = [];
 		raw[MAGPIE.KEY.INDEX.RSTATE] = Rstate;
 		raw[MAGPIE.KEY.INDEX.VSTATE] = Vstate;
 		raw[MAGPIE.KEY.INDEX.DRMAG] = dR_mag;
 		raw[MAGPIE.KEY.INDEX.DR] = dR;
+		raw[MAGPIE.KEY.INDEX.BDIST] = Bdist;
 		this.switchState(fitness_index, Vstate)
 		return { At: At, Tt: Tt, exp: exp, raw }
  	}
