@@ -82,7 +82,7 @@ const inspector = {
 		if(typeof data?.Vstate === 'string')
 			update("val-Vstate", data.Vstate);
 		if(typeof data?.Rstate === 'string')
-			update("val-Rstate", data.Rstate)
+			update("val-Rstate", data?.Rstate);
 		if(data?.dR_mag && !isNaN(data.dR_mag))
 			update("val-dR_mag", Number(data.dR_mag)?.toFixed(3));
 		update('val-heading', data.heading?.toFixed(1));
@@ -97,6 +97,13 @@ const inspector = {
 		// update('val-tlon', data.targetCoords[1].toFixed(10));
 		update('val-dist', Math.floor(data.distanceTo));
 		update('val-eta', data.ETA);
+		//
+		if(data?.dR && data.dR.every(n => !isNaN(n)))
+			update("val-dR", data.dR);
+		if(data?.R1)
+			update("val-R1", data.R1);
+		if(data?.T1)
+			update("val-T1", data.T1);
 	}
 };
 inspector.copyToClipboard = function copyToClipboard(buttonElement) {

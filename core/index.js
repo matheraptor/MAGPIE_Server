@@ -717,6 +717,9 @@ MAGPIE.KEY.INDEX.RSTATE = 0;
 MAGPIE.KEY.INDEX.VSTATE = 1;
 /** @type {index} entity.emote.output.raw[index] */
 MAGPIE.KEY.INDEX.DRMAG = 2;
+/** @type {index} entity.emote.output.raw[index] */
+MAGPIE.KEY.INDEX.DR = 3;
+
 /**
  * @typedef {Enumerator<Number>} urgency
  * @typedef {{value: Number, desc: String}} urgency_record

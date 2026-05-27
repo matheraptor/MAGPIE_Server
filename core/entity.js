@@ -1451,7 +1451,7 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 			output.target = target;
 		if(emote)
 			output.emote = emote;
-		MAGPIE_ENTITY.__socketEmit(output, input, this, C, POVART1, dt);
+		MAGPIE_ENTITY.__socketEmit(output, input, this, C, POVART1, dt, switchID);
 		return true
 	}
 	catch(e)
@@ -2103,13 +2103,13 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp, fitn
 		// MAGPIE_SYSTEM._logging_debug(Object.entries(options))
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, Pt, this.STATS, options);
-		const { At, Tt, Vstate, Rstate, dR_mag } = output;
+		const { At, Tt, Vstate, Rstate, dR_mag, dR } = output;
 		// MAGPIE_SYSTEM._logging_debug(Tt)
-		const rawData = [];
-		rawData[MAGPIE.KEY.INDEX.RSTATE] = Rstate;
-		rawData[MAGPIE.KEY.INDEX.VSTATE] = Vstate;
-		rawData[MAGPIE.KEY.INDEX.DRMAG] = dR_mag;
-		const raw = new Float64Array(rawData);
+		const raw = [];
+		raw[MAGPIE.KEY.INDEX.RSTATE] = Rstate;
+		raw[MAGPIE.KEY.INDEX.VSTATE] = Vstate;
+		raw[MAGPIE.KEY.INDEX.DRMAG] = dR_mag;
+		raw[MAGPIE.KEY.INDEX.DR] = dR;
 		this.switchState(fitness_index, Vstate)
 		return { At: At, Tt: Tt, exp: exp, raw }
  	}

@@ -646,6 +646,21 @@ MAGPIE_SYSTEM.Utility.version = function version(version)
 	const PATCH = version[2];
 	return `${MAJOR}.${MINOR}.${PATCH}`
 }
+/**
+ * 
+ * @param {Number} num 
+ * @param {Number} toFixed 
+ * @param {Boolean} sign 
+ */
+MAGPIE_SYSTEM.Utility._format_num = function formatNumber(num, toFixed, sign)
+{
+	const formatter = new Intl.NumberFormat('en-US', {
+	minimumFractionDigits: Number(toFixed) || 0,
+	maximumFractionDigits: Number(toFixed) || 0,
+	signDisplay: sign ? 'always' : 'never' // Forces +0.00000, -0.00000, +0.00005
+	});
+	return formatter.format(num)
+}
 // #endregion
 //------------------------------------------------------------------------
 /**

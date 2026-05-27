@@ -678,7 +678,7 @@ MAGPIE_PHYSICS._move_linearTo = function _move_linearTo(P0, P1, V0, Vmax, Amax, 
  * }} options 
  * @returns {{At: vector3, Tt: bivector, 
  * Vstate: stateID, Rstate: keyID
- * dR_mag: magnitude}} 
+ * dR_mag: magnitude, dR: bivector}} 
  */
 MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS, options)
 {
@@ -747,15 +747,15 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, STATS
 	const As = Asafe();
 	// if(this.mag(As) > 0)
 		// MAGPIE_SYSTEM._logging_debug(`At_mag: ${this.mag(As)}`)
-	// MAGPIE_SYSTEM._logging_debug(`pR: ${pR}`)
-	const Tt_mag = this.vector_clamp_mag(newTt, Tmax);
+	// MAGPIE_SYSTEM._logging_debug(`dR: ${dR}`)
+	// const Tt_mag = this.vector_clamp_mag(newTt, Tmax);
 	// if(Tt_mag > 0)
 		// MAGPIE_SYSTEM._logging_debug(`Tt: ${Tt_mag}`)
 	// MAGPIE_SYSTEM._logging_debug()
 	return {
 		At: this.scaleVector(As, pR),
 		Tt: this.vector_clamp_mag(newTt, Tmax),
-		Vstate, dR_mag: dRmag, Rstate
+		Vstate, dR_mag: dRmag, Rstate, dR: dR
 	}
 }
 // #endregion
@@ -1225,7 +1225,8 @@ MAGPIE_PHYSICS._getTt = function _getTt(dR, R0, O0, options)
 		// 	dR[roll] = 0;
 		// }
 		// MAGPIE_SYSTEM._logging_debug(`dRmag: ${this.mag(dR)}`)
-		const { Tt_local, Rstate } = this._getTt_local(dR, R0, O0, options)
+		const raw = this._getTt_local(dR, R0, O0, options);
+		const { Tt_local, Rstate } = raw;
 		if(!this.isValidVector(Tt_local))
 			throw new Error(`${Tt_local} is invalid Tt_local bivector`)
 		// const Tt = this.rotorApply(O0, Tt_local);
@@ -1282,8 +1283,8 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_component, R0_component, opti
     // MAGPIE_SYSTEM._logging_debug(`Rt_error: ${Rt_error}`)
     // Execute the UNIFIED state with per-axis components
 	// if(axis === 0)
-	// const distanceFactor = Math.min(dR_error / (Bdist * 2.0), 1.0);
-	const distanceFactor = 1
+	const distanceFactor = Math.min(dR_error / (Bdist * 2.0), 1.0);
+	// const distanceFactor = 1
 	let Tt = 0
 	
     if(state === STATE_INDEX.ALIGNING_TARGET) 
@@ -1296,9 +1297,9 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_component, R0_component, opti
 		Tt = Tt_align;
 		// MAGPIE_SYSTEM._logging_debug(`now: ${Date.now()}, Tt: ${Tt}`)
 	}
-    if(state === STATE_INDEX.FACING_TARGET) Tt = Tt_seek * distanceFactor;
+    if(state === STATE_INDEX.FACING_TARGET) Tt = Tt_seek;
 	// MAGPIE_SYSTEM._logging_debug(`Rt_err: ${Rt_error.toFixed(5)} | dR: ${dR_component.toFixed(5)} | R0: ${R0_component.toFixed(5)} | Tt: ${Tt.toFixed(5)} | Bdist: ${Bdist.toFixed(5)}`)
-	return Tt
+	return { Tt, state: 0 }
 }
 
 /**
@@ -1327,7 +1328,7 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		const magR0 = this.mag(R0);
 		const brakeDist = (magR0**2) / (2 * Tsafe);
 		const hold_threshold = 0.05 ;
-		const brake_threshold = hold_threshold + + brakeDist;
+		const brake_threshold = hold_threshold + brakeDist;
 		const decel_threshold = brake_threshold * 1.5;
 		options.seek_threshold = seek_threshold;
 		options.hold_threshold = hold_threshold;
@@ -1340,8 +1341,8 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		const Rt_error = Math.abs(magR0 - Rsafe);
 		const getRt = Rt_error <= transit;
 		const accelerate = magR0 < Rsafe;
-		const Tt_brake = this.scaleVector(R0, -(Math.min(Tsafe, Rt_error)))
-		// MAGPIE_SYSTEM._logging_debug(`dRmag: ${magDesired}, Rt_error: ${Rt_error}, accel: ${accelerate}`)
+		// const Tt_brake = this.scaleVector(R0, -(Math.min(Tsafe, Rt_error)))
+		// MAGPIE_SYSTEM._logging_debug(`dRmag: ${magDesired}, Bdist: ${brakeDist}`)
 		const onBrakeInit = brake_threshold > magDesired;
 		const onBrakeHold = hold_threshold > magDesired
 		const brake = Vstate === STATE_INDEX.ON_TARGET 
@@ -1391,17 +1392,18 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 			options.Rstate = STATE_INDEX.DRIFTING;
 		
 		// Per-axis decomposition — all axes execute the unified state with per-component torques
-		const [dR_roll, dR_pitch, dR_heading] = dR;
-		const [R0_roll, R0_pitch, R0_heading] = R0;
-		const Tt_roll = this._getTt_axis(dR_roll, R0_roll, options, 0);
-		const Tt_pitch = this._getTt_axis(dR_pitch, R0_pitch, options, 1);
-		const Tt_heading = this._getTt_axis(dR_heading, R0_heading, options, 2);
+		const [dR_pitch, dR_roll, dR_heading] = dR;
+		const [R0_pitch, R0_roll, R0_heading] = R0;
+		const { Tt: Tt_roll, state: R_roll } = this._getTt_axis(dR_roll, R0_roll, options, 0);
+		const { Tt: Tt_pitch, state: R_pitch } = this._getTt_axis(dR_pitch, R0_pitch, options, 1);
+		const { Tt: Tt_heading, state: R_heading } = this._getTt_axis(dR_heading, R0_heading, options, 2);
 		const Tt_local = [0, 0, Tt_heading];
 		//@audit inverted pitch/roll [r,p,h] => [p,r,h]
 		//@audit inverted roll [p, r, h] => [p, -r, h]
 		//@audit-ok [0,0,Tt_heading]
-		// MAGPIE_SYSTEM._logging_debug(`Tt_local: ${Tt_local} | Rt_err: ${Rt_error}`)
-		return { Tt_local, Rstate: options.Rstate }
+		// if(options?.Rstate)
+		// 	MAGPIE_SYSTEM._logging_debug(`state: ${options.Rstate}`)
+		return { Rstate: options.Rstate, Tt_local }
 	}
 	catch(e)
 	{

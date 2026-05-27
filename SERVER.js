@@ -999,7 +999,7 @@ MAGPIE_ENTITY.__hive = async function __hive(method, arguments)
 	const callback = MAGPIE_HIVE[method]
 	return callback(...arguments)
 }
-MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POVART1, dt)
+MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POVART1, dt, switchID)
 {
 	const ePrefix = `[ENTITY-${entity.ID}].socketEmit: `;
 	try
@@ -1038,11 +1038,16 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const ETA_s = Number(Math.floor(dist / Vmag));
 		// MAGPIE_SERVER._debug(ETA_s)
 		const ETA = !isNaN(ETA_s) ? MAGPIE_SYSTEM.Utility.printETA(ETA_s) : "N/A";
-		const rawData = output?.emote?.raw || output?.target?.raw || [];
-		const Rstate = rawData[MAGPIE.KEY.INDEX.RSTATE] || NaN; 
-		const Vstate = rawData[MAGPIE.KEY.INDEX.VSTATE] || NaN;
-		const dR_mag = Number(rawData[MAGPIE.KEY.INDEX.DRMAG]) || NaN;
+		const raw = output?.emote?.raw || output?.target?.raw || [];
+		const index = MAGPIE.KEY.INDEX
+		const Rstate = raw[index.RSTATE] || NaN; 
+		const Vstate = raw[index.VSTATE] || NaN;
+		const dR_mag = Number(raw[index.DRMAG]) || NaN;
+		const dR = raw[index.DR] || [NaN, NaN, NaN];
+		// MAGPIE_SYSTEM._logging_debug(raw)
+		const form = MAGPIE_SYSTEM.Utility._format_num;
 		const data = {
+			switchID,
 			entityID: entity.ID,
 			entityName: entity.name,
 			metadate: entity.updated,
@@ -1055,6 +1060,9 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 			Rmag: Rmag,
 			Tmag: Tmag,
 			dR_mag: dR_mag,
+			dR: dR.map(n => form(n, 5, true)),
+			R1: R1.map(n => form(n, 5, true)),
+			T1: T1.map(n => form(n, 5, true)),
 			heading: hdg,
 			pitch: pitch,
 			roll: roll,
