@@ -1286,18 +1286,18 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_component, R0_component, opti
 	const distanceFactor = 1
 	let Tt = 0
 	
-    // if(state === STATE_INDEX.ALIGNING_TARGET) 
-	// {
-	// 	Tt = Tt_brake
-	// 	// MAGPIE_SYSTEM._logging_debug(`now: ${Date.now()}, Tt: ${Tt}`)
-	// } 
-    // if(state === STATE_INDEX.LOCKING_TARGET) 
-	// {
-	// 	Tt = Tt_align;
-	// 	// MAGPIE_SYSTEM._logging_debug(`now: ${Date.now()}, Tt: ${Tt}`)
-	// }
-    // if(state === STATE_INDEX.FACING_TARGET) Tt = Tt_seek * distanceFactor;
-	// MAGPIE_SYSTEM._logging_debug(`Rt_err: ${Rt_error.toFixed(5)} | dR: ${dR_component.toFixed(5)} | R0: ${R0_component.toFixed(5)} | Tt: ${Tt.toFixed(5)} | Bdist: ${Bdist.toFixed(5)}`)
+    if(state === STATE_INDEX.ALIGNING_TARGET) 
+	{
+		Tt = Tt_brake
+		// MAGPIE_SYSTEM._logging_debug(`now: ${Date.now()}, Tt: ${Tt}`)
+	} 
+    if(state === STATE_INDEX.LOCKING_TARGET) 
+	{
+		Tt = Tt_align;
+		// MAGPIE_SYSTEM._logging_debug(`now: ${Date.now()}, Tt: ${Tt}`)
+	}
+    if(state === STATE_INDEX.FACING_TARGET) Tt = Tt_seek * distanceFactor;
+	MAGPIE_SYSTEM._logging_debug(`Rt_err: ${Rt_error.toFixed(5)} | dR: ${dR_component.toFixed(5)} | R0: ${R0_component.toFixed(5)} | Tt: ${Tt.toFixed(5)} | Bdist: ${Bdist.toFixed(5)}`)
 	return Tt
 }
 
