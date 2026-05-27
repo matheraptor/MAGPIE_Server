@@ -1738,6 +1738,9 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		}
 		// @todo entity.updatePhysics check obstacles and calculate Ac/Tc
 		const { At, Tt } = MAGPIE_PHYSICS._POVART_applyTargetAT(this, dt, Ax, Tx, O0);
+		// const At = Ax;
+		// const Tt = Tx;
+		// MAGPIE_SYSTEM._logging_debug(Tx)
 		const forcesData = { dt, r, P0, V0, At, C0, CB, STATS: this.STATS };
 		const { Af, Tf, forces } = MAGPIE_PHYSICS._apply_forces(forcesData);
 		const dA = MAGPIE_PHYSICS.scaleVector(MAGPIE_PHYSICS.addVectors(At, Af), dt)
@@ -1752,7 +1755,7 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 		//
 		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
 		const dV = MAGPIE_PHYSICS.addVectors(V0, A1);
-		const V1 = MAGPIE_PHYSICS.mag(dV) > 1e-6 ? dV : [0,0,0];
+		const V1 = MAGPIE_PHYSICS.mag(dV) > 1e-9 ? dV : [0,0,0];
 		//
 		const dP = MAGPIE_PHYSICS.scaleVector(V1, dt);
 		const P1 = MAGPIE_PHYSICS.addVectors(P0, dP);
@@ -2101,7 +2104,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp, fitn
 		const output = MAGPIE_PHYSICS
 			._emote_seekTarget(POVART0, Pt, this.STATS, options);
 		const { At, Tt, Vstate, Rstate, dR_mag } = output;
-		// MAGPIE_SYSTEM._logging_debug(MAGPIE_STATE.INDEX.get(Vstate).name)
+		// MAGPIE_SYSTEM._logging_debug(Tt)
 		const rawData = [];
 		rawData[MAGPIE.KEY.INDEX.RSTATE] = Rstate;
 		rawData[MAGPIE.KEY.INDEX.VSTATE] = Vstate;
