@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.24.0
+ * @version 0.25.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,9 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.25.0 2026 05 27
+ * - FIXED: physics.getTt_local inverted roll/pitch
  * 
  * @version 0.24.0 2026 05 26
  * - ADDED: Entity.agency scaffolding
