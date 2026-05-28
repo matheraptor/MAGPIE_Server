@@ -1,6 +1,6 @@
 /**
  * @name MAGPIE_ENTITY
- * @version 0.24.0
+ * @version 0.26.0
  * @desc 
  * @param {{
  * name: String,
@@ -332,9 +332,11 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {import("./index").vector3} vector3
  * @typedef {import("./index").bivector} bivector
  * @typedef {import("./index").rotor} rotor
+ * @typedef {import("./physics").magnitude} magnitude
  * @typedef {import("./index").angle_deg} angle_deg
  * @typedef {import("./index").acceleration} acceleration
  * @typedef {import("./index").force} force
+ * @typedef {import("./index").physics_forces} physics_forces [FG, FF, FD, FL, AOA, Atm, OAT, Dew, Breeze, Lit, Rad]
  * @typedef {angle_deg} lat
  * @typedef {angle_deg} lon
  * @typedef {distance} ASL
@@ -350,6 +352,7 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * 
  * @typedef {Number} fitness_index this.fitness[index]
  * @typedef {import("../data/states").state_output} state_output
+ * 
  * 
  * 
  * @typedef {import("./system").database_result} database_result
@@ -618,6 +621,21 @@ MAGPIE_ENTITY._get_decomp_POVART = function getDecompPOVART(POVART)
 	return MAGPIE_PHYSICS.decomp_POVART(POVART);
 }
 /**
+ * @param {MAGPIE_ENTITY} entity
+ * @returns {stateID[]} Number[]
+ */
+MAGPIE_ENTITY._get_States = function _get_States(entity)
+{
+	const K = MAGPIE.KEY.FITNESS;
+	const deckSize = entity.fitness[K.DECKSIZE];
+	const offset = K.TRAITS;
+	const stateOffset = K.STATES;
+	const states = Array.from(entity.fitness)
+		.slice(offset + deckSize, offset + deckSize * stateOffset + 1)
+		.filter(n => !!n)
+	return states
+}
+/**
  * @returns {MAGPIE_ENTITY}
  */
 MAGPIE_ENTITY.prototype._get_celestial = function _get_celestial()
@@ -704,28 +722,22 @@ MAGPIE_ENTITY.prototype._get_T0 = function getT0()
 	const K = MAGPIE.KEY.POVART;
 	return [this.STATS[K.T_YZ], this.STATS[K.T_XZ], this.STATS[K.T_XY]]
 }
+/**
+ * 
+ * @returns {STAT[]}
+ */
 MAGPIE_ENTITY.prototype._get_STATS = function getSTATS()
 {
-	return this.STATS.slice(MAGPIE.KEY.POVART.ARRAY)
-}
-MAGPIE_ENTITY.prototype._get_traits = function getTraits()
-{
-	return this.fitness.slice(2, this.fitness[1] + 2)
+	return Array.from(this.STATS).slice(MAGPIE.KEY.POVART.ARRAY)
 }
 /**
- * @param {MAGPIE_ENTITY} entity
- * @returns {stateID[]} Number[]
+ * 
+ * @returns {traitID[]}
  */
-MAGPIE_ENTITY._get_States = function _get_States(entity)
+MAGPIE_ENTITY.prototype._get_traits = function getTraits()
 {
 	const K = MAGPIE.KEY.FITNESS;
-	const deckSize = entity.fitness[K.DECKSIZE];
-	const offset = K.TRAITS;
-	const stateOffset = K.STATES;
-	const states = entity.fitness
-		.slice(offset + deckSize, offset + deckSize * stateOffset + 1)
-		.filter(n => !!n)
-	return states
+	return Array.from(this.fitness).slice(K.TRAITS, this.fitness[K.DECKSIZE] + K.TRAITS)
 }
 /**
  * 
@@ -1428,7 +1440,6 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 			throw new Error(`${switchID} is invalid switchID`);
 		if(isNaN(dt))
 			throw new Error(`${dt} is invalid dT`);
-		// MAGPIE_SYSTEM._logging_debug(dt);
 		this.updated = Date.now();
 		// @todo different refresh methods according on type?
 		if(this.type < MAGPIE.KEY.ENTITY.TYPE.get("MATERIA").type)
@@ -1437,14 +1448,11 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 		const key = this.processKeys(input);
 		const emote = this.processEmote(switchID, dt, input, key);
 		const { exp: state, target } = this.processStates(switchID, dt, emote?.exp || input);
-		// MAGPIE_SYSTEM._logging_debug(Object.entries(target))
 		this.processAgency(switchID, dt, state, input?.keys || []);
-		const { At, Tt } = emote?.target ? emote.target : target;
+		const intent = emote?.target ? emote.target : target;
 		const POVART0 = this._get_POVART();
-		// if(MAGPIE_PHYSICS.mag(Tt) > 0)
-			// MAGPIE_SYSTEM._logging_debug(MAGPIE_PHYSICS.mag(Tt))
 		const C = this._get_celestial(POVART0[MAGPIE.KEY.POVART.P_C]);
-		const { output, POVART1 } = this.updatePhysics(switchID, dt, At, Tt, C, POVART0);
+		const { output, POVART1 } = this.updatePhysics(switchID, dt, intent, C, POVART0);
 		if(!output)
 			throw new Error(`${output} is invalid output`)
 		if(target)
@@ -1704,8 +1712,12 @@ MAGPIE_ENTITY.prototype.processAgency = function processAgency(switchID, dt, exp
  * 
  * @param {Number} switchID 
  * @param {duration} dt 
- * @param {vector3} Ax
- * @param {bivector} Tx
+ * @param {{
+ * At: vector3,
+ * Tt: bivector,
+ * exp: MAGPIE_EXP,
+ * raw: action_output
+ * }} intent
  * @param {MAGPIE_ENTITY} C
  * @param {POVART} POVART0
  * @returns {{
@@ -1713,7 +1725,7 @@ MAGPIE_ENTITY.prototype.processAgency = function processAgency(switchID, dt, exp
  * POVART1: POVART
  * }}
  */
-MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax, Tx, C, POVART0)
+MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, intent, C, POVART0)
 {
 	const ePrefix = `[ENTITY-${this.ID}].updatePhysics: `;
 	let update = { 
@@ -1723,8 +1735,6 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 	try
 	{
 		let { P0, orbit, O0, V0, A0, R0, T0, E_ID } = MAGPIE_ENTITY._get_decomp_POVART(POVART0);
-		A0 = [0,0,0];
-		T0 = [0,0,0];
 		const CB = MAGPIE_PHYSICS._calculate_collisionBox(this);
 		const r = MAGPIE_ENTITY._get_celestialRadius(C);
 		let C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
@@ -1737,23 +1747,21 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, Ax,
 			C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
 		}
 		// @todo entity.updatePhysics check obstacles and calculate Ac/Tc
-		const { At, Tt } = MAGPIE_PHYSICS._POVART_applyTargetAT(this, dt, Ax, Tx, O0);
-		// const At = Ax;
-		// const Tt = Tx;
-		// MAGPIE_SYSTEM._logging_debug(Tx)
-		const forcesData = { dt, r, P0, V0, At, C0, CB, STATS: this.STATS };
+		const forcesData = { dt, r, P0, O0, V0, A0, R0, T0, C0, CB, STATS: this.STATS, switchID };
 		const { Af, Tf, forces } = MAGPIE_PHYSICS._apply_forces(forcesData);
-		const dA = MAGPIE_PHYSICS.scaleVector(MAGPIE_PHYSICS.addVectors(At, Af), dt)
+		const state = { Af, Tf, A0, T0, forces };
+		const { Ax, Tx } = this._apply_intent(intent, state, forces, switchID, dt);
+		const dA = MAGPIE_PHYSICS.scaleVector(Ax, dt)
 		update.dA = dA;
-		const dT = MAGPIE_PHYSICS.scaleVector(MAGPIE_PHYSICS.addVectors(Tf, Tt), dt);
+		const dT = MAGPIE_PHYSICS.scaleVector(Tx, dt);
 		update.dT = dT;
-		const T1 = MAGPIE_PHYSICS.addVectors(T0, dT);
+		const T1 = dT//MAGPIE_PHYSICS.addVectors(T0, dT);
 		const R1 = MAGPIE_PHYSICS.addVectors(R0, T1);
 		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
 		// HASTAL Doctrine: Right-side multiplication for local frame rotation (O_new = O_old * R_delta)
 		const O1 = MAGPIE_PHYSICS.rotorCompose(O0, dO);
 		//
-		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
+		const A1 = dA//MAGPIE_PHYSICS.addVectors(A0, dA);
 		const dV = MAGPIE_PHYSICS.addVectors(V0, A1);
 		const V1 = MAGPIE_PHYSICS.mag(dV) > 1e-9 ? dV : [0,0,0];
 		//
@@ -1885,10 +1893,68 @@ MAGPIE_ENTITY.prototype._get_type = function getType()
 //========================================================================
 // #region - TRAITS
 //========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Get
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {deckSize}
+ */
 MAGPIE_ENTITY.prototype._get_deckSize = function getDeckSize()
 {
 	return this.fitness[MAGPIE.KEY.FITNESS.DECKSIZE]
 }
+/**
+ * 
+ * @param {symbolID} symbolID 
+ * @returns {index}
+ */
+MAGPIE_ENTITY.prototype._trait_getIndexOf = function getTraitIndex(symbolID)
+{
+	return Array.from(this.fitness).findIndex(n => n === symbolID)
+}
+/**
+ * 
+ * @returns {MAGPIE_SYMBOL[]}
+ */
+MAGPIE_ENTITY.prototype._fetch_traits = function fetchTraits()
+{
+	return this._get_traits().map(traitID => MAGPIE_ENTITY.__hiveSync("_get_symbol", [traitID]))
+}
+/**
+ * @returns {symbolID[]}
+ */
+MAGPIE_ENTITY.prototype._trait_getType = function getTypeTraits()
+{
+	const ePrefix = `[ENTITY-${this.ID}].getTypeTraits: `;
+	try
+	{
+		const archetype = this._get_type();
+		const reqs = archetype._get_requirementIDs();
+		const comps = archetype._get_compoundIDs();
+		return [archetype.ID, ...reqs, ...comps];
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return []
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Set
+//------------------------------------------------------------------------
 /**
  * @param {traitID}
  * @param {symbolID} symbolID 
@@ -1916,6 +1982,7 @@ MAGPIE_ENTITY.prototype._trait_add = function addTrait(symbolID)
 		return false
 	}
 }
+
 /**
  * 
  * @param {symbolID} symbolID 
@@ -1947,34 +2014,125 @@ MAGPIE_ENTITY.prototype._trait_remove = function removeTrait(symbolID)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+// #endregion
+//------------------------------------------------------------------------
 /**
- * 
- * @param {symbolID} symbolID 
- * @returns {index}
+ * @name 
+ * @desc 
+ * @typedef {trait_output[]} fitness_output
  */
-MAGPIE_ENTITY.prototype._trait_getIndexOf = function getTraitIndex(symbolID)
-{
-	return this.fitness.findIndex(n => n === symbolID)
-}
+//------------------------------------------------------------------------
+// #region > Fitness
+//------------------------------------------------------------------------
+MAGPIE_ENTITY.fitness = {};
 /**
- * @returns {symbolID[]}
+ * @param {{
+ * At: vector3,
+ * Tt: bivector,
+ * exp: MAGPIE_EXP,
+ * raw: action_output
+ * }} intent
+ * @param {{
+ * Af: vector3,
+ * Tf: bivector,
+ * A0: vector3,
+ * T0: bivector,
+ * forces: physics_forces
+ * }} state
+ * @param {physics_forces} forces
+ * @param {Number} switchID 
+ * @param {duration} dt 
+ * @returns {{ Ax: vector3, Tx: bivector }}
  */
-MAGPIE_ENTITY.prototype._trait_getType = function getTypeTraits()
+MAGPIE_ENTITY.prototype._apply_intent = function _apply_intent(intent, state, forces, switchID, dt)
 {
-	const ePrefix = `[ENTITY-${this.ID}].getTypeTraits: `;
+	const ePrefix = `[ENTITY-${this.ID}].applyIntent: `;
 	try
 	{
-		const archetype = this._get_type();
-		const reqs = archetype._get_requirementIDs();
-		const comps = archetype._get_compoundIDs();
-		return [archetype.ID, ...reqs, ...comps];
+		//@todo generate locomotion from intent and forces
+		const K = MAGPIE.KEY.STATS;
+		const Amax = this.STATS[K.AMAX];
+		const R = MAGPIE.KEY.POVART.R_AXES;
+		//@audit
+		return { Ax: intent.At, Tx: intent.Tt }
+		const { dA, dT } = this._apply_locomotion(intent, state)
+		const Ax_raw = MAGPIE_PHYSICS.addVectors(state.A0, dA);
+		const Ax = MAGPIE_PHYSICS.vector_clamp_mag(Ax_raw, Amax);
+		const Tx_raw = MAGPIE_PHYSICS.addVectors(state.T0, dT);
+		const pitch = Math.min(Tx_raw[R.get("pitch")], this.STATS[K.TMAX_X])
+		const roll = Math.min(Tx_raw[R.get("roll")], this.STATS[K.TMAX_Y]);
+		const heading = Math.min(Tx_raw[R.get("roll")], this.STATS[K.TMAX_Z]);
+		return { Ax, Tx: [pitch, roll, heading] }
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-		return []
 	}
 }
+/**
+ * 
+ * @param {fitness_index} fitness_index 
+ * @param {{
+ * At: vector3,
+ * Tt: bivector,
+ * exp: MAGPIE_EXP,
+ * raw: action_output
+ * }} intent
+ * @param {{
+ * Af: vector3,
+ * Tf: bivector,
+ * A0: vector3,
+ * T0: bivector
+ * }} state
+ * @returns {{}} dA 
+ */
+MAGPIE_ENTITY.prototype._apply_locomotion = function _apply_locomotion(intent, state)
+{
+	const ePrefix = `[ENTITY-${this.ID}].applyLocomotion: `;
+	const defaults = { dA: [0,0,0], dT: [0,0,0] }
+	try
+	{
+		const fitness_index = intent?.raw?.fitness_index || NaN;
+		if(isNaN(fitness_index))
+			return defaults
+		const index = this._get_index_trait(fitness_index, "STATES") - MAGPIE.KEY.FITNESS.TRAITS;
+		const trait = this._fetch_traits()[index];
+		if(!(trait instanceof MAGPIE_SYMBOL))
+			throw new Error(`unable to find trait[${index}]`)
+		const { speeds, forces } = trait._get_locomotion();
+		const dA = Number(speeds?.Amax) ? MAGPIE_PHYSICS.scaleVector(intent.At, speeds.Amax) : [0,0,0];
+		const dT = Number(speeds?.Tmax) ? MAGPIE_PHYSICS.scaleVector(intent.Tt, speeds.Tmax) : [0,0,0]
+		// MAGPIE_SYSTEM._logging_debug(`speeds: ${Object.entries(speeds)}`)
+		// return defaults
+		if(!MAGPIE_PHYSICS.isValidVector(dA))
+			throw new Error(`${dA} is invalid ΔA vector`);
+		if(!MAGPIE_PHYSICS.isValidVector(dT))
+			throw new Error(`${dT} is invalid ΔT bivector`);
+		return { dA, dT }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return defaults
+	}
+}
+/**
+ * 
+ * @param {fitness_index} fitness_index
+ * @param {String} zone {@link MAGPIE.KEY.FITNESS.ZONES}
+ * @returns {fitness_index} 
+ */
+MAGPIE_ENTITY.prototype._get_index_trait = function _get_index_trait(fitness_index, zone)
+{
+	const K = MAGPIE.KEY.FITNESS;
+	const deckSize = K.DECKSIZE;
+	const offset = K.TRAITS;
+	const mult = K[zone];
+	const section = fitness_index - (deckSize * mult)
+	return section
+}
+// #endregion
+//------------------------------------------------------------------------
 
 /**
  * 
@@ -2004,11 +2162,51 @@ MAGPIE_ENTITY.prototype._trait_getType = function getTypeTraits()
 /**
  * @name 
  * @desc 
- * 
+ * @typedef {{
+ * dR: bivector,
+ * dR_mag: magnitude,
+ * Bdist: bivector,
+ * fitness_index: fitness_index
+ * }} action_output
  */
 //========================================================================
-// #region - EMOTES
+// #region - ACTION
 //========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Act
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {emoteID} emoteID 
+ * @param {MAGPIE_EXP} exp
+ * @returns {{exp: MAGPIE_EXP, target: {At: vector3, Tt: bivector}}} 
+ */
+MAGPIE_ENTITY.prototype._act_emote = function _act_emote(emoteID, exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}].actEmote: `;
+	try
+	{
+		if(isNaN(emoteID))
+			throw new Error(`${emoteID} is invalid emoteID`)
+		if(!(exp instanceof MAGPIE_EXP))
+			throw new Error(`${exp} is invalid EXP`)
+		const emote = MAGPIE_EMOTE.INDEX.get(emoteID);
+		if(!emote) 
+			throw new Error(`unable to find [EMOTE-${emoteID}]`)
+		return emote.onAction(exp, this)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * @name 
  * @desc 
@@ -2100,17 +2298,15 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp, fitn
 			if(key && value)
 				options[key] = value;
 		})
+		options.Rstate = this._get_Rstate();
 		// MAGPIE_SYSTEM._logging_debug(Object.entries(options))
+		options.STATS = this.STATS;
 		const output = MAGPIE_PHYSICS
-			._emote_seekTarget(POVART0, Pt, this.STATS, options);
-		const { At, Tt, Vstate, Rstate, dR_mag, dR } = output;
+			._emote_seekTarget(POVART0, Pt, options);
+		const { At, Tt, state, Rstate, dR_mag, dR, Bdist } = output;
 		// MAGPIE_SYSTEM._logging_debug(Tt)
-		const raw = [];
-		raw[MAGPIE.KEY.INDEX.RSTATE] = Rstate;
-		raw[MAGPIE.KEY.INDEX.VSTATE] = Vstate;
-		raw[MAGPIE.KEY.INDEX.DRMAG] = dR_mag;
-		raw[MAGPIE.KEY.INDEX.DR] = dR;
-		this.switchState(fitness_index, Vstate)
+		const raw = { dR, dR_mag, Bdist, fitness_index } 
+		this.switchState(fitness_index, output.state);
 		return { At: At, Tt: Tt, exp: exp, raw }
  	}
 	catch(e)
@@ -2177,6 +2373,82 @@ MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp, fi
 		// MAGPIE_SYSTEM._logging_debug(ePrefix)
 		if(exp._get_key_target())
 			return this._target_next()
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_idling = function _emote_idling(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].idling: `;
+	try
+	{
+		//@todo idling logic?
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_lockingTarget = function _emote_lockingTarget(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].lockingTarget: `;
+	try
+	{
+		//@todo locking logic?
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_aligningTarget = function _emote_aligningTarget(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].aligningTarget: `;
+	try
+	{
+		//@todo aligning logic?
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_facingTarget = function _emote_facingTarget(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].facingTarget: `;
+	try
+	{
+		//@todo facingTarget logic?
 		return this._emote_seekTarget(exp, fitness_index)
 	}
 	catch(e)
@@ -2302,6 +2574,14 @@ MAGPIE_ENTITY._get_key = function getKey(keyID)
 }
 // #endregion
 //------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
 /**
  * 
  * @desc back to {@link }
@@ -2455,6 +2735,18 @@ MAGPIE_ENTITY.prototype.switchState = function switchState(fitness_index, stateI
 	}
 }
 /**
+ * @returns {stateID}
+ */
+MAGPIE_ENTITY.prototype._get_Rstate = function getRstate()
+{
+	const states = this._get_states();
+	const Rstates = MAGPIE_STATE.TYPE.get(STATE.TYPE.FSM_POSTURE);
+	Rstates.forEach(n => {
+		if(states.includes(n))
+			return n
+	})
+}
+/**
  * 
  * @desc back to {@link }
  *
@@ -2601,31 +2893,7 @@ MAGPIE_ENTITY.prototype._set_ASL = function setASL(meters)
 //========================================================================
 // #region - ACTION
 //========================================================================
-/**
- * 
- * @param {emoteID} emoteID 
- * @param {MAGPIE_EXP} exp
- * @returns {{exp: MAGPIE_EXP, target: {At: vector3, Tt: bivector}}} 
- */
-MAGPIE_ENTITY.prototype._act_emote = function _act_emote(emoteID, exp)
-{
-	const ePrefix = `[ENTITY-${this.ID}].actEmote: `;
-	try
-	{
-		if(isNaN(emoteID))
-			throw new Error(`${emoteID} is invalid emoteID`)
-		if(!(exp instanceof MAGPIE_EXP))
-			throw new Error(`${exp} is invalid EXP`)
-		const emote = MAGPIE_EMOTE.INDEX.get(emoteID);
-		if(!emote) 
-			throw new Error(`unable to find [EMOTE-${emoteID}]`)
-		return emote.onAction(exp, this)
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
+
 /**
  * 
  * @desc back to {@link }

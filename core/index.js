@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.25.0
+ * @version 0.26.1
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,8 +20,16 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.25.0 2026 05 27
- * - FIXED: physics.getTt_local inverted roll/pitch
+ * @version 0.26.1 2026 05 28
+ * - ADDED: Component.forces
+ * - ADDED: Component.processors phase 1
+ * - ADDED: Intent vs Locomotion
+ * - TWEAKED: entity.seekTarget
+ * - FIXED: physics.getTt_axis unable to capture target
+ * 
+ * @version 0.25.0 2026 05 26
+ * - ADDED: dedicated runtime dt
+ * - FIXED: HIVE dt tied to runtime layer delta 
  * 
  * @version 0.24.0 2026 05 26
  * - ADDED: Entity.agency scaffolding
@@ -406,9 +414,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 24, 0],
+			version: [0, 26, 1],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260526"
+			firmwareDate: "20260528"
 		};
 	}
 }
@@ -715,14 +723,246 @@ MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.FACING_TARGET, "Facing Target"
 MAGPIE.KEY.INDEX.DRIFTING = 314;
 MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DRIFT, "Drifting");
 /** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.RSTATE = 0;
+MAGPIE.KEY.INDEX.STATES = 0;
 /** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.VSTATE = 1;
+MAGPIE.KEY.INDEX.DRMAG = 1;
 /** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.DRMAG = 2;
+MAGPIE.KEY.INDEX.DR = 2;
 /** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.DR = 3;
+MAGPIE.KEY.INDEX.BDIST = 3;
+/**
+ * @typedef {{
+ * GMAX: velocity,
+ * GSAFE: velocity,
+ * GCOMFORT: velocity,
+ * GMIN: velocity,
+ * FMAX: force,
+ * FSAFE: force,
+ * FCOMFORT: force,
+ * DMAX: force,
+ * DSAFE: force,
+ * DCOMFORT: force,
+ * DMIN: force,
+ * LMAX: force,
+ * LSAFE: force,
+ * LCOMFORT: force,
+ * LMIN: force,
+ * AOAMAX: angle_deg,
+ * AOASAFE: angle_deg,
+ * AOACOMFORT: angle_deg,
+ * AOAMIN: angle_deg,
+ * PRESMAX: pressure,
+ * PRESSAFE: pressure,
+ * PRESCOMFORT: pressure,
+ * PRESMIN: pressure,
+ * TEMPMAX: temperature,
+ * TEMPSAFE: temperature,
+ * TEMPCOMFORT: temperature,
+ * TEMPMIN: temperature,
+ * DEWMAX: percentage,
+ * DEWSAFE: percentage,
+ * DEWCOMFORT: percentage,
+ * DEWMIN: percentage,
+ * BREEZEMAX: velocity,
+ * BREEZESAFE: velocity,
+ * BREEZECOMFORT: velocity,
+ * BREEZEMIN: velocity,
+ * LITMAX: luminosity,
+ * LITSAFE: luminosity,
+ * LITCOMFORT: luminosity,
+ * LITMIN: luminosity,
+ * RADMAX: radioactivity,
+ * RADSAFE: radioactivity,
+ * RADCOMFORT: radioactivity,
+ * RADMIN: radioactivity
+ * }} TraitForces
+ * @type {Map<key_index, key_label>}
+ */
+MAGPIE.KEY.INDEX.FORCES = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GMAX = 9001;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GMAX, "GMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GSAFE = 9002;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GSAFE, "GSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GCOMFORT = 9003;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GCOMFORT, "GCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GMIN = 9004;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GMIN, "GMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FMAX = 9011;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FMAX, "FMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FSAFE = 9012;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FSAFE, "FSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FCOMFORT = 9013;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FCOMFORT, "FCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FMIN = 9014;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FMIN, "FMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DMAX = 9021;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DMAX, "DMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DSAFE = 9022;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DSAFE, "DSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DCOMFORT = 9023;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DCOMFORT, "DCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DMIN = 9024;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DMIN, "DMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LMAX = 9031;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LMAX, "LMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LSAFE = 9032;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LSAFE, "LSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LCOMFORT = 9033;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LCOMFORT, "LCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LMIN = 9034;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LMIN, "LMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AOAMAX = 9041;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOAMAX, "AOAMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AOASAFE = 9042;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOASAFE, "AOASAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AOACOMFORT = 9043;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOACOMFORT, "AOACOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AOAMIN = 9044;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOAMIN, "AOAMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRESMAX = 9051;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESMAX, "PRESMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRESSAFE = 9052;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESSAFE, "PRESSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRESCOMFORT = 9053;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESCOMFORT, "PRESCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRESMIN = 9054;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESMIN, "PRESMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TEMPMAX = 9061;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPMAX, "TEMPMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TEMPSAFE = 9062;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPSAFE, "TEMPSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TEMPCOMFORT = 9063;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPCOMFORT, "TEMPCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TEMPMIN = 9064;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPMIN, "TEMPMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DEWMAX = 9071;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWMAX, "DEWMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DEWSAFE = 9072;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWSAFE, "DEWSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DEWCOMFORT = 9073;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWCOMFORT, "DEWCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DEWMIN = 9074;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWMIN, "DEWMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.BREEZEMAX = 9081;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZEMAX, "BREEZEMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.BREEZESAFE = 9082;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZESAFE, "BREEZESAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.BREEZECOMFORT = 9083;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZECOMFORT, "BREEZECOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.BREEZEMIN = 9084;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZEMIN, "BREEZEMIN")
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LITMAX = 9091;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITMAX, "LITMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LITSAFE = 9092;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITSAFE, "LITSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LITCOMFORT = 9093;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITCOMFORT, "LITCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LITMIN = 9094;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITMIN, "LITMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RADMAX = 9095;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADMAX, "RADMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RADSAFE = 9096;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADSAFE, "RADSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RADCOMFORT = 9097;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADCOMFORT, "RADCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RADMIN = 9098;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADMIN, "RADMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FORCES.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("GMAX"))
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FORCES.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("RADMIN"))
+/** 
+ * 
+ * @typedef {{
+ * Ingredients: keyID[],
+ * Products: keyID[],
+ * rate: coefficient,
+ * Rmax: coefficient,
+ * Rsafe: coefficient,
+ * Rcomfort: coefficient,
+ * Rmin: coefficient,
+ * Rdegrade: coefficient,
+ * Rdamage: coefficient 
+ * }} Processors
+ * @type {Map<key_index, key_label>} 
+ * */
+MAGPIE.KEY.INDEX.PROCESSORS = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.INGREDIENT = 9501;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.INGREDIENT, "INGREDIENT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRODUCT = 9502;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PRODUCT, "PRODUCT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_RATE = 9503;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_RATE, "PROCESS_RATE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_MAX = 9504;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_MAX, "PROCESS_MAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_SAFE = 9505;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_SAFE, "PROCESS_SAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_COMFORT = 9506;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_COMFORT, "PROCESS_COMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_MIN = 9507;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_MIN, "PROCESS_MIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_DEGRADE = 9508;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_DEGRADE, "PROCESS_DEGRADE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_DAMAGE = 9509;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_DAMAGE, "PROCESS_DAMAGE");
 
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESSORS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("INGREDIENT"));
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESSORS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("PROCESS_DAMAGE"))
 /**
  * @typedef {Enumerator<Number>} urgency
  * @typedef {{value: Number, desc: String}} urgency_record
@@ -855,14 +1095,45 @@ MAGPIE.KEY.RUNTIME.meta = {
 	firmwareName: "MAGPIE_RUNTIME",
 	name: "M.A.G.P.I.E. runtime"
 };
-/** @type {Map<Number, {name: String, delta: Number, slots: Number}} */
+MAGPIE.KEY.RUNTIME.DELTA = new Float64Array([0.001,0.033,1,60,60**2,60**2*24])
+/** @type {Map<Number, {name: String, delta: duration, dt: duration, slots: Number}} */
 MAGPIE.KEY.RUNTIME.LAYER = new Map();
-MAGPIE.KEY.RUNTIME.LAYER.set(0, { name: "_GuestsBase", delta: 0.001, slots: 100 });
-MAGPIE.KEY.RUNTIME.LAYER.set(1, { name: "_GuestsGame", delta: 0.033, slots: 1000 });
-MAGPIE.KEY.RUNTIME.LAYER.set(2, { name: "_GuestsStandard", delta: 1, slots: 5000 });
-MAGPIE.KEY.RUNTIME.LAYER.set(3, { name: "_GuestsSuper", delta: 60, slots: 10000 });
-MAGPIE.KEY.RUNTIME.LAYER.set(4, { name: "_GuestsMega", delta: 60 ** 2, slots: 50000 });
-MAGPIE.KEY.RUNTIME.LAYER.set(5, { name: "_GuestsUltra", delta: 60 ** 2 * 24, slots: 100000 });
+MAGPIE.KEY.RUNTIME.LAYER.set(0, { 
+	name: "_GuestsBase", 		
+	delta: MAGPIE.KEY.RUNTIME.DELTA[0], 	
+	dt: MAGPIE.KEY.RUNTIME.DELTA[0],
+	slots: 100 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(1, { 
+	name: "_GuestsGame", 		
+	delta: MAGPIE.KEY.RUNTIME.DELTA[1], 	
+	dt: MAGPIE.KEY.RUNTIME.DELTA[1],
+	slots: 1000 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(2, { 
+	name: "_GuestsStandard", 	
+	delta: MAGPIE.KEY.RUNTIME.DELTA[2], 		
+	dt: MAGPIE.KEY.RUNTIME.DELTA[2],
+	slots: 5000 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(3, { 
+	name: "_GuestsSuper", 	
+	delta: MAGPIE.KEY.RUNTIME.DELTA[3], 		
+	dt: MAGPIE.KEY.RUNTIME.DELTA[3],
+	slots: 10000 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(4, { 
+	name: "_GuestsMega", 		
+	delta: MAGPIE.KEY.RUNTIME.DELTA[4], 	
+	dt: MAGPIE.KEY.RUNTIME.DELTA[4],
+	slots: 50000 
+});
+MAGPIE.KEY.RUNTIME.LAYER.set(5, { 
+	name: "_GuestsUltra", 	
+	delta: MAGPIE.KEY.RUNTIME.DELTA[5],
+	dt: MAGPIE.KEY.RUNTIME.DELTA[5],
+	slots: 100000 
+});
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1066,6 +1337,7 @@ MAGPIE.KEY.PHYSICS = {};
  * @typedef {Number} temperature in Kelvin (K)
  * @typedef {Number} substance Mole (mol)
  * @typedef {Number} luminosity Candela (cd)
+ * @typedef {Number} radioactivity Rad (rad) absorbed dose / amount of energy in matter
  * @typedef {Number} force in Newton (N) = kg * m/s²
  * @typedef {Number} energy in Joule (J) = N * m / kg * m²/s²
  * @typedef {Number} power in Watt (W) = J/s / kg * m²/s³
@@ -1203,9 +1475,13 @@ MAGPIE.KEY.GEODETIC.DEFAULT = {
 	forces: [NaN]
 }
 /**
- * @component of {@link MAGPIE_ENTITY}
- * @sister of {@link MAGPIE.KEY.STATS}
- * @sister of {@link MAGPIE_PHYSICS.aero}
+ * @typedef {Float64Array} physics_forces [FG, FF, FD, FL, AOA, Atm, OAT, Dew, Breeze, Lit, Rad]
+ */
+/**
+ * 
+ * @desc component of {@link MAGPIE_ENTITY}
+ * sister of {@link MAGPIE.KEY.STATS}
+ * sister of {@link MAGPIE_PHYSICS.aero}
  */
 MAGPIE.KEY.PHYSICS.FORCES = {};
 /** @type {index} local gravity */
@@ -1413,6 +1689,11 @@ MAGPIE.KEY.POVART.FWD = [0,1,0];
 MAGPIE.KEY.POVART.UP = [0,0,1];
 /** @type {vector3} default 'right' vector */
 MAGPIE.KEY.POVART.RIGHT = [1,0,0];
+/** @type {Map<String, Enumerator<Number>>} */
+MAGPIE.KEY.POVART.R_AXES = new Map();
+MAGPIE.KEY.POVART.R_AXES.set("pitch", 0);
+MAGPIE.KEY.POVART.R_AXES.set("roll", 1);
+MAGPIE.KEY.POVART.R_AXES.set("heading", 2);
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1647,6 +1928,12 @@ MAGPIE.KEY.FITNESS.INJURY = 4;
 MAGPIE.KEY.FITNESS.STAMINA = 5;
 /** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.ZONES = MAGPIE.KEY.FITNESS.INJURY + 1;
+/** @type {Map<String, index>} */
+MAGPIE.KEY.FITNESS.OUTPUT = new Map();
+/** @type {index} */
+MAGPIE.KEY.FITNESS.OUTPUT.set("TRAIT_ID", 0);
+/** @type {index} */
+MAGPIE.KEY.FITNESS.OUTPUT.set("TRAIT_INDEX", 1);
 // #endregion
 //------------------------------------------------------------------------
 /**

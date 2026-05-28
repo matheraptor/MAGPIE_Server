@@ -6,11 +6,12 @@ const { MAGPIE } = require("../core/index");
  * @typedef {import("../core/entity").fitness_index} fitness_index
  * @typedef {import("../core/physics").vector3} vector3
  * @typedef {import("../core/physics").bivector} bivector
+ * @typedef {import("../core/entity").action_output} action_output
  * @typedef {{
  * At: vector3,
  * Tt: bivector,
  * exp: MAGPIE_EXP,
- * raw: Float64Array
+ * raw: action_output
  * }} state_output
  */
 /**
@@ -313,8 +314,18 @@ const IDLING = {
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: () => {
-
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} process 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: (exp, entity, process, fitness_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target || !process) return {exp: exp}
+		return entity._emote_Idling(exp, fitness_index)
 	},
 	onRemove: () => {},
 	onExpire: () => {}
@@ -325,7 +336,7 @@ INDEX.IDLING = IDLING.ID;
 //------------------------------------------------------------------------
 /** @type {state_data} */
 const ALIGNING_TARGET = {
-	ID: 311,
+	ID: 312,
 	type: TYPE.FSM_POSTURE,
 	name: "ALIGNING_TARGET",
 	description: "",
@@ -339,7 +350,11 @@ const ALIGNING_TARGET = {
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: () => {},
+	onUpdate: (exp, entity, process, fitness_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target || !process) return {exp: exp}
+		return entity._emote_aligningTarget(exp, fitness_index)
+	},
 	onRemove: () => {},
 	onExpire: () => {}
 }
@@ -349,7 +364,7 @@ INDEX.ALIGNING_TARGET = ALIGNING_TARGET.ID;
 //------------------------------------------------------------------------
 /** @type {state_data} */
 const LOCKING_TARGET = {
-	ID: 312,
+	ID: 311,
 	type: TYPE.FSM_POSTURE,
 	name: "LOCKING_TARGET",
 	description: "",
@@ -363,7 +378,11 @@ const LOCKING_TARGET = {
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: () => {},
+	onUpdate: (exp, entity, process, fitness_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target || !process) return {exp: exp}
+		return entity._emote_lockingTarget(exp, fitness_index)
+	},
 	onRemove: () => {},
 	onExpire: () => {}
 }
@@ -387,7 +406,11 @@ const FACING_TARGET = {
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: () => {},
+	onUpdate: (exp, entity, process, fitness_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target || !process) return {exp: exp}
+		return entity._emote_facingTarget(exp, fitness_index)
+	},
 	onRemove: () => {},
 	onExpire: () => {}
 }
@@ -411,7 +434,11 @@ const DRIFTING = {
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: () => {},
+	onUpdate: (exp, entity, process, fitness_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target || !process) return {exp: exp}
+		return entity._emote_drifting(exp, fitness_index)
+	},
 	onRemove: () => {},
 	onExpire: () => {}
 }

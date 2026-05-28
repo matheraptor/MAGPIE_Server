@@ -354,42 +354,42 @@ MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID, layer_frame)
 		const layerUltra = layer.get(Ultra);
 		const f = layer_frame
 		if(switchID === 0)
-			this.tick_buffer(layerBase.name, Base, Base, layerBase.delta, f);
+			this.tick_buffer(layerBase.name, Base, Base, layerBase.dt, f);
 		if(switchID === 1)
 		{
-			this.tick_buffer(layerBase.name, Base, Game, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, Game, layerGame.delta, f);
+			this.tick_buffer(layerBase.name, Base, Game, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, Game, layerGame.dt, f);
 		}
 		if(switchID === 2)
 		{
-			this.tick_buffer(layerBase.name, Base, TICK, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, TICK, layerBase.delta, f);
-			this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.delta, f);
+			this.tick_buffer(layerBase.name, Base, TICK, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, TICK, layerBase.dt, f);
+			this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.dt, f);
 		}
 		if(switchID === 3)
 		{
-			this.tick_buffer(layerBase.name, Base, Super, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, Super, layerBase.delta, f);
-			this.tick_buffer(layerTICK.name, TICK, Super, layerBase.delta, f);
-			this.tick_remote(layerSuper.name, Super, Super, layerSuper.delta, f);
+			this.tick_buffer(layerBase.name, Base, Super, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, Super, layerBase.dt, f);
+			this.tick_buffer(layerTICK.name, TICK, Super, layerBase.dt, f);
+			this.tick_remote(layerSuper.name, Super, Super, layerSuper.dt, f);
 			this.save()
 		}
 		if(switchID === 4)
 		{
-			this.tick_buffer(layerBase.name, Base, Mega, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, Mega, layerBase.delta, f);
-			this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.delta, f);
-			this.tick_remote(layerSuper.name, Super, Mega, layerBase.delta, f);
-			this.tick_remote(layerMega.name, Mega, Mega, layerMega.delta, f);
+			this.tick_buffer(layerBase.name, Base, Mega, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, Mega, layerBase.dt, f);
+			this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.dt, f);
+			this.tick_remote(layerSuper.name, Super, Mega, layerBase.dt, f);
+			this.tick_remote(layerMega.name, Mega, Mega, layerMega.dt, f);
 		}
 		if(switchID === 5)
 		{
-			this.tick_buffer(layerBase.name, Base, Ultra, layerBase.delta, f);
-			this.tick_buffer(layerGame.name, Game, Ultra, layerBase.delta, f);
-			this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.delta, f);
-			this.tick_remote(layerSuper.name, Super, Ultra, layerBase.delta, f);
-			this.tick_remote(layerMega.name, Mega, Ultra, layerBase.delta, f);
-			this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.delta, f);
+			this.tick_buffer(layerBase.name, Base, Ultra, layerBase.dt, f);
+			this.tick_buffer(layerGame.name, Game, Ultra, layerBase.dt, f);
+			this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.dt, f);
+			this.tick_remote(layerSuper.name, Super, Ultra, layerBase.dt, f);
+			this.tick_remote(layerMega.name, Mega, Ultra, layerBase.dt, f);
+			this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.dt, f);
 		}
 		return true
 	}
@@ -999,6 +999,16 @@ MAGPIE_ENTITY.__hive = async function __hive(method, arguments)
 	const callback = MAGPIE_HIVE[method]
 	return callback(...arguments)
 }
+/**
+ * 
+ * @param {*} output 
+ * @param {MAGPIE_EXP} exp 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {*} P_C 
+ * @param {*} POVART1 
+ * @param {*} dt 
+ * @param {*} switchID 
+ */
 MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POVART1, dt, switchID)
 {
 	const ePrefix = `[ENTITY-${entity.ID}].socketEmit: `;
@@ -1039,21 +1049,20 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		// MAGPIE_SERVER._debug(ETA_s)
 		const ETA = !isNaN(ETA_s) ? MAGPIE_SYSTEM.Utility.printETA(ETA_s) : "N/A";
 		const raw = output?.emote?.raw || output?.target?.raw || [];
-		const index = MAGPIE.KEY.INDEX
-		const Rstate = raw[index.RSTATE] || NaN; 
-		const Vstate = raw[index.VSTATE] || NaN;
-		const dR_mag = Number(raw[index.DRMAG]) || NaN;
-		const dR = raw[index.DR] || [NaN, NaN, NaN];
+		const index = MAGPIE.KEY.INDEX;
+		const dR_mag = Number(raw?.dR_mag) || NaN;
+		const dR = Array.isArray(raw?.dR) ? raw.dR : [NaN, NaN, NaN];
+		const Bdist = Array.isArray(raw?.Bdist) ? raw.Bdist : [NaN, NaN, NaN];
 		// MAGPIE_SYSTEM._logging_debug(raw)
 		const form = MAGPIE_SYSTEM.Utility._format_num;
+		const states = (stateID) => {return MAGPIE_STATE.INDEX.get(stateID)?.name} 
 		const data = {
 			switchID,
 			entityID: entity.ID,
 			entityName: entity.name,
 			metadate: entity.updated,
 			coords: [lat,lon,ASL],
-			Vstate: MAGPIE_STATE.INDEX.get(Vstate)?.name,
-			Rstate: MAGPIE_STATE.INDEX.get(Rstate)?.name,
+			states: entity._get_states(this).map(n => states(n)),
 			Vmag: Vmag,
 			Vknots: Vknots,
 			Amag: Amag,
@@ -1063,6 +1072,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 			dR: dR.map(n => form(n, 5, true)),
 			R1: R1.map(n => form(n, 5, true)),
 			T1: T1.map(n => form(n, 5, true)),
+			Bdist: Bdist?.map(n => form(n, 5, true)),
 			heading: hdg,
 			pitch: pitch,
 			roll: roll,

@@ -1,7 +1,7 @@
 /**
  * @name INDEX
  * @desc 
- * @version 0.23.5
+ * @version 0.26.1
  */
 //========================================================================
 // #region - INDEX
@@ -120,6 +120,7 @@ function MAGPIE_SYMBOL(data)
  * @typedef {import("./index").stamina_index} stamina_index
  * @typedef {import("./index").vector3} vector3
  * @typedef {import("./index").bivector} bivector
+ * @typedef {import("./entity").action_output} action_output
  * 
  * @name COMPONENT
  * @desc 
@@ -375,24 +376,43 @@ MAGPIE_SYMBOL.prototype.mapStats = function mapStats()
  */
 MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 {
-	const ePrefix = `[SYMBOL-${this.ID}].getVspeeds: `;
+	return this.getCategory("VSPEEDS");
+}
+/**
+ * @typedef {import("./index").TraitForces} TraitForces
+ * @returns {TraitForces}
+ */
+MAGPIE_SYMBOL.prototype.getForces = function getForces()
+{
+	return this.getCategory("FORCES");
+}
+/**
+ * 
+ * @param {String} category_key 
+ * @returns {Object}
+ */
+MAGPIE_SYMBOL.prototype.getCategory = function getCategory(category_key)
+{
+	const ePrefix = `[SYMBOL-${this.ID}].getCategory: `;
 	try
 	{
-		const map = this._get_STATS();
 		const K = MAGPIE.KEY.INDEX;
-		const keys = Array.from(K.VSPEEDS.values())
-		const values = Array.from(K.VSPEEDS.keys());
-		const Vspeeds = {};
+		if(Object.prototype.toString.call(K[category_key]) !== "[object Map]")
+			throw new Error(`${category_key} is invalid category_key`)
+		const map = this._get_STATS();
+		const keys = Array.from(K[category_key].values());
+		const values = Array.from(K[category_key].keys());
+		const category = {};
 		map.forEach((keyID, index) => {
 			if(index % 2 === 0 && values.includes(keyID))
-				Vspeeds[K.VSPEEDS.get(keyID)] = map[index + 1]
+				category[K[category_key].get(keyID)] = map[index + 1];
 		})
-		// MAGPIE_SYSTEM._logging_debug(Object.entries(Vspeeds))
-		return Vspeeds
+		return category
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e) 
+		return {}
 	}
 }
 /**
@@ -528,6 +548,131 @@ MAGPIE_SYMBOL.prototype._addComponent = async function addComponent(symbolID)
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Trait
+//------------------------------------------------------------------------
+/**
+ * @returns {{
+ * speeds: Vspeeds,
+ * forces: TraitForces
+ * }}
+ */
+MAGPIE_SYMBOL.prototype._get_locomotion = function getLocomotion()
+{
+	const ePrefix = `[SYMBOL-${this.ID}].getLocomotion: `;
+	try
+	{
+		const K = MAGPIE.KEY.INDEX;
+		const speeds = this.getVspeeds();
+		const forces = this.getForces();
+		return { speeds, forces }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return { speeds: {}, forces: {} }
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Processor
+//------------------------------------------------------------------------
+/**
+ * 
+ * @typedef {import("./index").Processors} Processors
+ * @returns {Processors}
+ */
+MAGPIE_SYMBOL.prototype._get_processors = function getProcessors()
+{
+	const ePrefix = `[SYMBOL-${this.ID}].getProcessors: `;
+	try
+	{
+		const K = MAGPIE.KEY.INDEX.PROCESSORS;
+		const keys = Object.keys(MAGPIE.KEY.INDEX).slice(K.get("start"), K.get("end") + 1)
+		const obj = {}
+		obj.ingredients = [];
+		obj.products = [];
+		const stats = this._get_STATS();
+		stats.forEach((n, index) => {
+			if(n === K.get("INGREDIENT"))
+			{
+				obj.ingredients.push(stats[index + 1])
+				if(stats[index + 2] === K.get("PROCESS_RATE"))
+					obj.ingredients.push(stats[index + 3])
+				else obj.ingredients.push(1)
+			}
+			if(n === K.get("PRODUCT"))
+			{
+				obj.products.push(stats[index + 1])
+				if(stats[index + 2 === K.get("PROCESS_RATE")])
+					obj.products.push(stats[index + 3])
+				else obj.products.push(1)
+			}
+			if(n === K.get("PROCESS_MAX"))
+				obj.Rmax = stats[index + 1]
+			if(n === K.get("PROCESS_SAFE"))
+				obj.Rsafe = stats[index + 1]
+			if(n === K.get("PROCESS_COMFORT"))
+				obj.Rcomfort = stats[index + 1]
+			if(n === K.get("PROCESS_MIN"))
+				obj.Rmin = stats[index + 1]
+			if(n === K.get("PROCESS_DEGRAGE"))
+				obj.Rdegrade = stats[index + 1]
+			if(n === K.get("PROCESS_DAMAGE"))
+				obj.Rdamage = stats[index + 1]
+		})
+		return obj
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {{
+ * rate: Number
+ * }} options 
+ * @param {Number} dt 
+ * @param {MAGPIE_ENTITY} container 
+ */
+MAGPIE_SYMBOL.prototype._apply_processor = function applyProcessor(options, dt, container)
+{
+	const ePrefix = `[SYMBOL-${this.ID}].applyProcessor: `;
+	try
+	{
+		const processors = this._get_processors();
+		const Rmax = processors?.Rmax;
+		const Rsafe = processors?.Rsafe;
+		const Rcomfort = processors?.Rcomfort;
+		const Rmin = processors?.Rmin;
+		const Rdegrade = processors?.Rdegrade;
+		const Rdamage = processors?.Rdamage;
+		const rate = MAGPIE_SYSTEM.Math.clampRange(Number(options?.rate) || 1, Rmin, Rmax);
+		const degrade = rate > Rcomfort ? Rdegrade : 1
+		const damage = rate > Rsafe ? Rdamage : 1
+		options.rate = rate * degrade * damage
+		const stats = Array.from(this.STATS);
+		processors
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *
@@ -546,14 +691,21 @@ MAGPIE_SYMBOL.prototype._addComponent = async function addComponent(symbolID)
 MAGPIE_STATE.meta = {};
 /** @type {Map<stateID, MAGPIE_STATE>} */
 MAGPIE_STATE.INDEX = new Map();
+MAGPIE_STATE.TYPE = new Map();
 MAGPIE_STATE.setup = function setup()
 {
 	const data = require("../data/states").states;
 	for(const state_data of data)
 	{
-		MAGPIE_STATE.INDEX.set(state_data.ID, new MAGPIE_STATE(state_data))
+		MAGPIE_STATE.INDEX.set(state_data.ID, new MAGPIE_STATE(state_data));
+		let type = MAGPIE_STATE.TYPE.get(state_data.type);
+		if(!type)
+			type = [];
+		type.push(state_data.ID)
+		MAGPIE_STATE.TYPE.set(state_data.type, type)
 	}
 }
+
 /**
  * 
  * @param {import("../data/states").state_data} data 
@@ -898,7 +1050,7 @@ MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
 	for(const key of keys)
 	{
 		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
-			Vspeeds[key.getOrigin()?.label?.toUpperCase()] = Number(key.label)
+			Vspeeds[key.getOrigin()?.label?.toUpperCase()] = JSON.parse(key.label)
 	}
 	return Vspeeds
 }
