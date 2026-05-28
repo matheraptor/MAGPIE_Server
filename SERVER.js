@@ -1050,9 +1050,9 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const ETA = !isNaN(ETA_s) ? MAGPIE_SYSTEM.Utility.printETA(ETA_s) : "N/A";
 		const raw = output?.emote?.raw || output?.target?.raw || [];
 		const index = MAGPIE.KEY.INDEX;
-		const dR_mag = Number(raw[index.DRMAG]) || NaN;
-		const dR = raw[index.DR] || [NaN, NaN, NaN];
-		const Bdist = raw[index.BDIST] || [NaN, NaN, NaN];
+		const dR_mag = Number(raw?.dR_mag) || NaN;
+		const dR = Array.isArray(raw?.dR) ? raw.dR : [NaN, NaN, NaN];
+		const Bdist = Array.isArray(raw?.Bdist) ? raw.Bdist : [NaN, NaN, NaN];
 		// MAGPIE_SYSTEM._logging_debug(raw)
 		const form = MAGPIE_SYSTEM.Utility._format_num;
 		const states = (stateID) => {return MAGPIE_STATE.INDEX.get(stateID)?.name} 

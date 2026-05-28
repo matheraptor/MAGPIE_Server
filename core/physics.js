@@ -83,6 +83,7 @@ function MAGPIE_PHYSICS()
  * @typedef {import("./entity").STATS} STATS
  * @typedef {import("./index").keyID} keyID
  * @typedef {import("./index").stateID} stateID
+ * @typedef {import("./entity").fitness_output} fitness_output
  * 
  */
 //========================================================================
@@ -337,7 +338,8 @@ MAGPIE_PHYSICS._forces_calculate2BodyGravityVector = function _forces_calculate2
 /**
  * @todo calculateForces
  * @param {MAGPIE_ENTITY} P_C 
- * @param {coords} C1 
+ * @param {vector3} P0
+ * @param {coords} C0
  * @param {Number} Cf 
  * @param {Number} Cl 
  * @param {Number} Cd 
@@ -345,18 +347,16 @@ MAGPIE_PHYSICS._forces_calculate2BodyGravityVector = function _forces_calculate2
  * @param {Number} CoL 
  * @param {angle} AoA 
  * @param {vector3} At
- * @returns {{ Fg: acceleration, Ff: force, Fd: force, Fl: force }}
+ * @returns {physics_forces}
  */
-MAGPIE_PHYSICS._geod_calculateForces = function _geod_calculateForces(P_C, C1, Cf, Cl, Cd, CoM, CoL, AoA, At)
+MAGPIE_PHYSICS._geod_calculateForces = function _geod_calculateForces(P_C, P0, C0, Cf, Cl, Cd, CoM, CoL, AoA, At)
 {
 	const ePrefix = `[PHYSICS].geodForces: `;
 	const K = MAGPIE.KEY.PHYSICS.FORCES;
 	const offset = K.ARRAY;
-	let forces = new Float64Array(K.ARRAY * 2)
 	try
 	{
-		forces[K.FG] = P_C.STATS[MAGPIE.KEY.CELESTIAL.G]
-		// const { Ff, eFf } = this._geod_frictionAtCoords(C, C1, Cf);
+		// const { Ff, eFf } = 
 		// forces[K.FF] = Ff;
 		// forces[K.FF + offset] = eFf;
 		// const { Fl, eFl } = this._geod_liftAtCoords(C1, Cl, AoA, CoM, CoL);
@@ -367,16 +367,35 @@ MAGPIE_PHYSICS._geod_calculateForces = function _geod_calculateForces(P_C, C1, C
 		// forces[K.FD + offset] = eFd;
 		// const A0 = At;
 		// At = this.scaleVector(A0, -eFd);
-		forces[K.FG + offset] = this.mag(At);
+		const FG = this._scale_gravity(P_C, P0);
+		const FF = this._geod_frictionAtCoords(C, C0, Cf);;
+		const FD = this._geod_applyDrag(P_C, C0, Cd);
+		const FL = NaN;
+		const AOA = NaN;
+		const Atm = NaN;
+		const OAT = NaN;
+		const Dew = NaN;
+		const Breeze = NaN;
+		const Lit = NaN;
+		const Rad = NaN;
+		const forces = new Float64Array([FG, FF, FD, FL, AOA, Atm, OAT, Dew, Breeze, Lit, Rad])
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+		return []
 	}
-	finally
-	{
-		return forces
-	}
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} C 
+ * @param {coords} C1 
+ * @param {coefficient} Cf 
+ * @returns {force}
+ */
+MAGPIE_PHYSICS._geod_frictionAtCoords = function (C, C1, Cf)
+{
+	return NaN
 }
 /**
  * @param {{
@@ -1286,13 +1305,13 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 		const Tt_seek = Rt_error > transit ? accel : decel
 		const Tt_align = Rt_error > 0.001 ? decel : 0
 		const distanceFactor = Math.min(dR_error / (Bdist * 2.0), 1.0);
-		if(axis === 1)
-			MAGPIE_SYSTEM._logging_debug(`D_decel: ${decel_threshold.toFixed(5)} | `
-			+ `D_brake: ${brake_threshold.toFixed(5)} | `
-			+ `Rt_err: ${Rt_error.toFixed(5)} | `
-			+ `HOLD: ${HOLD} | `
-			+ `ALIGN: ${ALIGN} | `
-			+ `FACE: ${FACE} | `)
+		// if(axis === 1)
+		// 	MAGPIE_SYSTEM._logging_debug(`D_decel: ${decel_threshold.toFixed(5)} | `
+		// 	+ `D_brake: ${brake_threshold.toFixed(5)} | `
+		// 	+ `Rt_err: ${Rt_error.toFixed(5)} | `
+		// 	+ `HOLD: ${HOLD} | `
+		// 	+ `ALIGN: ${ALIGN} | `
+		// 	+ `FACE: ${FACE} | `)
 		let Tt = 0
 		let state = STATE_INDEX.SPOOFED;
 		if(ALIGN) 
@@ -1670,43 +1689,46 @@ MAGPIE_PHYSICS._apply_gravity = function _apply_gravity(entity, celestial, P0, d
 	}
 }
 /**
+ * @typedef {import("./index").physics_forces} physics_forces 11x [FG, FF, FD, FL, AOA, Atm, OAT, Dew, Breeze, Lit, Rad]
  * @todo ApplyForces to At/Tt
  * @param {{
  * dt: duration,
  * r: distance,
+ * P_C: MAGPIE_ENTITY,
  * P0: vector3,
+ * O0: rotor,
  * V0: vector3,
- * At: vector3,
+ * R0: bivector,
+ * locomotion: fitness_output,
  * C0: coords,
  * CB: vector3,
- * STATS: Float64Array
+ * STATS: Float64Array,
+ * switchID: Number
  * }} data
- * @returns {{Af: vector3, Tf: bivector, forces: Float64Array}}
+ * @returns {{Af: vector3, Tf: bivector, forces: physics_forces}}
  */
 MAGPIE_PHYSICS._apply_forces = function _apply_forces(data)
 {
 	const ePrefix = "[PHYSICS].applyForces: ";
 	try
 	{
-		// const { r, P0, V0, At, dt, STATS } = data;
-		// const K = MAGPIE.KEY.STATS;
-		// const S = data.STATS;
-		// const Cf = S[K.CF];
-		// const Cl = S[K.CL];
-		// const Cd = S[K.CD];
-		// const CoM = [S[K.COM_X], S[K.COM_Y], S[K.COM_Z]];
-		// const CoL = [S[K.COL_X], S[K.COL_Y], S[K.COL_Z]];
-		// const dV = this.scaleVector(At, dt);
-		// const V1 = this.addVectors(V0, dV);
-		// const dP = this.scaleVector(V1, dt);
-		// const P1 = this.addVectors(P0, dP);
-		// const C1 = this.cartesianToGeodetic(P1, r);
+		const { r, P_C, P0, O0, V0, R0, dt, STATS } = data;
+		const K = MAGPIE.KEY.STATS;
+		const S = data.STATS;
+		const Cf = S[K.CF];
+		const Cl = S[K.CL];
+		const Cd = S[K.CD];
+		const CoM = [S[K.COM_X], S[K.COM_Y], S[K.COM_Z]];
+		const CoL = [S[K.COL_X], S[K.COL_Y], S[K.COL_Z]];
+		const dV = this.scaleVector(V0, dt);
+		const P1 = this.addVectors(P0, dV);
+		const C1 = this.cartesianToGeodetic(P1, r);
 		// data.C1 = C1;
-		// const { Ac, Tc } = this._geod_checkCollisions(data)
-		// const fwd = MAGPIE.KEY.POVART.FWD;
-		// const AoA = this._aero_calculateAoArad(O0, V1, fwd);
-		// const forces = this._geod_calculateForces(C, C1, Cf, Cl, Cd, CoM, CoL, AoA, At)
-		const forces = new Float64Array(8).fill(NaN);
+		const { Ac, Tc } = this._geod_checkCollisions(data)
+		const fwd = MAGPIE.KEY.POVART.FWD;
+		const AoA = this._aero_calculateAoArad(O0, V0, fwd);
+		// const forces = this._geod_calculateForces(P_C, P0, C0, V0, R0, Cf, Cl, Cd, CoM, CoL, AoA)
+		const forces = [];
 		const Af = [0,0,0];
 		const Tf = [0,0,0];
 		return { Af, Tf, forces }

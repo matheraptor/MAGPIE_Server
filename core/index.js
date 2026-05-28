@@ -1234,9 +1234,13 @@ MAGPIE.KEY.GEODETIC.DEFAULT = {
 	forces: [NaN]
 }
 /**
- * @component of {@link MAGPIE_ENTITY}
- * @sister of {@link MAGPIE.KEY.STATS}
- * @sister of {@link MAGPIE_PHYSICS.aero}
+ * @typedef {Float64Array} physics_forces [FG, FF, FD, FL, AOA, Atm, OAT, Dew, Breeze, Lit, Rad]
+ */
+/**
+ * 
+ * @desc component of {@link MAGPIE_ENTITY}
+ * sister of {@link MAGPIE.KEY.STATS}
+ * sister of {@link MAGPIE_PHYSICS.aero}
  */
 MAGPIE.KEY.PHYSICS.FORCES = {};
 /** @type {index} local gravity */
@@ -1683,6 +1687,12 @@ MAGPIE.KEY.FITNESS.INJURY = 4;
 MAGPIE.KEY.FITNESS.STAMINA = 5;
 /** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.ZONES = MAGPIE.KEY.FITNESS.INJURY + 1;
+/** @type {Map<String, index>} */
+MAGPIE.KEY.FITNESS.OUTPUT = new Map();
+/** @type {index} */
+MAGPIE.KEY.FITNESS.OUTPUT.set("TRAIT_ID", 0);
+/** @type {index} */
+MAGPIE.KEY.FITNESS.OUTPUT.set("TRAIT_INDEX", 1);
 // #endregion
 //------------------------------------------------------------------------
 /**
