@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.26.0
+ * @version 0.26.1
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,8 +20,9 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.26.0 2026 05 28
+ * @version 0.26.1 2026 05 28
  * - ADDED: Component.forces
+ * - ADDED: Component.processors phase 1
  * - ADDED: Intent vs Locomotion
  * - TWEAKED: entity.seekTarget
  * - FIXED: physics.getTt_axis unable to capture target
@@ -413,7 +414,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 26, 0],
+			version: [0, 26, 1],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260528"
 		};
@@ -917,10 +918,15 @@ MAGPIE.KEY.INDEX.FORCES.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("RADMIN
 /** 
  * 
  * @typedef {{
- * Consumer: Processor,
- * Converter: Processor,
- * Engine: Processor,
- * Propeller: Processor 
+ * Ingredients: keyID[],
+ * Products: keyID[],
+ * rate: coefficient,
+ * Rmax: coefficient,
+ * Rsafe: coefficient,
+ * Rcomfort: coefficient,
+ * Rmin: coefficient,
+ * Rdegrade: coefficient,
+ * Rdamage: coefficient 
  * }} Processors
  * @type {Map<key_index, key_label>} 
  * */
@@ -932,15 +938,31 @@ MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.INGREDIENT, "INGREDIENT");
 MAGPIE.KEY.INDEX.PRODUCT = 9502;
 MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PRODUCT, "PRODUCT");
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.WASTE = 9503;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.WASTE, "WASTE");
+MAGPIE.KEY.INDEX.PROCESS_RATE = 9503;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_RATE, "PROCESS_RATE");
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.PROPELLER = 9504;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROPELLER, "PROPELLER");
+MAGPIE.KEY.INDEX.PROCESS_MAX = 9504;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_MAX, "PROCESS_MAX");
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESSORS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("CONSUMER"));
+MAGPIE.KEY.INDEX.PROCESS_SAFE = 9505;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_SAFE, "PROCESS_SAFE");
 /** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESSORS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("PROPELLER"))
+MAGPIE.KEY.INDEX.PROCESS_COMFORT = 9506;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_COMFORT, "PROCESS_COMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_MIN = 9507;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_MIN, "PROCESS_MIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_DEGRADE = 9508;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_DEGRADE, "PROCESS_DEGRADE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESS_DAMAGE = 9509;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_DAMAGE, "PROCESS_DAMAGE");
+
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESSORS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("INGREDIENT"));
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESSORS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("PROCESS_DAMAGE"))
 /**
  * @typedef {Enumerator<Number>} urgency
  * @typedef {{value: Number, desc: String}} urgency_record

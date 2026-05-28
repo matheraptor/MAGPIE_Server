@@ -1,7 +1,7 @@
 /**
  * @name INDEX
  * @desc 
- * @version 0.26.0
+ * @version 0.26.1
  */
 //========================================================================
 // #region - INDEX
@@ -594,11 +594,81 @@ MAGPIE_SYMBOL.prototype._get_locomotion = function getLocomotion()
  */
 MAGPIE_SYMBOL.prototype._get_processors = function getProcessors()
 {
-	return this.getCategory("PROCESSORS")
+	const ePrefix = `[SYMBOL-${this.ID}].getProcessors: `;
+	try
+	{
+		const K = MAGPIE.KEY.INDEX.PROCESSORS;
+		const keys = Object.keys(MAGPIE.KEY.INDEX).slice(K.get("start"), K.get("end") + 1)
+		const obj = {}
+		obj.ingredients = [];
+		obj.products = [];
+		const stats = this._get_STATS();
+		stats.forEach((n, index) => {
+			if(n === K.get("INGREDIENT"))
+			{
+				obj.ingredients.push(stats[index + 1])
+				if(stats[index + 2] === K.get("PROCESS_RATE"))
+					obj.ingredients.push(stats[index + 3])
+				else obj.ingredients.push(1)
+			}
+			if(n === K.get("PRODUCT"))
+			{
+				obj.products.push(stats[index + 1])
+				if(stats[index + 2 === K.get("PROCESS_RATE")])
+					obj.products.push(stats[index + 3])
+				else obj.products.push(1)
+			}
+			if(n === K.get("PROCESS_MAX"))
+				obj.Rmax = stats[index + 1]
+			if(n === K.get("PROCESS_SAFE"))
+				obj.Rsafe = stats[index + 1]
+			if(n === K.get("PROCESS_COMFORT"))
+				obj.Rcomfort = stats[index + 1]
+			if(n === K.get("PROCESS_MIN"))
+				obj.Rmin = stats[index + 1]
+			if(n === K.get("PROCESS_DEGRAGE"))
+				obj.Rdegrade = stats[index + 1]
+			if(n === K.get("PROCESS_DAMAGE"))
+				obj.Rdamage = stats[index + 1]
+		})
+		return obj
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
-MAGPIE_SYMBOL.prototype._apply_processor = function applyProcessor()
+/**
+ * 
+ * @param {{
+ * rate: Number
+ * }} options 
+ * @param {Number} dt 
+ * @param {MAGPIE_ENTITY} container 
+ */
+MAGPIE_SYMBOL.prototype._apply_processor = function applyProcessor(options, dt, container)
 {
-
+	const ePrefix = `[SYMBOL-${this.ID}].applyProcessor: `;
+	try
+	{
+		const processors = this._get_processors();
+		const Rmax = processors?.Rmax;
+		const Rsafe = processors?.Rsafe;
+		const Rcomfort = processors?.Rcomfort;
+		const Rmin = processors?.Rmin;
+		const Rdegrade = processors?.Rdegrade;
+		const Rdamage = processors?.Rdamage;
+		const rate = MAGPIE_SYSTEM.Math.clampRange(Number(options?.rate) || 1, Rmin, Rmax);
+		const degrade = rate > Rcomfort ? Rdegrade : 1
+		const damage = rate > Rsafe ? Rdamage : 1
+		options.rate = rate * degrade * damage
+		const stats = Array.from(this.STATS);
+		processors
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------
