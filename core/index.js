@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.25.0
+ * @version 0.26.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,12 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.26.0 2026 05 28
+ * - ADDED: Component.forces
+ * - ADDED: Intent vs Locomotion
+ * - TWEAKED: entity.seekTarget
+ * - FIXED: physics.getTt_axis unable to capture target
  * 
  * @version 0.25.0 2026 05 26
  * - ADDED: dedicated runtime dt
@@ -407,9 +413,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 24, 0],
+			version: [0, 26, 0],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260526"
+			firmwareDate: "20260528"
 		};
 	}
 }
@@ -908,6 +914,33 @@ MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADMIN, "RADMIN");
 MAGPIE.KEY.INDEX.FORCES.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("GMAX"))
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.FORCES.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("RADMIN"))
+/** 
+ * 
+ * @typedef {{
+ * Consumer: Processor,
+ * Converter: Processor,
+ * Engine: Processor,
+ * Propeller: Processor 
+ * }} Processors
+ * @type {Map<key_index, key_label>} 
+ * */
+MAGPIE.KEY.INDEX.PROCESSORS = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.INGREDIENT = 9501;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.INGREDIENT, "INGREDIENT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRODUCT = 9502;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PRODUCT, "PRODUCT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.WASTE = 9503;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.WASTE, "WASTE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROPELLER = 9504;
+MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROPELLER, "PROPELLER");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESSORS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("CONSUMER"));
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PROCESSORS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("PROPELLER"))
 /**
  * @typedef {Enumerator<Number>} urgency
  * @typedef {{value: Number, desc: String}} urgency_record

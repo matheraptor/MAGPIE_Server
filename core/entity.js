@@ -1,6 +1,6 @@
 /**
  * @name MAGPIE_ENTITY
- * @version 0.25.0
+ * @version 0.26.0
  * @desc 
  * @param {{
  * name: String,
@@ -1751,17 +1751,17 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, int
 		const { Af, Tf, forces } = MAGPIE_PHYSICS._apply_forces(forcesData);
 		const state = { Af, Tf, A0, T0, forces };
 		const { Ax, Tx } = this._apply_intent(intent, state, forces, switchID, dt);
-		const dA = MAGPIE_PHYSICS.scaleVector(Af, dt)
+		const dA = MAGPIE_PHYSICS.scaleVector(Ax, dt)
 		update.dA = dA;
-		const dT = MAGPIE_PHYSICS.scaleVector(Tf, dt);
+		const dT = MAGPIE_PHYSICS.scaleVector(Tx, dt);
 		update.dT = dT;
-		const T1 = MAGPIE_PHYSICS.addVectors(T0, dT);
+		const T1 = dT//MAGPIE_PHYSICS.addVectors(T0, dT);
 		const R1 = MAGPIE_PHYSICS.addVectors(R0, T1);
 		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
 		// HASTAL Doctrine: Right-side multiplication for local frame rotation (O_new = O_old * R_delta)
 		const O1 = MAGPIE_PHYSICS.rotorCompose(O0, dO);
 		//
-		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
+		const A1 = dA//MAGPIE_PHYSICS.addVectors(A0, dA);
 		const dV = MAGPIE_PHYSICS.addVectors(V0, A1);
 		const V1 = MAGPIE_PHYSICS.mag(dV) > 1e-9 ? dV : [0,0,0];
 		//
@@ -2053,6 +2053,8 @@ MAGPIE_ENTITY.prototype._apply_intent = function _apply_intent(intent, state, fo
 		const K = MAGPIE.KEY.STATS;
 		const Amax = this.STATS[K.AMAX];
 		const R = MAGPIE.KEY.POVART.R_AXES;
+		//@audit
+		return { Ax: intent.At, Tx: intent.Tt }
 		const { dA, dT } = this._apply_locomotion(intent, state)
 		const Ax_raw = MAGPIE_PHYSICS.addVectors(state.A0, dA);
 		const Ax = MAGPIE_PHYSICS.vector_clamp_mag(Ax_raw, Amax);
@@ -2095,12 +2097,18 @@ MAGPIE_ENTITY.prototype._apply_locomotion = function _apply_locomotion(intent, s
 			return defaults
 		const index = this._get_index_trait(fitness_index, "STATES") - MAGPIE.KEY.FITNESS.TRAITS;
 		const trait = this._fetch_traits()[index];
-		// MAGPIE_SYSTEM._logging_debug(`Trait: ${trait?.name}`)
 		if(!(trait instanceof MAGPIE_SYMBOL))
 			throw new Error(`unable to find trait[${index}]`)
-		const { speeds, forces } = trait._get_locomotion()
-		return defaults
-		// return { dA, dT }
+		const { speeds, forces } = trait._get_locomotion();
+		const dA = Number(speeds?.Amax) ? MAGPIE_PHYSICS.scaleVector(intent.At, speeds.Amax) : [0,0,0];
+		const dT = Number(speeds?.Tmax) ? MAGPIE_PHYSICS.scaleVector(intent.Tt, speeds.Tmax) : [0,0,0]
+		// MAGPIE_SYSTEM._logging_debug(`speeds: ${Object.entries(speeds)}`)
+		// return defaults
+		if(!MAGPIE_PHYSICS.isValidVector(dA))
+			throw new Error(`${dA} is invalid ΔA vector`);
+		if(!MAGPIE_PHYSICS.isValidVector(dT))
+			throw new Error(`${dT} is invalid ΔT bivector`);
+		return { dA, dT }
 	}
 	catch(e)
 	{

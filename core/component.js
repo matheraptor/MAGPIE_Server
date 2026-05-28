@@ -1,7 +1,7 @@
 /**
  * @name INDEX
  * @desc 
- * @version 0.23.5
+ * @version 0.26.0
  */
 //========================================================================
 // #region - INDEX
@@ -576,6 +576,29 @@ MAGPIE_SYMBOL.prototype._get_locomotion = function getLocomotion()
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 		return { speeds: {}, forces: {} }
 	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Processor
+//------------------------------------------------------------------------
+/**
+ * 
+ * @typedef {import("./index").Processors} Processors
+ * @returns {Processors}
+ */
+MAGPIE_SYMBOL.prototype._get_processors = function getProcessors()
+{
+	return this.getCategory("PROCESSORS")
+}
+MAGPIE_SYMBOL.prototype._apply_processor = function applyProcessor()
+{
+
 }
 // #endregion
 //------------------------------------------------------------------------
