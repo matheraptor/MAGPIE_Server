@@ -120,6 +120,7 @@ function MAGPIE_SYMBOL(data)
  * @typedef {import("./index").stamina_index} stamina_index
  * @typedef {import("./index").vector3} vector3
  * @typedef {import("./index").bivector} bivector
+ * @typedef {import("./entity").action_output} action_output
  * 
  * @name COMPONENT
  * @desc 
@@ -375,24 +376,43 @@ MAGPIE_SYMBOL.prototype.mapStats = function mapStats()
  */
 MAGPIE_SYMBOL.prototype.getVspeeds = function getVspeeds()
 {
-	const ePrefix = `[SYMBOL-${this.ID}].getVspeeds: `;
+	return this.getCategory("VSPEEDS");
+}
+/**
+ * @typedef {import("./index").TraitForces} TraitForces
+ * @returns {TraitForces}
+ */
+MAGPIE_SYMBOL.prototype.getForces = function getForces()
+{
+	return this.getCategory("FORCES");
+}
+/**
+ * 
+ * @param {String} category_key 
+ * @returns {Object}
+ */
+MAGPIE_SYMBOL.prototype.getCategory = function getCategory(category_key)
+{
+	const ePrefix = `[SYMBOL-${this.ID}].getCategory: `;
 	try
 	{
-		const map = this._get_STATS();
 		const K = MAGPIE.KEY.INDEX;
-		const keys = Array.from(K.VSPEEDS.values())
-		const values = Array.from(K.VSPEEDS.keys());
-		const Vspeeds = {};
+		if(Object.prototype.toString.call(K[category_key]) !== "[object Map]")
+			throw new Error(`${category_key} is invalid category_key`)
+		const map = this._get_STATS();
+		const keys = Array.from(K[category_key].values());
+		const values = Array.from(K[category_key].keys());
+		const category = {};
 		map.forEach((keyID, index) => {
 			if(index % 2 === 0 && values.includes(keyID))
-				Vspeeds[K.VSPEEDS.get(keyID)] = map[index + 1]
+				category[K[category_key].get(keyID)] = map[index + 1];
 		})
-		// MAGPIE_SYSTEM._logging_debug(Object.entries(Vspeeds))
-		return Vspeeds
+		return category
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e) 
+		return {}
 	}
 }
 /**
@@ -524,6 +544,38 @@ MAGPIE_SYMBOL.prototype._addComponent = async function addComponent(symbolID)
 	if(!result)
 		return
 	return await result
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Trait
+//------------------------------------------------------------------------
+/**
+ * @returns {{
+ * speeds: Vspeeds,
+ * forces: TraitForces
+ * }}
+ */
+MAGPIE_SYMBOL.prototype._get_locomotion = function getLocomotion()
+{
+	const ePrefix = `[SYMBOL-${this.ID}].getLocomotion: `;
+	try
+	{
+		const K = MAGPIE.KEY.INDEX;
+		const speeds = this.getVspeeds();
+		const forces = this.getForces();
+		return { speeds, forces }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return { speeds: {}, forces: {} }
+	}
 }
 // #endregion
 //------------------------------------------------------------------------

@@ -621,6 +621,21 @@ MAGPIE_ENTITY._get_decomp_POVART = function getDecompPOVART(POVART)
 	return MAGPIE_PHYSICS.decomp_POVART(POVART);
 }
 /**
+ * @param {MAGPIE_ENTITY} entity
+ * @returns {stateID[]} Number[]
+ */
+MAGPIE_ENTITY._get_States = function _get_States(entity)
+{
+	const K = MAGPIE.KEY.FITNESS;
+	const deckSize = entity.fitness[K.DECKSIZE];
+	const offset = K.TRAITS;
+	const stateOffset = K.STATES;
+	const states = Array.from(entity.fitness)
+		.slice(offset + deckSize, offset + deckSize * stateOffset + 1)
+		.filter(n => !!n)
+	return states
+}
+/**
  * @returns {MAGPIE_ENTITY}
  */
 MAGPIE_ENTITY.prototype._get_celestial = function _get_celestial()
@@ -707,28 +722,22 @@ MAGPIE_ENTITY.prototype._get_T0 = function getT0()
 	const K = MAGPIE.KEY.POVART;
 	return [this.STATS[K.T_YZ], this.STATS[K.T_XZ], this.STATS[K.T_XY]]
 }
+/**
+ * 
+ * @returns {STAT[]}
+ */
 MAGPIE_ENTITY.prototype._get_STATS = function getSTATS()
 {
-	return this.STATS.slice(MAGPIE.KEY.POVART.ARRAY)
-}
-MAGPIE_ENTITY.prototype._get_traits = function getTraits()
-{
-	return this.fitness.slice(2, this.fitness[1] + 2)
+	return Array.from(this.STATS).slice(MAGPIE.KEY.POVART.ARRAY)
 }
 /**
- * @param {MAGPIE_ENTITY} entity
- * @returns {stateID[]} Number[]
+ * 
+ * @returns {traitID[]}
  */
-MAGPIE_ENTITY._get_States = function _get_States(entity)
+MAGPIE_ENTITY.prototype._get_traits = function getTraits()
 {
 	const K = MAGPIE.KEY.FITNESS;
-	const deckSize = entity.fitness[K.DECKSIZE];
-	const offset = K.TRAITS;
-	const stateOffset = K.STATES;
-	const states = Array.from(entity.fitness)
-		.slice(offset + deckSize, offset + deckSize * stateOffset + 1)
-		.filter(n => !!n)
-	return states
+	return Array.from(this.fitness).slice(K.TRAITS, this.fitness[K.DECKSIZE] + K.TRAITS)
 }
 /**
  * 
@@ -1725,9 +1734,7 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, int
 	}
 	try
 	{
-		let { P0, orbit, O0, V0, R0, E_ID } = MAGPIE_ENTITY._get_decomp_POVART(POVART0);
-		const A0 = [0,0,0];
-		const T0 = [0,0,0];
+		let { P0, orbit, O0, V0, A0, R0, T0, E_ID } = MAGPIE_ENTITY._get_decomp_POVART(POVART0);
 		const CB = MAGPIE_PHYSICS._calculate_collisionBox(this);
 		const r = MAGPIE_ENTITY._get_celestialRadius(C);
 		let C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
@@ -1740,9 +1747,10 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, int
 			C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
 		}
 		// @todo entity.updatePhysics check obstacles and calculate Ac/Tc
-		const forcesData = { dt, r, P0, O0, V0, R0, C0, CB, STATS: this.STATS, switchID };
+		const forcesData = { dt, r, P0, O0, V0, A0, R0, T0, C0, CB, STATS: this.STATS, switchID };
 		const { Af, Tf, forces } = MAGPIE_PHYSICS._apply_forces(forcesData);
-		const { Ax, Tx } = this._apply_intent(intent, Af, Tf, forces, switchID, dt);
+		const state = { Af, Tf, A0, T0, forces };
+		const { Ax, Tx } = this._apply_intent(intent, state, forces, switchID, dt);
 		const dA = MAGPIE_PHYSICS.scaleVector(Af, dt)
 		update.dA = dA;
 		const dT = MAGPIE_PHYSICS.scaleVector(Tf, dt);
@@ -1908,7 +1916,15 @@ MAGPIE_ENTITY.prototype._get_deckSize = function getDeckSize()
  */
 MAGPIE_ENTITY.prototype._trait_getIndexOf = function getTraitIndex(symbolID)
 {
-	return this.fitness.findIndex(n => n === symbolID)
+	return Array.from(this.fitness).findIndex(n => n === symbolID)
+}
+/**
+ * 
+ * @returns {MAGPIE_SYMBOL[]}
+ */
+MAGPIE_ENTITY.prototype._fetch_traits = function fetchTraits()
+{
+	return this._get_traits().map(traitID => MAGPIE_ENTITY.__hiveSync("_get_symbol", [traitID]))
 }
 /**
  * @returns {symbolID[]}
@@ -2016,25 +2032,96 @@ MAGPIE_ENTITY.fitness = {};
  * exp: MAGPIE_EXP,
  * raw: action_output
  * }} intent
- * @param {vector3} Af
- * @param {bivector} Tf
+ * @param {{
+ * Af: vector3,
+ * Tf: bivector,
+ * A0: vector3,
+ * T0: bivector,
+ * forces: physics_forces
+ * }} state
  * @param {physics_forces} forces
  * @param {Number} switchID 
  * @param {duration} dt 
  * @returns {{ Ax: vector3, Tx: bivector }}
  */
-MAGPIE_ENTITY.prototype._apply_intent = function _apply_intent(intent, Af, Tf, forces, switchID, dt)
+MAGPIE_ENTITY.prototype._apply_intent = function _apply_intent(intent, state, forces, switchID, dt)
 {
 	const ePrefix = `[ENTITY-${this.ID}].applyIntent: `;
 	try
 	{
 		//@todo generate locomotion from intent and forces
-		return { Ax: Af, Tx: Tf }
+		const K = MAGPIE.KEY.STATS;
+		const Amax = this.STATS[K.AMAX];
+		const R = MAGPIE.KEY.POVART.R_AXES;
+		const { dA, dT } = this._apply_locomotion(intent, state)
+		const Ax_raw = MAGPIE_PHYSICS.addVectors(state.A0, dA);
+		const Ax = MAGPIE_PHYSICS.vector_clamp_mag(Ax_raw, Amax);
+		const Tx_raw = MAGPIE_PHYSICS.addVectors(state.T0, dT);
+		const pitch = Math.min(Tx_raw[R.get("pitch")], this.STATS[K.TMAX_X])
+		const roll = Math.min(Tx_raw[R.get("roll")], this.STATS[K.TMAX_Y]);
+		const heading = Math.min(Tx_raw[R.get("roll")], this.STATS[K.TMAX_Z]);
+		return { Ax, Tx: [pitch, roll, heading] }
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+/**
+ * 
+ * @param {fitness_index} fitness_index 
+ * @param {{
+ * At: vector3,
+ * Tt: bivector,
+ * exp: MAGPIE_EXP,
+ * raw: action_output
+ * }} intent
+ * @param {{
+ * Af: vector3,
+ * Tf: bivector,
+ * A0: vector3,
+ * T0: bivector
+ * }} state
+ * @returns {{}} dA 
+ */
+MAGPIE_ENTITY.prototype._apply_locomotion = function _apply_locomotion(intent, state)
+{
+	const ePrefix = `[ENTITY-${this.ID}].applyLocomotion: `;
+	const defaults = { dA: [0,0,0], dT: [0,0,0] }
+	try
+	{
+		const fitness_index = intent?.raw?.fitness_index || NaN;
+		if(isNaN(fitness_index))
+			return defaults
+		const index = this._get_index_trait(fitness_index, "STATES") - MAGPIE.KEY.FITNESS.TRAITS;
+		const trait = this._fetch_traits()[index];
+		// MAGPIE_SYSTEM._logging_debug(`Trait: ${trait?.name}`)
+		if(!(trait instanceof MAGPIE_SYMBOL))
+			throw new Error(`unable to find trait[${index}]`)
+		const { speeds, forces } = trait._get_locomotion()
+		return defaults
+		// return { dA, dT }
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return defaults
+	}
+}
+/**
+ * 
+ * @param {fitness_index} fitness_index
+ * @param {String} zone {@link MAGPIE.KEY.FITNESS.ZONES}
+ * @returns {fitness_index} 
+ */
+MAGPIE_ENTITY.prototype._get_index_trait = function _get_index_trait(fitness_index, zone)
+{
+	const K = MAGPIE.KEY.FITNESS;
+	const deckSize = K.DECKSIZE;
+	const offset = K.TRAITS;
+	const mult = K[zone];
+	const section = fitness_index - (deckSize * mult)
+	return section
 }
 // #endregion
 //------------------------------------------------------------------------

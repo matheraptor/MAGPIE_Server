@@ -1712,6 +1712,9 @@ MAGPIE_PHYSICS._apply_forces = function _apply_forces(data)
 	const ePrefix = "[PHYSICS].applyForces: ";
 	try
 	{
+		//@todo include inertia 
+		// const AT = this._POVART_applyTargetAT()
+		// const I = this._calculateInertiaTensor()
 		const { r, P_C, P0, O0, V0, R0, dt, STATS } = data;
 		const K = MAGPIE.KEY.STATS;
 		const S = data.STATS;

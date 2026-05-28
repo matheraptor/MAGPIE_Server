@@ -724,6 +724,191 @@ MAGPIE.KEY.INDEX.DR = 2;
 /** @type {index} entity.emote.output.raw[index] */
 MAGPIE.KEY.INDEX.BDIST = 3;
 /**
+ * @typedef {{
+ * GMAX: velocity,
+ * GSAFE: velocity,
+ * GCOMFORT: velocity,
+ * GMIN: velocity,
+ * FMAX: force,
+ * FSAFE: force,
+ * FCOMFORT: force,
+ * DMAX: force,
+ * DSAFE: force,
+ * DCOMFORT: force,
+ * DMIN: force,
+ * LMAX: force,
+ * LSAFE: force,
+ * LCOMFORT: force,
+ * LMIN: force,
+ * AOAMAX: angle_deg,
+ * AOASAFE: angle_deg,
+ * AOACOMFORT: angle_deg,
+ * AOAMIN: angle_deg,
+ * PRESMAX: pressure,
+ * PRESSAFE: pressure,
+ * PRESCOMFORT: pressure,
+ * PRESMIN: pressure,
+ * TEMPMAX: temperature,
+ * TEMPSAFE: temperature,
+ * TEMPCOMFORT: temperature,
+ * TEMPMIN: temperature,
+ * DEWMAX: percentage,
+ * DEWSAFE: percentage,
+ * DEWCOMFORT: percentage,
+ * DEWMIN: percentage,
+ * BREEZEMAX: velocity,
+ * BREEZESAFE: velocity,
+ * BREEZECOMFORT: velocity,
+ * BREEZEMIN: velocity,
+ * LITMAX: luminosity,
+ * LITSAFE: luminosity,
+ * LITCOMFORT: luminosity,
+ * LITMIN: luminosity,
+ * RADMAX: radioactivity,
+ * RADSAFE: radioactivity,
+ * RADCOMFORT: radioactivity,
+ * RADMIN: radioactivity
+ * }} TraitForces
+ * @type {Map<key_index, key_label>}
+ */
+MAGPIE.KEY.INDEX.FORCES = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GMAX = 9001;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GMAX, "GMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GSAFE = 9002;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GSAFE, "GSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GCOMFORT = 9003;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GCOMFORT, "GCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GMIN = 9004;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GMIN, "GMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FMAX = 9011;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FMAX, "FMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FSAFE = 9012;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FSAFE, "FSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FCOMFORT = 9013;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FCOMFORT, "FCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FMIN = 9014;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FMIN, "FMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DMAX = 9021;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DMAX, "DMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DSAFE = 9022;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DSAFE, "DSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DCOMFORT = 9023;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DCOMFORT, "DCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DMIN = 9024;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DMIN, "DMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LMAX = 9031;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LMAX, "LMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LSAFE = 9032;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LSAFE, "LSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LCOMFORT = 9033;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LCOMFORT, "LCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LMIN = 9034;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LMIN, "LMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AOAMAX = 9041;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOAMAX, "AOAMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AOASAFE = 9042;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOASAFE, "AOASAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AOACOMFORT = 9043;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOACOMFORT, "AOACOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AOAMIN = 9044;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOAMIN, "AOAMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRESMAX = 9051;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESMAX, "PRESMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRESSAFE = 9052;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESSAFE, "PRESSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRESCOMFORT = 9053;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESCOMFORT, "PRESCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.PRESMIN = 9054;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESMIN, "PRESMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TEMPMAX = 9061;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPMAX, "TEMPMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TEMPSAFE = 9062;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPSAFE, "TEMPSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TEMPCOMFORT = 9063;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPCOMFORT, "TEMPCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TEMPMIN = 9064;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPMIN, "TEMPMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DEWMAX = 9071;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWMAX, "DEWMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DEWSAFE = 9072;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWSAFE, "DEWSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DEWCOMFORT = 9073;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWCOMFORT, "DEWCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.DEWMIN = 9074;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWMIN, "DEWMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.BREEZEMAX = 9081;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZEMAX, "BREEZEMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.BREEZESAFE = 9082;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZESAFE, "BREEZESAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.BREEZECOMFORT = 9083;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZECOMFORT, "BREEZECOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.BREEZEMIN = 9084;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZEMIN, "BREEZEMIN")
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LITMAX = 9091;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITMAX, "LITMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LITSAFE = 9092;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITSAFE, "LITSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LITCOMFORT = 9093;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITCOMFORT, "LITCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.LITMIN = 9094;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITMIN, "LITMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RADMAX = 9095;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADMAX, "RADMAX");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RADSAFE = 9096;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADSAFE, "RADSAFE");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RADCOMFORT = 9097;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADCOMFORT, "RADCOMFORT");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RADMIN = 9098;
+MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADMIN, "RADMIN");
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FORCES.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("GMAX"))
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.FORCES.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("RADMIN"))
+/**
  * @typedef {Enumerator<Number>} urgency
  * @typedef {{value: Number, desc: String}} urgency_record
  * @type {Map<keyID, {value: urgency, desc: String>}}
@@ -1097,6 +1282,7 @@ MAGPIE.KEY.PHYSICS = {};
  * @typedef {Number} temperature in Kelvin (K)
  * @typedef {Number} substance Mole (mol)
  * @typedef {Number} luminosity Candela (cd)
+ * @typedef {Number} radioactivity Rad (rad) absorbed dose / amount of energy in matter
  * @typedef {Number} force in Newton (N) = kg * m/s²
  * @typedef {Number} energy in Joule (J) = N * m / kg * m²/s²
  * @typedef {Number} power in Watt (W) = J/s / kg * m²/s³
