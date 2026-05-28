@@ -1300,7 +1300,7 @@ MAGPIE_RUNTIME.prototype.refresh = function refresh()
 	this._lag += delta;
 	this._base += delta;
 	this._game += delta;
-	if(this._base >= 1000)
+	if(this._base >= MAGPIE.KEY.RUNTIME.LAYER.get(2).delta * 1000)
 		return this.TICK_standard();
 	if(this._game >= FIXED_DELTA || this._lag > FIXED_DELTA)
 		this.TICK_game(FIXED_DELTA)
@@ -1541,6 +1541,32 @@ MAGPIE_RUNTIME.prototype.loadMetastate = function loadMetastate()
 	//
 }
 MAGPIE_RUNTIME._loadMetastate = MAGPIE_RUNTIME.prototype.loadMetastate;
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Utility
+//------------------------------------------------------------------------
+MAGPIE_RUNTIME.prototype._time_acceleration = function timeAcceleration(rate = 1, reset = false)
+{
+	const K = MAGPIE.KEY.RUNTIME.LAYER
+	const layer = K.get(2);
+	const buffer1 = K.get(1);
+	if(reset && layer?.reset && buffer1?.reset)
+	{
+		buffer1.dt = buffer1.reset
+		layer.delta = layer.reset;
+		return 
+	}
+	layer.reset = structuredClone(layer.delta);
+	layer.delta /= rate;
+	buffer1.reset = structuredClone(buffer1.dt);
+	buffer1.dt *= rate;
+}
 // #endregion
 //------------------------------------------------------------------------
 /**

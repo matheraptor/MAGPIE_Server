@@ -1074,7 +1074,7 @@ MAGPIE.KEY.RUNTIME.meta = {
 	name: "M.A.G.P.I.E. runtime"
 };
 MAGPIE.KEY.RUNTIME.DELTA = new Float64Array([0.001,0.033,1,60,60**2,60**2*24])
-/** @type {Map<Number, {name: String, delta: Number, slots: Number}} */
+/** @type {Map<Number, {name: String, delta: duration, dt: duration, slots: Number}} */
 MAGPIE.KEY.RUNTIME.LAYER = new Map();
 MAGPIE.KEY.RUNTIME.LAYER.set(0, { 
 	name: "_GuestsBase", 		
