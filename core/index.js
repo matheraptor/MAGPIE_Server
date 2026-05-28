@@ -716,15 +716,13 @@ MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.FACING_TARGET, "Facing Target"
 MAGPIE.KEY.INDEX.DRIFTING = 314;
 MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DRIFT, "Drifting");
 /** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.RSTATE = 0;
+MAGPIE.KEY.INDEX.STATES = 0;
 /** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.VSTATE = 1;
+MAGPIE.KEY.INDEX.DRMAG = 1;
 /** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.DRMAG = 2;
+MAGPIE.KEY.INDEX.DR = 2;
 /** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.DR = 3;
-/** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.BDIST = 4;
+MAGPIE.KEY.INDEX.BDIST = 3;
 /**
  * @typedef {Enumerator<Number>} urgency
  * @typedef {{value: Number, desc: String}} urgency_record
@@ -1446,6 +1444,11 @@ MAGPIE.KEY.POVART.FWD = [0,1,0];
 MAGPIE.KEY.POVART.UP = [0,0,1];
 /** @type {vector3} default 'right' vector */
 MAGPIE.KEY.POVART.RIGHT = [1,0,0];
+/** @type {Map<String, Enumerator<Number>>} */
+MAGPIE.KEY.POVART.R_AXES = new Map();
+MAGPIE.KEY.POVART.R_AXES.set("pitch", 0);
+MAGPIE.KEY.POVART.R_AXES.set("roll", 1);
+MAGPIE.KEY.POVART.R_AXES.set("heading", 2);
 // #endregion
 //------------------------------------------------------------------------
 /**

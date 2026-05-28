@@ -722,7 +722,7 @@ MAGPIE_ENTITY._get_States = function _get_States(entity)
 	const deckSize = entity.fitness[K.DECKSIZE];
 	const offset = K.TRAITS;
 	const stateOffset = K.STATES;
-	const states = entity.fitness
+	const states = Array.from(entity.fitness)
 		.slice(offset + deckSize, offset + deckSize * stateOffset + 1)
 		.filter(n => !!n)
 	return states
@@ -2096,18 +2096,18 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp, fitn
 			if(key && value)
 				options[key] = value;
 		})
+		options.Rstate = this._get_Rstate();
 		// MAGPIE_SYSTEM._logging_debug(Object.entries(options))
+		options.STATS = this.STATS;
 		const output = MAGPIE_PHYSICS
-			._emote_seekTarget(POVART0, Pt, this.STATS, options);
-		const { At, Tt, Vstate, Rstate, dR_mag, dR, Bdist } = output;
+			._emote_seekTarget(POVART0, Pt, options);
+		const { At, Tt, state, Rstate, dR_mag, dR, Bdist } = output;
 		// MAGPIE_SYSTEM._logging_debug(Tt)
 		const raw = [];
-		raw[MAGPIE.KEY.INDEX.RSTATE] = Rstate;
-		raw[MAGPIE.KEY.INDEX.VSTATE] = Vstate;
 		raw[MAGPIE.KEY.INDEX.DRMAG] = dR_mag;
 		raw[MAGPIE.KEY.INDEX.DR] = dR;
 		raw[MAGPIE.KEY.INDEX.BDIST] = Bdist;
-		this.switchState(fitness_index, Vstate)
+		this.switchState(fitness_index, output.state)
 		return { At: At, Tt: Tt, exp: exp, raw }
  	}
 	catch(e)
@@ -2174,6 +2174,82 @@ MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp, fi
 		// MAGPIE_SYSTEM._logging_debug(ePrefix)
 		if(exp._get_key_target())
 			return this._target_next()
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_idling = function _emote_idling(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].idling: `;
+	try
+	{
+		//@todo idling logic?
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_lockingTarget = function _emote_lockingTarget(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].lockingTarget: `;
+	try
+	{
+		//@todo locking logic?
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_aligningTarget = function _emote_aligningTarget(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].aligningTarget: `;
+	try
+	{
+		//@todo aligning logic?
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_facingTarget = function _emote_facingTarget(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].facingTarget: `;
+	try
+	{
+		//@todo facingTarget logic?
 		return this._emote_seekTarget(exp, fitness_index)
 	}
 	catch(e)
@@ -2450,6 +2526,18 @@ MAGPIE_ENTITY.prototype.switchState = function switchState(fitness_index, stateI
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+/**
+ * @returns {stateID}
+ */
+MAGPIE_ENTITY.prototype._get_Rstate = function getRstate()
+{
+	const states = this._get_states();
+	const Rstates = MAGPIE_STATE.TYPE.get(STATE.TYPE.FSM_POSTURE);
+	Rstates.forEach(n => {
+		if(states.includes(n))
+			return n
+	})
 }
 /**
  * 

@@ -546,14 +546,21 @@ MAGPIE_SYMBOL.prototype._addComponent = async function addComponent(symbolID)
 MAGPIE_STATE.meta = {};
 /** @type {Map<stateID, MAGPIE_STATE>} */
 MAGPIE_STATE.INDEX = new Map();
+MAGPIE_STATE.TYPE = new Map();
 MAGPIE_STATE.setup = function setup()
 {
 	const data = require("../data/states").states;
 	for(const state_data of data)
 	{
-		MAGPIE_STATE.INDEX.set(state_data.ID, new MAGPIE_STATE(state_data))
+		MAGPIE_STATE.INDEX.set(state_data.ID, new MAGPIE_STATE(state_data));
+		let type = MAGPIE_STATE.TYPE.get(state_data.type);
+		if(!type)
+			type = [];
+		type.push(state_data.ID)
+		MAGPIE_STATE.TYPE.set(state_data.type, type)
 	}
 }
+
 /**
  * 
  * @param {import("../data/states").state_data} data 
@@ -898,7 +905,7 @@ MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
 	for(const key of keys)
 	{
 		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
-			Vspeeds[key.getOrigin()?.label?.toUpperCase()] = Number(key.label)
+			Vspeeds[key.getOrigin()?.label?.toUpperCase()] = JSON.parse(key.label)
 	}
 	return Vspeeds
 }

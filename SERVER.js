@@ -999,6 +999,16 @@ MAGPIE_ENTITY.__hive = async function __hive(method, arguments)
 	const callback = MAGPIE_HIVE[method]
 	return callback(...arguments)
 }
+/**
+ * 
+ * @param {*} output 
+ * @param {MAGPIE_EXP} exp 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {*} P_C 
+ * @param {*} POVART1 
+ * @param {*} dt 
+ * @param {*} switchID 
+ */
 MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POVART1, dt, switchID)
 {
 	const ePrefix = `[ENTITY-${entity.ID}].socketEmit: `;
@@ -1039,22 +1049,20 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		// MAGPIE_SERVER._debug(ETA_s)
 		const ETA = !isNaN(ETA_s) ? MAGPIE_SYSTEM.Utility.printETA(ETA_s) : "N/A";
 		const raw = output?.emote?.raw || output?.target?.raw || [];
-		const index = MAGPIE.KEY.INDEX
-		const Rstate = raw[index.RSTATE] || NaN; 
-		const Vstate = raw[index.VSTATE] || NaN;
+		const index = MAGPIE.KEY.INDEX;
 		const dR_mag = Number(raw[index.DRMAG]) || NaN;
 		const dR = raw[index.DR] || [NaN, NaN, NaN];
-		const Bdist = raw[index.BDIST];
+		const Bdist = raw[index.BDIST] || [NaN, NaN, NaN];
 		// MAGPIE_SYSTEM._logging_debug(raw)
 		const form = MAGPIE_SYSTEM.Utility._format_num;
+		const states = (stateID) => {return MAGPIE_STATE.INDEX.get(stateID)?.name} 
 		const data = {
 			switchID,
 			entityID: entity.ID,
 			entityName: entity.name,
 			metadate: entity.updated,
 			coords: [lat,lon,ASL],
-			Vstate: MAGPIE_STATE.INDEX.get(Vstate)?.name,
-			Rstate: MAGPIE_STATE.INDEX.get(Rstate)?.name,
+			states: entity._get_states(this).map(n => states(n)),
 			Vmag: Vmag,
 			Vknots: Vknots,
 			Amag: Amag,
@@ -1064,7 +1072,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 			dR: dR.map(n => form(n, 5, true)),
 			R1: R1.map(n => form(n, 5, true)),
 			T1: T1.map(n => form(n, 5, true)),
-			Bdist: form(Bdist, 5, true),
+			Bdist: Bdist?.map(n => form(n, 5, true)),
 			heading: hdg,
 			pitch: pitch,
 			roll: roll,

@@ -79,10 +79,7 @@ const inspector = {
 		update('val-Amag', data.Amag?.toFixed(3));
 		update("val-Tmag", data.Tmag?.toFixed(3));
 		update("val-Rmag", data.Rmag.toFixed(3));
-		if(typeof data?.Vstate === 'string')
-			update("val-Vstate", data.Vstate);
-		if(typeof data?.Rstate === 'string')
-			update("val-Rstate", data?.Rstate);
+		update("val-states", data.states);
 		if(data?.dR_mag && !isNaN(data.dR_mag))
 			update("val-dR_mag", Number(data.dR_mag)?.toFixed(3));
 		update('val-heading', data.heading?.toFixed(1));
@@ -100,7 +97,7 @@ const inspector = {
 		//
 		if(data?.dR && data.dR.every(n => !isNaN(n)))
 			update("val-dR", data.dR);
-		if(data?.Bdist && !isNaN(data.Bdist))
+		if(data?.Bdist && data.Bdist.every(n => !isNaN(n)))
 			update("val-Bdist", data.Bdist)
 		if(data?.R1)
 			update("val-R1", data.R1);
