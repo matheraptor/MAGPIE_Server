@@ -1551,20 +1551,24 @@ MAGPIE_RUNTIME._loadMetastate = MAGPIE_RUNTIME.prototype.loadMetastate;
 //------------------------------------------------------------------------
 // #region > Utility
 //------------------------------------------------------------------------
+/**
+ * 
+ * @param {Number} rate 
+ * @param {Boolean} reset 
+ * @returns 
+ */
 MAGPIE_RUNTIME.prototype._time_acceleration = function timeAcceleration(rate = 1, reset = false)
 {
 	const K = MAGPIE.KEY.RUNTIME.LAYER
 	const layer = K.get(2);
 	const buffer1 = K.get(1);
-	if(reset && layer?.reset && buffer1?.reset)
+	if(reset)
 	{
-		buffer1.dt = buffer1.reset
-		layer.delta = layer.reset;
-		return 
+		layer.delta = MAGPIE.KEY.RUNTIME.DELTA[2];
+		buffer1.dt = MAGPIE.KEY.RUNTIME.DELTA[1];
+		return
 	}
-	layer.reset = structuredClone(layer.delta);
 	layer.delta /= rate;
-	buffer1.reset = structuredClone(buffer1.dt);
 	buffer1.dt *= rate;
 }
 // #endregion
@@ -2646,6 +2650,44 @@ MAGPIE_HIVE._set_contextSync = function setContextSync(context)
 		entry = context;
 	}
 	return MAGPIE_HIVE._set_databaseSync("saveContextSync", [context])
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Utility
+//------------------------------------------------------------------------
+MAGPIE_HIVE._time_advance = function timeAdvance(dt)
+{
+	const ePrefix = "[HIVE].timeAdvance: ";
+	try
+	{
+		const K = MAGPIE.KEY.RUNTIME.LAYER;
+		const Game = 1;
+		const TICK = 2;
+		const Super = 3;
+		const Mega = 4;
+		const Ultra = 5;
+		const layerGame = K.get(Game);
+		const layerTICK = K.get(TICK);
+		const layerSuper = K.get(Super);
+		const layerMega = K.get(Mega);
+		const layerUltra = K.get(Ultra);
+		const switchID = dt < 1 ? 1 : dt < 60 ? 2 : dt < 60**2 ? 3 : dt < 60**2*24 ? 4 : 5
+		MAGPIE_HIVE.tick_buffer(layerGame.name, Game, switchID, dt);
+		MAGPIE_HIVE.tick_buffer(layerTICK.name, TICK, switchID, dt);
+		MAGPIE_HIVE.tick_remote(layerSuper.name, Super, switchID, dt);
+		MAGPIE_HIVE.tick_remote(layerMega.name, Mega, switchID, dt);
+		MAGPIE_HIVE.tick_remote(layerUltra.name, Ultra, switchID, dt);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------

@@ -568,6 +568,8 @@ MAGPIE.KEY.INDEX.TARGET = 12;
 MAGPIE.KEY.INDEX.TRIVIAL = 13;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TIME = 14;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.MARKER = 15;
 /*** @type {Map<keyID, stamina_index>} */
 MAGPIE.KEY.INDEX.STAMINA = new Map();
 /** @type {key_index} */
@@ -1100,9 +1102,9 @@ MAGPIE.KEY.RUNTIME.DELTA = new Float64Array([0.001,0.033,1,60,60**2,60**2*24])
 MAGPIE.KEY.RUNTIME.LAYER = new Map();
 MAGPIE.KEY.RUNTIME.LAYER.set(0, { 
 	name: "_GuestsBase", 		
-	delta: MAGPIE.KEY.RUNTIME.DELTA[0], 	
+	delta: MAGPIE.KEY.RUNTIME.DELTA[0],	
 	dt: MAGPIE.KEY.RUNTIME.DELTA[0],
-	slots: 100 
+	slots: 100
 });
 MAGPIE.KEY.RUNTIME.LAYER.set(1, { 
 	name: "_GuestsGame", 		

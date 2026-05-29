@@ -423,20 +423,26 @@ MAGPIE_ENTITY.prototype.setupSTATS = function setupSTATS(STATS)
 	const ePrefix = `[ENTITY-${this.ID}].setupSTATS: `;
 	try
 	{
-		this.STATS = new Float64Array(MAGPIE.KEY.STATS.ARRAY).fill(0);
-		const offset = MAGPIE.KEY.POVART.ARRAY + 1;
-		const povart = STATS.slice(0, offset);
-		const stats = STATS.slice(offset);
-		if(!MAGPIE_ENTITY.isValidPOVART(povart))
-			throw new Error(`${povart} is invalid POVART`)
-		povart.forEach((value, index) => {
-			this.STATS[index] = value;
-		})
-		if(!MAGPIE_ENTITY.isValidEntityStats(stats))
-			throw new Error(`${stats} is invalid STATS`);
-		stats.forEach((stat, index) => {
-			this.STATS[index + offset] = stat;
-		})
+		// this.STATS = new Float64Array(MAGPIE.KEY.STATS.ARRAY).fill(0);
+		// const offset = MAGPIE.KEY.POVART.ARRAY + 1;
+		// const povart = STATS.slice(0, offset);
+		// const stats = STATS.slice(offset);
+		// if(!MAGPIE_ENTITY.isValidPOVART(povart))
+		// 	throw new Error(`${povart} is invalid POVART`)
+		// povart.forEach((value, index) => {
+		// 	this.STATS[index] = value;
+		// })
+		// if(!MAGPIE_ENTITY.isValidEntityStats(stats))
+		// 	throw new Error(`${stats} is invalid STATS`);
+		// stats.forEach((stat, index) => {
+		// 	this.STATS[index + offset] = stat;
+		// })
+		const length = STATS.length === MAGPIE.KEY.STATS.ARRAY;
+		const array = Array.isArray(STATS) && STATS.every(n => !isNaN(n));
+		if(!array || !length)
+			return
+		this.STATS = new Float64Array(STATS);
+		this.STATS[MAGPIE.KEY.POVART.E_ID] = this.ID;
 	}
 	catch(e)
 	{
@@ -2934,9 +2940,10 @@ MAGPIE_ENTITY.prototype._target_getDistance = function getDistanceToTarget(P0, P
  */
 MAGPIE_ENTITY.prototype._target_get_queue = function getTargetQueue()
 {
+	const K = MAGPIE.KEY.INDEX;
 	return this._get_exps().map(exp => exp.getKeys()).flat(Infinity)
 		.flatMap(key => {
-			if(key.originID === MAGPIE.KEY.INDEX.TARGET)
+			if(key.originID === K.TARGET || key.originID === K.MARKER)
 				return [Number(key.label)];
 			return []
 		})

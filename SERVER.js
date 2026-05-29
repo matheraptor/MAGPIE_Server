@@ -338,7 +338,7 @@ MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID, layer_frame)
 	const ePrefix = "[HIVE].refresh: ";
 	try
 	{
-		MAGPIE_SYSTEM.refresh.call(this)
+		MAGPIE_SYSTEM.refresh.call(this);
 		const layer = MAGPIE.KEY.RUNTIME.LAYER;
 		const Base = 0;
 		const Game = 1;
@@ -406,7 +406,7 @@ MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID, layer_frame)
  * @param {duration} dt 
  * @param {Number} layer_frame 
  */
-MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt, layer_frame)
+MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt, layer_frame = 0)
 {
 	const ePrefix = "[HIVE].tick_buffer: ";
 	const layer = this[layerName];
