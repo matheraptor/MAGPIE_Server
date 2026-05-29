@@ -329,17 +329,21 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {import("./index").distance} distance
  * @typedef {import("./index").ratio} ratio
  * @typedef {import("./index").angle_rad} angle_rad
+ * @typedef {import("./index").angle_deg} angle_deg
  * @typedef {import("./index").vector3} vector3
  * @typedef {import("./index").bivector} bivector
  * @typedef {import("./index").rotor} rotor
  * @typedef {import("./physics").magnitude} magnitude
- * @typedef {import("./index").angle_deg} angle_deg
  * @typedef {import("./index").acceleration} acceleration
  * @typedef {import("./index").force} force
  * @typedef {import("./index").physics_forces} physics_forces [FG, FF, FD, FL, AOA, Atm, OAT, Dew, Breeze, Lit, Rad]
  * @typedef {angle_deg} lat
  * @typedef {angle_deg} lon
  * @typedef {distance} ASL
+ * @typedef {import("./physics").pitch} pitch
+ * @typedef {import("./physics").roll} roll
+ * @typedef {import("./physics").heading} heading
+ * @typedef {import("./physics").angle_euler} angle_euler
  * @typedef {{
  * name: String,
  * type: Enumerator<Number>,
@@ -2581,6 +2585,58 @@ MAGPIE_ENTITY._get_key = function getKey(keyID)
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Marker
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {coords[]}
+ */
+MAGPIE_ENTITY.prototype._marker_get_queue = function _marker_get_queue()
+{
+	const K = MAGPIE.KEY.INDEX;
+	return this._get_exps().map(exp => exp.getKeys()).flat(Infinity)
+		.flatMap(key => {
+			if(key.originID === key.originID === K.MARKER)
+				return [JSON.parse(key.label)]
+			return []
+		})
+}
+/**
+ * @typedef {{
+ * leg: Number,
+ * coords: coords,
+ * course: heading,
+ * distance: distance
+ * }} marker_route
+ * @returns {marker_route}
+ */
+MAGPIE_ENTITY.prototype._marker_queue_geodetic = function()
+{
+	const queue = this._marker_get_queue();
+	const route = new Map();
+	for(let i = 0; i < queue.length; i++)
+	{
+		const r = this._get_celestial()._get_radius();
+		const P0 = MAGPIE_PHYSICS.geodeticToCartesian(queue[i]);
+		const P1 = MAGPIE_PHYSICS.geodeticToCartesian(queue[i + 1]);
+		const course = P1 ? MAGPIE_PHYSICS._geod_getCourse(P0, P1) : undefined;
+		const distance = P1 ? MAGPIE_PHYSICS._geod_distanceTo(P0, P1, r) : undefined;
+		route.set(i + 1, {
+			leg: i + 1,
+			coords: queue[i],
+			course: Math.floow(course),
+			distance: Math.floow(distance)
+		})
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *
@@ -2943,7 +2999,7 @@ MAGPIE_ENTITY.prototype._target_get_queue = function getTargetQueue()
 	const K = MAGPIE.KEY.INDEX;
 	return this._get_exps().map(exp => exp.getKeys()).flat(Infinity)
 		.flatMap(key => {
-			if(key.originID === K.TARGET || key.originID === K.MARKER)
+			if(key.originID === K.TARGET)
 				return [Number(key.label)];
 			return []
 		})
@@ -2958,7 +3014,15 @@ MAGPIE_ENTITY.prototype._target_fetch_queue = async function()
 		.map(targetID => MAGPIE_ENTITY.__hiveSync("_get_entity", [targetID]))
 }
 /**
- * @todo target_queue_geodetic
+ * @typedef {{
+ * leg: Number,
+ * ID: entityID,
+ * name: String,
+ * coords: coords
+ * course: heading,
+ * distance: distance,
+ * }}
+ * @returns {target_route}
  */
 MAGPIE_ENTITY.prototype._target_queue_geodetic = async function()
 {
@@ -2978,9 +3042,9 @@ MAGPIE_ENTITY.prototype._target_queue_geodetic = async function()
 				leg: i + 1,
 				ID: queue[i].ID,
 				name: queue[i].name,
+				coords: queue[i]._get_C0(),
 				course: Math.floor(course),
-				distance: Math.floor(distance),
-				coords: queue[i]._get_C0()
+				distance: Math.floor(distance)
 			})
 		}
 		return route
