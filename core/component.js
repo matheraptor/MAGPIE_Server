@@ -1761,8 +1761,9 @@ MAGPIE_KEY.prototype._get_data = function getData()
  */
 MAGPIE_KEY.prototype._U_clone = async function clone()
 {
-	const data = this._get_data();
-	const key = new MAGPIE_KEY(data);
+	const key = structuredClone(this);
+	Object.setPrototypeOf(key, MAGPIE_KEY.prototype);
+	key.ID = Date.now();
 	await key.set();
 	return key
 }
