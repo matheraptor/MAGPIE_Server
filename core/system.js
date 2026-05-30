@@ -596,7 +596,7 @@ MAGPIE_SYSTEM.Utility._makeInterval = function makeInterval(seconds)
 	interval.minutes = Math.floor(seconds % minute);
 	if(seconds < minute)
 		return interval
-	const hour
+	const hour = 60**2 * 24
 	interval.hours = Math.floor(seconds % hour);
 	if(seconds < hour)
 		return interval
