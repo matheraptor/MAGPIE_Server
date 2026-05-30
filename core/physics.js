@@ -1288,7 +1288,10 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 	const output = { Tt: 0, state: STATE_INDEX.SPOOFED, Bdist: 0 }
 	try
 	{
-		const Tmax = Array.isArray(options?.Tmax) ? options.Tmax[axis] : NaN;
+		const Tmax_axis = `Tmax_${MAGPIE.KEY.POVART.AXES[axis]}`;
+		const Rmax_axis = `Rmax_${MAGPIE.KEY.POVART.AXES[axis]}`;
+		const Tmax = options.hasOwnProperty(Tmax_axis) ? Number(options[Tmax_axis]) : Number(options?.Tmax);
+		// MAGPIE_SYSTEM._logging_debug(`Tmax: ${Tmax}`)
 		if(isNaN(Tmax))
 			return 
 		const reserve = 1 - (this._U_clampRange(Number(options?.reserve) || 20, 0, 99.9) / 100);
@@ -1296,7 +1299,7 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 		const last_state = options?.Rstate;
 		// if(axis === 2)
 		// 	MAGPIE_SYSTEM._logging_debug(`axis: ${axis} | Tres: ${Treserve} | Tsafe: ${Tsafe}`)
-		const Rmax = Array.isArray(options?.Rmax) ? options.Rmax[axis] : NaN;
+		const Rmax = options.hasOwnProperty(Rmax_axis) ? Number(options[Rmax_axis]) : Number(options?.Rmax);
 		if(isNaN(Rmax))
 			return 
 		const Rsafe = Array.isArray(options?.Rsafe) ? options.Rsafe[axis] : Rmax * reserve;

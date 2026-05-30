@@ -642,7 +642,7 @@ MAGPIE_ENTITY._get_States = function _get_States(entity)
 MAGPIE_ENTITY.prototype._get_celestial = function _get_celestial()
 {
 	const celestialID = this.STATS[MAGPIE.KEY.POVART.P_C];
-	return MAGPIE_ENTITY.__hiveSync("_get_celestial", [celestialID])
+	return MAGPIE_ENTITY.__hiveSync("_get_entity", [celestialID])
 }
 /**
  * 
@@ -1182,26 +1182,50 @@ MAGPIE_ENTITY.prototype._get_speeds = function getSpeed(overrideVspeed)
 	const Vspeeds = symbol.getVspeeds();
 	/** @type {entity_speeds} */
 	const speeds = {
-		Vmax: overrideVspeed?.VMAX || Vspeeds?.Vmax,
-		Vcruise: overrideVspeed?.VCRUISE || Vspeeds?.Vcruise,
-		Vsafe: overrideVspeed?.VSAFE || Vspeeds?.Vsafe,
-		Vcreep: overrideVspeed?.VCREEP || Vspeeds?.Vcreep,
-		Vdock: overrideVspeed?.VDOCK || Vspeeds?.Vdock,
-		Amax: overrideVspeed?.AMAX || Vspeeds?.Amax,
-		Asafe: overrideVspeed?.ASAFE || Vspeeds?.Asafe,
-		Acruise: overrideVspeed?.ACRUISE || Vspeeds?.Acruise,
-		Acreep: overrideVspeed?.ACREEP || Vspeeds?.Acreep,
-		Adock: overrideVspeed?.ADOCK || Vspeeds?.Adock,
-		Rmax: overrideVspeed?.RMAX || Vspeeds?.Rmax,
-		Rsafe: overrideVspeed?.RSAFE || Vspeeds?.Rsafe,
-		Rcruise: overrideVspeed?.RCRUISE || Vspeeds?.Rcruise,
-		Rcreep: overrideVspeed?.RCREEP || Vspeeds?.Rcreep,
-		Rdock: overrideVspeed?.RDOCK || Vspeeds?.Rdock,
-		Tmax: overrideVspeed?.TMAX || Vspeeds?.Tmax,
-		Tsafe: overrideVspeed?.TSAFE || Vspeeds?.Tsafe,
-		Tcruise: overrideVspeed?.TCRUISE || Vspeeds?.Tcruise,
-		Tcreep: overrideVspeed?.TCREEP || Vspeeds?.Tcreep,
-		Tdock: overrideVspeed?.TDOCK || Vspeeds?.Tdock
+		Vmax: overrideVspeed?.VMAX || Vspeeds?.VMAX,
+		Vcruise: overrideVspeed?.VCRUISE || Vspeeds?.VCRUISE,
+		Vsafe: overrideVspeed?.VSAFE || Vspeeds?.VSAFE,
+		Vcreep: overrideVspeed?.VCREEP || Vspeeds?.VCREEP,
+		Vdock: overrideVspeed?.VDOCK || Vspeeds?.VDOCK,
+		Amax: overrideVspeed?.AMAX || Vspeeds?.AMAX,
+		Asafe: overrideVspeed?.ASAFE || Vspeeds?.ASAFE,
+		Acruise: overrideVspeed?.ACRUISE || Vspeeds?.ACRUISE,
+		Acreep: overrideVspeed?.ACREEP || Vspeeds?.ACREEP,
+		Adock: overrideVspeed?.ADOCK || Vspeeds?.ADOCK,
+		Rmax: overrideVspeed?.RMAX || Vspeeds?.RMAX,
+		Rsafe: overrideVspeed?.RSAFE || Vspeeds?.RSAFE,
+		Rcruise: overrideVspeed?.RCRUISE || Vspeeds?.RCRUISE,
+		Rcreep: overrideVspeed?.RCREEP || Vspeeds?.RCREEP,
+		Rdock: overrideVspeed?.RDOCK || Vspeeds?.RDOCK,
+		Tmax: overrideVspeed?.TMAX || Vspeeds?.TMAX,
+		Tsafe: overrideVspeed?.TSAFE || Vspeeds?.TSAFE,
+		Tcruise: overrideVspeed?.TCRUISE || Vspeeds?.TCRUISE,
+		Tcreep: overrideVspeed?.TCREEP || Vspeeds?.TCREEP,
+		Tdock: overrideVspeed?.TDOCK || Vspeeds?.TDOCK,
+		Rmax_x: overrideVspeed?.RMAX_X || Vspeeds?.RMAX_X,
+		Rsafe_x: overrideVspeed?.RSAFE_X || Vspeeds?.RSAFE_X,
+		Rcruise_x: overrideVspeed?.RCRUISE_X || Vspeeds?.RCRUISE_X,
+		Rcreep_x: overrideVspeed?.RCREEP_X || Vspeeds?.RCREEP_X,
+		Rmax_y: overrideVspeed?.RMAX_Y || Vspeeds?.RMAX_Y,
+		Rsafe_y: overrideVspeed?.RSAFE_Y || Vspeeds?.RSAFE_Y,
+		Rcruise_y: overrideVspeed?.RCRUISE_Y || Vspeeds?.RCRUISE_Y,
+		Rcreep_y: overrideVspeed?.RCREEP_Y || Vspeeds?.RCREEP_Y,
+		Rmax_z: overrideVspeed?.RMAX_Z || Vspeeds?.RMAX_Z,
+		Rsafe_z: overrideVspeed?.RSAFE_Z || Vspeeds?.RSAFE_Z,
+		Rcruise_z: overrideVspeed?.RCRUISE_Z || Vspeeds?.RCRUISE_Z,
+		Rcreep_z: overrideVspeed?.RCREEP_Z || Vspeeds?.RCREEP_Z,
+		Tmax_x: overrideVspeed?.TMAX_X || Vspeeds?.TMAX_X,
+		Tsafe_x: overrideVspeed?.TSAFE_X || Vspeeds?.TSAFE_X,
+		Tcruise_x: overrideVspeed?.TCRUISE_X || Vspeeds?.TCRUISE_X,
+		Tcreep_x: overrideVspeed?.TCREEP_X || Vspeeds?.TCREEP_X,
+		Tmax_y: overrideVspeed?.TMAX_Y || Vspeeds?.TMAX_Y,
+		Tsafe_y: overrideVspeed?.TSAFE_Y || Vspeeds?.TSAFE_Y,
+		Tcruise_y: overrideVspeed?.TCRUISE_Y || Vspeeds?.TCRUISE_Y,
+		Tcreep_y: overrideVspeed?.TCREEP_Y || Vspeeds?.TCREEP_Y,
+		Tmax_z: overrideVspeed?.TMAX_Z || Vspeeds?.TMAX_Z,
+		Tsafe_z: overrideVspeed?.TSAFE_Z || Vspeeds?.TSAFE_Z,
+		Tcruise_z: overrideVspeed?.TCRUISE_Z || Vspeeds?.TCRUISE_Z,
+		Tcreep_z: overrideVspeed?.TCREEP_Z || Vspeeds?.TCREEP_Z
 	}
 	return speeds
 }
@@ -1747,6 +1771,7 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, int
 		let { P0, orbit, O0, V0, A0, R0, T0, E_ID } = MAGPIE_ENTITY._get_decomp_POVART(POVART0);
 		const CB = MAGPIE_PHYSICS._calculate_collisionBox(this);
 		const r = C._get_radius();
+		// MAGPIE_SYSTEM._logging_debug(`C: ${C?.name}`)
 		let C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
 		const floor = MAGPIE_PHYSICS._geod_clampToGround(r, C0, POVART0, dt);
 		if(floor.clamped)
@@ -2298,8 +2323,7 @@ MAGPIE_ENTITY.prototype._emote_seekTarget = function _emote_seekTarget(exp, fitn
 			agility: this.STATS[MAGPIE.KEY.STATS.DEX],
 			tolerance: tolerance,
 			geodetic: geodetic,
-			surface: surface,
-			Rsafe: 0.05 //@todo Rsafe key
+			surface: surface
 		}
 		const overrideVspeed = exp._key_mapVspeeds();
 		const speeds = this._get_speeds(overrideVspeed);

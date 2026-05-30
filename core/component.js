@@ -996,7 +996,7 @@ MAGPIE_EXP.prototype._set_target = async function _set_target(targetID)
 }
 /**
  * 
- * @returns {entityID} entityID
+ * @returns {Promise<entityID>} entityID
  */
 MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 {
@@ -1009,7 +1009,7 @@ MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 		const result = await key.removeOrigin();
 		if(!result) 
 			throw new Error(`unable to remove 'target' origin from [KEY-${key.ID}]`)
-		return Number(key.label);
+		return Number(this._get_key_target()?.label);
 	}
 	catch(e)
 	{
@@ -1025,7 +1025,7 @@ MAGPIE_EXP.prototype._target_next = async function _target_next()
 	const ePrefix = `[EXP-${this.ID}].targetNext: `;
 	try
 	{
-		const targetID = this._key_target_next()
+		const targetID = await this._key_target_next()
 		const set = await this._set_target(targetID);
 		if(!set)
 			throw new Error(`unable to set targetID[${targetID}]`)

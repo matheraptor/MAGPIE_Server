@@ -1056,6 +1056,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const Pt = target?.STATS?.slice(0, Kp.P_C) || [NaN,NaN,NaN]
 		const validTarget = MAGPIE_PHYSICS.isValidVector(Pt);
 		const r = Number(output[3]);
+		// MAGPIE_SERVER._debug(`output: ${output}`)
 		const Ct = validTarget && r > 1 ? MAGPIE_PHYSICS.cartesianToGeodetic(Pt, r) : [NaN, NaN, NaN];
 		const dist = validTarget && r > 1 ? Number(MAGPIE_PHYSICS._geod_distanceTo(P1, Pt, r)) : NaN;
 		const dist2 = validTarget && r > 1 ? Number(MAGPIE_PHYSICS.distanceTo(P1, Pt)) : NaN;
@@ -1215,23 +1216,23 @@ MAGPIE_KEY.setup = async function setup()
 	try
 	{
 		MAGPIE_SERVER.log("loading keys...", null, true);
-		const db = MAGPIE_DATABASE.sync.world;
-		const sql = "SELECT label FROM MAGPIE_KEY WHERE type = ?";
-		/** @param {Enumerator<Number>} type @returns {String[]} */
-		const query = (type) => {
-			const results = db.prepare(sql).all(type)
-			return results.map(result => result.label)
-		}
-		const axioms = query(MAGPIE.KEY.TYPE.AXIOM);
-		MAGPIE_SERVER.log(`loaded ${axioms.length}x keys`);
-		MAGPIE_SERVER.CLI._incrementLoadBar();
-		/** @param {Object} */
+		// const db = MAGPIE_DATABASE.sync.world;
+		// const sql = "SELECT label FROM MAGPIE_KEY WHERE type = ?";
+		// /** @param {Enumerator<Number>} type @returns {String[]} */
+		// const query = (type) => {
+		// 	const results = db.prepare(sql).all(type)
+		// 	return results.map(result => result.label)
+		// }
+		// const axioms = query(MAGPIE.KEY.TYPE.AXIOM);
+		// MAGPIE_SERVER.log(`loaded ${axioms.length}x keys`);
+		// MAGPIE_SERVER.CLI._incrementLoadBar();
+		/** @param {Map<Number, String>} type */
 		const index = (type) => {
-			const start = axioms.indexOf("Vmax")
-			const end = axioms.indexOf("Tdock")
-			const types = axioms.slice(start, end + 1)
+			const start = type.get("start")
+			const end = type.get("end")
+			const types = Object.keys(MAGPIE.KEY.INDEX).slice(start, end + 1)
 			types.forEach(label => {
-				type.set(MAGPIE.KEY.INDEX[label.toUpperCase()], label)
+				type.set(MAGPIE.KEY.INDEX[label], label)
 			})
 			return types.length
 		}

@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.27.0
+ * @version 0.27.1
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,10 +20,13 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.27.0 2026 05 30
+ * @version 0.27.1 2026 05 30
  * - ADDED: hive slot conflict check
  * - FIXED: hive context handling
  * - FIXED: hive host/kick
+ * - FIXED: hive host bug actually caused by entity *194.type 0
+ * - FIXED: Vspeeds improperly indexed
+ * - FIXED: exp.targetNext not awaiting key target next
  * 
  * @version 0.26.1 2026 05 28
  * - ADDED: Component.forces
@@ -419,7 +422,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 27, 0],
+			version: [0, 27, 1],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260530"
 		};
@@ -654,6 +657,36 @@ MAGPIE.KEY.INDEX.RCREEP = 4003;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.RDOCK = 4004;
 /** @type {key_index} */
+MAGPIE.KEY.INDEX.RMAX_X = 4010;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RSAFE_X = 4011;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RCRUISE_X = 4012;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RCREEP_X = 4013;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RDOCK_X = 4014;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RMAX_Y = 4020;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RSAFE_Y = 4021;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RCRUISE_Y = 4022;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RCREEP_Y = 4023;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RDOCK_Y = 4024;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RMAX_Z = 4030;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RSAFE_Z = 4031;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RCRUISE_Z = 4032;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RCREEP_Z = 4033;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.RDOCK_Z = 4034;
+/** @type {key_index} */
 MAGPIE.KEY.INDEX.AMAX = 5000;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.ASAFE = 5001;
@@ -673,8 +706,38 @@ MAGPIE.KEY.INDEX.TCRUISE = 6002;
 MAGPIE.KEY.INDEX.TCREEP = 6003;
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.TDOCK = 6004;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TMAX_X = 6010;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TSAFE_X = 6011;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TCRUISE_X = 6012;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TCREEP_X = 6013;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TDOCK_X = 6014;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TMAX_Y = 6020;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TSAFE_Y = 6021;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TCRUISE_Y = 6022;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TCREEP_Y = 6023;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TDOCK_Y = 6024;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TMAX_Z = 6030;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TSAFE_Z = 6031;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TCRUISE_Z = 6032;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TCREEP_Z = 6033;
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.TDOCK_Z = 6034;
 MAGPIE.KEY.INDEX.VSPEEDS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("VMAX"));
-MAGPIE.KEY.INDEX.VSPEEDS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("TDOCK"));
+MAGPIE.KEY.INDEX.VSPEEDS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("TDOCK_Z"));
 /**
  * @type {Map<keyID, String>}
  */
@@ -1708,6 +1771,8 @@ MAGPIE.KEY.POVART.FWD = [0,1,0];
 MAGPIE.KEY.POVART.UP = [0,0,1];
 /** @type {vector3} default 'right' vector */
 MAGPIE.KEY.POVART.RIGHT = [1,0,0];
+/** @type {Enumerator<String>[]} */
+MAGPIE.KEY.POVART.AXES = ["x","y","z"];
 /** @type {Map<String, Enumerator<Number>>} */
 MAGPIE.KEY.POVART.R_AXES = new Map();
 MAGPIE.KEY.POVART.R_AXES.set("pitch", 0);
