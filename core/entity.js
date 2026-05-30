@@ -3202,9 +3202,9 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 	const ePrefix = `[ENTITY-${this.ID}].nextTarget: `;
 	try
 	{
-		const exp = this._get_exps().find(exp => 
-			exp._get_key_target() || exp._get_key_marker()
-		)
+		const key = exp._get_key_target() || exp._get_key_marker();
+		/** @type {MAGPIE_EXP} */
+		const exp = this._get_exps().find(exp => exp.keys.includes(key.ID))
 		if(!this.isValidExp(exp))
 			return false// throw new Error(`${exp} is invalid target.exp`)
 		const index = this._get_expIndex(exp);
@@ -3217,6 +3217,9 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 		const target = this._get_target();
 		if(!target)
 			throw new Error(`unable to set [TARGET-${next}]`)
+		const oldOptions = exp._key_findWPoptions();
+		if(oldOptions)
+			oldOptions.type = 0;
 		MAGPIE_SYSTEM.logging.log_exp(ePrefix + `[ENTITY-${next}].name[${target.name}]`)
 		return next
 	}

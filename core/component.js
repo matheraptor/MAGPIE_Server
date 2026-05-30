@@ -1,7 +1,7 @@
 /**
  * @name INDEX
  * @desc 
- * @version 0.26.1
+ * @version 0.30.0
  */
 //========================================================================
 // #region - INDEX
@@ -884,15 +884,40 @@ MAGPIE_EXP.prototype._key_remove = function _key_remove(keyID)
 /**
  * 
  * @param {keyID} keyID 
- * @returns {array_size}
+ * @returns {keyID}
  */
-MAGPIE_EXP.prototype._key_add = function addKey(keyID)
+MAGPIE_EXP.prototype._key_push = function pushKey(keyID)
 {
 	if(isNaN(keyID))
 		return
 	this.keys.push(keyID);
 	this.set();
-	return this.keys.length;
+	return keyID;
+}
+/**
+ * 
+ * @param {key_data} key_data 
+ * @returns {Promise<MAGPIE_KEY>}
+ */
+MAGPIE_EXP.prototype._key_add = async function addKey(key_data)
+{
+	const ePrefix = `[EXP-${this.ID}]addKey: `;
+	try
+	{
+		const key = new MAGPIE_KEY(key_data);
+		const result = key.set();
+		if(!result)
+			throw new Error(`unable to save key`);
+		this.keys.push(key.ID);
+		const saved = await this.set();
+		if(!saved)
+			throw new Error("unable to save exp")
+		return key
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 /**
  * 
@@ -1058,6 +1083,80 @@ MAGPIE_EXP.prototype._target_next = async function _target_next()
  * 
  */
 //------------------------------------------------------------------------
+// #region > Waypoint
+//------------------------------------------------------------------------
+/**
+ * @typedef {{
+ * Vcruise: velocity,
+ * ASL: distance,
+ * offset: vector3,
+ * posture: stateID,
+ * trigger: keyID
+ * }} waypoint_options
+ * @returns {waypoint_options}
+ */
+MAGPIE_EXP.prototype._key_mapWPoptions = function()
+{
+	const key = this._key_findWPoptions();
+	if(!key) return
+	const options = JSON.parse(key.label);
+	if(Object.keys(optons).length < 1) return
+	return options
+}
+/**
+ * 
+ * @returns {MAGPIE_KEY}
+ */
+MAGPIE_EXP.prototype._key_findWPoptions = function()
+{
+	const K = MAGPIE.KEY.INDEX;
+	const keys = this.getKeys();
+	if(keys.length < 1) return
+	return keys.find(key => key.type === MAGPIE.KEY.TYPE.WAYPOINT)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Route
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {entityID} targetID 
+ * @returns {index}
+ */
+MAGPIE_EXP.prototype._route_push = async function _route_push(targetID)
+{
+	const ePrefix = `[EXP-${this.ID}].routePush: `;
+	try
+	{
+		const K = MAGPIE.KEY;
+		const key = await this._key_add({
+			type: K.TYPE.CONTEXT, 
+			label: String(targetID), 
+			originID: K.TYPE.TARGET
+		})
+		if(!(key instanceof MAGPIE_KEY))
+			throw new Error(`${key} is invalid key`)
+		return this.keys.length - 1
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
 // #region > Stamina
 //------------------------------------------------------------------------
 /**
@@ -1088,16 +1187,20 @@ MAGPIE_EXP.prototype._get_stamina_index = function getStaminaINdex()
 MAGPIE_EXP.prototype._key_mapVspeeds = function mapVspeeds()
 {
 	const K = MAGPIE.KEY.INDEX;
+	const T = MAGPIE.KEY.TYPE;
 	const keys = this.getKeys();
 	if(keys.length < 1) return
 	const Vspeeds = {};
 	for(const key of keys)
 	{
-		if(key.originID >= K.VMAX && key.originID <= K.TDOCK)
+		const isVSPEED = key.originID >= K.VMAX && key.originID <= K.TDOCK_Z
+		const isType = key.type === T.CONTEXT || key.type === T.WAYPOINT;
+		if(isVSPEED && isType)
 			Vspeeds[key.getOrigin()?.label?.toUpperCase()] = JSON.parse(key.label)
 	}
 	return Vspeeds
 }
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1627,8 +1730,9 @@ MAGPIE_TICKET.prototype.initialize = function initialize(data)
  * @typedef {import("./index").acceleration} acceleration in m/s²
  * @typedef {import("./index").omega} omega (ω) angular velocity in rad/s
  * @typedef {import("./index").alpha} alpha (α) angular acceleration in rad/s²
+ * @typedef {import("./index").distance} distance in m
  * @typedef {import("./index").key_data} key_data
- * 
+ * @typedef {import("./index").stateID} stateID
  * @name 
  * @desc 
  * @param {Object} data

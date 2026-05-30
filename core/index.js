@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.29.0
+ * @version 0.30.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,8 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.29.0 2026 05 30
+ * @version 0.30.0 2026 05 30
+ * - ADDED: exp.waypoint logic and options based on exp.keys and their order
  * - ADDED: physics 2body gravity
  * - ADDED: physics: velocity fwd clamping
  * - ADDED: hive slot conflict check
@@ -425,7 +426,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 29, 0],
+			version: [0, 30, 0],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260530"
 		};
@@ -504,7 +505,7 @@ MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.SEMANTIC, "SEMANTIC");
 MAGPIE.KEY.TYPE.CONTEXT = 4;
 MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.CONTEXT, "CONTEXT");
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.VACANT_1 = 5;
+MAGPIE.KEY.TYPE.WAYPOINT = 5;
 MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.VACANT_1, "VACANT_1");
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.EXP = 6;
