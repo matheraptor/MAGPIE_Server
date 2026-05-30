@@ -1,7 +1,7 @@
 /**
  * @name 
  * @desc 
- * @version 0.29.0
+ * @version 0.30.1
  * 
  */
 //========================================================================
@@ -1325,44 +1325,47 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 		const Bdist = (Math.abs(R0_comp)**2) / (2 * Tsafe) || 0;
 		const dR_error = Math.abs(dR_comp)
 		const R0_abs = Math.abs(R0_comp);
+		const Rcruise_margin = Math.abs(R0_abs - Rsafe);
 		const Rt_error = Math.abs(dR_error - R0_abs);
 		const seek_threshold = options?.seek_threshold ?? 0.0005;
 		const seek_deadzone = Math.abs(Rsafe - R0_abs);
 		const R0_isStable = seek_deadzone < Rsafe * 0.05;
 		const brake_deadzone = Rsafe * 0.25;
-		const hold_threshold = options?.hold_threshold ?? 0.005;
-		const brake_threshold = hold_threshold + Bdist;
-		const decel_threshold = brake_threshold * 1.5;
+		const aligned_deadzone = 0.0001;
+		const hold_threshold = options?.hold_threshold ?? this._U_deg_to_rad(10) / 100; 
+		const brake_threshold = Bdist;
+		const decel_threshold = brake_threshold * 1.1;
 		const Rhold = R0_abs < brake_deadzone;
+		const Rcrawl = 0.001;
 		const sticky_align = dR_error < brake_threshold;
 		const align_trigger = dR_error < decel_threshold ? true : sticky_align;
-		const ALIGN = Rhold ? false : align_trigger;
-		const HOLD = ALIGN ? false : dR_error < decel_threshold;
-		const FACE = ALIGN || HOLD ? false : dR_error > hold_threshold //&& R0_comp < Rsafe;
+		const HOLD = R0_abs > Rcrawl ? false : dR_error < hold_threshold;
+		const FACE = HOLD || align_trigger ? false : R0_abs < Rsafe;
+		const DRIFT = HOLD || FACE || decel_threshold ? false : true;
 		// MAGPIE_SYSTEM._logging_debug(options)
 		const R_stop = R0_abs < 1e-6 ? 0 : R0_abs * -Tsafe;
 		const Tt_brake = R0_abs < 1e-5 ? 0 : Math.sign(R0_comp) * -Tsafe;
 		const decel = dR_error < 0.001 || R0_abs > Rsafe * 0.01 ? Tt_brake * 0.25 :  Math.sign(dR_comp) * Tsafe * 0.25
-		const accel = R0_isStable ? 0 : Math.sign(dR_comp) * Tsafe
-		const transit = options?.transit || 0.001;
-		const Tt_seek = Rt_error > transit ? accel : decel
-		const Tt_align = Rt_error > 0.001 ? decel : 0
+		const accel = Math.sign(dR_comp) * Tsafe//R0_isStable ? 0 : Math.sign(dR_comp) * Tsafe
+		const transit = options?.transit || 0.0001;
+		const Tt_seek = Rcruise_margin > transit ? accel : decel;
+		const adjust = R0_abs < Rcrawl ? accel * 0.25 : Tt_brake * 0.25;
+		const Tt_align = dR_error > aligned_deadzone ? adjust : R_stop;
 		const distanceFactor = Math.min(dR_error / (Bdist * 2.0), 1.0);
-		// if(axis === 1)
+		// if(axis === 2)
 		// 	MAGPIE_SYSTEM._logging_debug(`D_decel: ${decel_threshold.toFixed(5)} | `
 		// 	+ `D_brake: ${brake_threshold.toFixed(5)} | `
 		// 	+ `Rt_err: ${Rt_error.toFixed(5)} | `
+		// 	+ `dR_err: ${dR_error.toFixed(5)} | `
 		// 	+ `HOLD: ${HOLD} | `
-		// 	+ `ALIGN: ${ALIGN} | `
-		// 	+ `FACE: ${FACE} | `)
+		// 	+ `DRIFT: ${DRIFT} | `
+		// 	+ `FACE: ${FACE} | `
+		// 	+ `decel_thres: ${decel_threshold.toFixed(5)} | `
+		// 	+ `Tt_seek: ${Tt_seek} | `
+		// )
 		let Tt = 0
 		let state = STATE_INDEX.SPOOFED;
-		if(ALIGN) 
-		{
-			Tt = Tt_brake;
-			state = STATE_INDEX.ALIGNING_TARGET;
-		}
-		else if(HOLD)
+		if(HOLD)
 		{
 			Tt = Tt_align;
 			state = STATE_INDEX.LOCKING_TARGET;
@@ -1372,10 +1375,15 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 			Tt = Tt_seek;
 			state = STATE_INDEX.FACING_TARGET;
 		}
-		else 
+		else if(DRIFT) 
 		{
 			Tt = 0;
 			state = STATE_INDEX.DRIFTING;
+		}
+		else
+		{
+			Tt = Tt_brake;
+			state = STATE_INDEX.ALIGNING_TARGET;
 		}
 		// if(state === STATE_INDEX.ALIGNING_TARGET) Tt = Tt_brake
 		// if(state === STATE_INDEX.LOCKING_TARGET) Tt = Tt_align;
