@@ -109,5 +109,11 @@ ENTITY_TYPES.set("PLANET_TERRESTRIAL", PLANET_TERRESTRIAL);
 const MATERIA = structuredClone(ENTITY_GENERIC);
 MATERIA.type = 400;
 ENTITY_TYPES.set("MATERIA", MATERIA);
+const CREATURE = structuredClone(MATERIA);
+// CREATURE.type = 401;
+// ENTITY_TYPES.set("CREATURE", CREATURE);
+// const ITEM = structuredClone(MATERIA);
+// ITEM.type = 411;
+// ENTITY_TYPES.set("ITEM", ITEM);
 //
 module.exports = ENTITY_TYPES;

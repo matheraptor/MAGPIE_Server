@@ -176,6 +176,27 @@ require("ganja.js")(3, 0, 1, () => {
 //========================================================================
 MAGPIE_PHYSICS.geodetic = {};
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > validation
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {coords} coords 
+ * @returns {Boolean}
+ */
+MAGPIE_PHYSICS.isValidCoords = function isValidCoords(coords)
+{
+	if(Array.isArray(coords) || coords.length < 3 || coords.some(n => isNaN(n)))
+			return false
+		return true
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @param {Number} lat1 latitude of origin, in DD°
  * @param {Number} lon1 longitude of origin, in DD°
@@ -1781,13 +1802,46 @@ MAGPIE_PHYSICS.POVART = {};
  */
 MAGPIE_PHYSICS.isValidPOVART = function isValidPOVART(POVART)
 {
-	const K = MAGPIE.KEY.POVART;
-	if(POVART && POVART.length === K.ARRAY && POVART.every(n => !isNaN(n)))
+	const E_ID = MAGPIE.KEY.POVART.E_ID;
+	const ePrefix = `[PHYSICS].validatePOVART: [ENTITY-${POVART[E_ID]}] `;
+	try
 	{
-		if(this.validate(POVART))
-			return true
+		if(Object.prototype.toString.call(POVART) !== "[object Float64Array]")
+			throw new Error(`${POVART} is invalid Float64Array`);
+		if(POVART.length !== MAGPIE.KEY.POVART.ARRAY)
+			throw new Error(`${POVART} is invalid array length of ${MAGPIE.KEY.POVART.ARRAY}`);
+		const P = this.decomp_POVART(POVART);
+		const P0 = P?.P0;
+		const P_C = P?.P_C;
+		const orbit = P?.orbit;
+		const O0 = P?.O0;
+		const V0 = P?.V0;
+		const A0 = P?.A0;
+		const R0 = P?.R0;
+		const T0 = P?.T0;
+		if(!this.isValidVector(P0))
+			throw new Error(`${P0} is invalid Position vector`)
+		if(!Number(P_C))
+			throw new Error(`${P_C} is invalid celestialID`)
+		// if(!this.isValidOrbit(orbit))
+		// 	throw new Error(`${orbit} is invalid orbit data`)
+		if(!this.isValidRotor(O0))
+			throw new Error(`${O0} is invalid Rotor`)
+		if(!this.isValidVector(V0))
+			throw new Error(`${V0} is invalid Velocity vector`)
+		if(!this.isValidVector(A0))
+			throw new Error(`${A0} is invalid Acceleration vector`)
+		if(!this.isValidVector(R0))
+			throw new Error(`${R0} is invalid Rotation bivector`)
+		if(!this.isValidVector(T0))
+			throw new Error(`${T0} is invalid Torque bivector`)
+		return true
 	}
-	return false
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return false
+	}
 }
 /**
  * 
@@ -1833,9 +1887,7 @@ MAGPIE_PHYSICS.initPOVART = function initPOVART(entityID = -1, celestialID = -1)
  */
 MAGPIE_PHYSICS.validate = function validate(POVART)
 {
-	if(Object.prototype.toString.call(POVART) === "[object Float64Array]")
-		return true;
-	return false
+	
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -2410,8 +2462,6 @@ MAGPIE_PHYSICS.decomp_POVART = function decomp_POVART(POVART0)
 	const message = `[PHYSICS].decomp_POVART: `
 	try
 	{
-		if(!this.isValidPOVART(POVART0))
-			throw new Error(`(${POVART0}) is invalid POVART₀`);
 		const POVART = POVART0;
 		const K = MAGPIE.KEY.POVART;
 		const P0 = [POVART[K.P_X], POVART[K.P_Y], POVART[K.P_Z]];

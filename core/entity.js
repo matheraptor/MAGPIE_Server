@@ -196,15 +196,6 @@ MAGPIE_ENTITY.isValidEntityStats = function isValidEntityStats(stats)
 }
 /**
  * 
- * @param {POVART} POVART
- * @returns {Boolean} 
- */
-MAGPIE_ENTITY.isValidPOVART = function isValidPOVART(POVART)
-{
-	//
-}
-/**
- * 
  * @param {entity_fitness} fitness 
  * @returns {Boolean}
  */
@@ -1465,11 +1456,15 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 		const { output, POVART1 } = this.updatePhysics(switchID, dt, intent, C, POVART0);
 		if(!output)
 			throw new Error(`${output} is invalid output`)
+		if(!POVART1)
+			throw new Error(`${POVART1} is invalid POVART₁`)
 		if(target)
 			output.target = target;
 		if(emote)
 			output.emote = emote;
-		MAGPIE_ENTITY.__socketEmit(output, input, this, C, POVART1, dt, switchID);
+		const emit = MAGPIE_ENTITY.__socketEmit(output, input, this, C, POVART1, dt, switchID);
+		if(!emit)
+			return false
 		return true
 	}
 	catch(e)
@@ -1477,6 +1472,11 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 		return false
 	}
+}
+MAGPIE_ENTITY.prototype.selfKick = function selfKick()
+{
+	const ID = structuredClone(this.ID);
+	return MAGPIE_ENTITY.__hiveSync("kick", [ID, "self-kick"])
 }
 /**
  * @name 
@@ -1738,15 +1738,15 @@ MAGPIE_ENTITY.prototype.processAgency = function processAgency(switchID, dt, exp
 MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, intent, C, POVART0)
 {
 	const ePrefix = `[ENTITY-${this.ID}].updatePhysics: `;
-	let update = { 
-		STATS: this.STATS, 
-		geodetic: { lat: NaN, lon: NaN, ASL: NaN, forces: new Float64Array(8)} 
-	}
+	const defaults = { output: null, POVART1: null }
 	try
 	{
+		const valid = MAGPIE_PHYSICS.isValidPOVART(POVART0) && POVART0[MAGPIE.KEY.POVART.E_ID] === this.ID
+		if(!valid)
+			throw new Error(`${POVART0} is invalid POVART₀`)
 		let { P0, orbit, O0, V0, A0, R0, T0, E_ID } = MAGPIE_ENTITY._get_decomp_POVART(POVART0);
 		const CB = MAGPIE_PHYSICS._calculate_collisionBox(this);
-		const r = MAGPIE_ENTITY._get_celestialRadius(C);
+		const r = C._get_radius();
 		let C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
 		const floor = MAGPIE_PHYSICS._geod_clampToGround(r, C0, POVART0, dt);
 		if(floor.clamped)
@@ -1762,9 +1762,7 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, int
 		const state = { Af, Tf, A0, T0, forces };
 		const { Ax, Tx } = this._apply_intent(intent, state, forces, switchID, dt);
 		const dA = MAGPIE_PHYSICS.scaleVector(Ax, dt)
-		update.dA = dA;
 		const dT = MAGPIE_PHYSICS.scaleVector(Tx, dt);
-		update.dT = dT;
 		const T1 = dT//MAGPIE_PHYSICS.addVectors(T0, dT);
 		const R1 = MAGPIE_PHYSICS.addVectors(R0, T1);
 		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
@@ -1782,12 +1780,15 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, int
 		const output = new Float64Array([lat,lon,ASL,r,...forces])
 		//
 		this._set_POVART({P1, O1, V1, A1, R1, T1 });
-		return { output, POVART1: this._get_POVART() }
+		const POVART1 = this._get_POVART();
+		if(!MAGPIE_PHYSICS.isValidPOVART(POVART1))
+			throw new Error(`${POVART1} is invalid POVART₁`)
+		return { output, POVART1: POVART1 }
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-		return null
+		return defaults
 	}
 }
 // #endregion
@@ -2336,10 +2337,7 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp, fitness_
 	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
 	try
 	{
-		// MAGPIE_SYSTEM._logging_debug(ePrefix)
-		if(exp._get_key_target())
-			return this._target_next()
-		const next = exp._emote_onTarget();
+		this._target_next()
 		//@todo entity._emote_onTarget
 		return this._emote_seekTarget(exp, fitness_index);
 	}
@@ -2359,9 +2357,7 @@ MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(e
 	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
 	try
 	{
-		// MAGPIE_SYSTEM._logging_debug(ePrefix)
-		if(exp._get_key_target())
-			return this._target_next()
+		this._target_next()
 		return this._emote_seekTarget(exp, fitness_index)
 	}
 	catch(e)
@@ -2381,8 +2377,7 @@ MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp, fi
 	try
 	{
 		// MAGPIE_SYSTEM._logging_debug(ePrefix)
-		if(exp._get_key_target())
-			return this._target_next()
+		this._target_next()
 		return this._emote_seekTarget(exp, fitness_index)
 	}
 	catch(e)
@@ -2459,6 +2454,44 @@ MAGPIE_ENTITY.prototype._emote_facingTarget = function _emote_facingTarget(exp, 
 	try
 	{
 		//@todo facingTarget logic?
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_drifting = function _emote_drifting(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].drifting: `;
+	try
+	{
+		//@todo drifting logic?
+		return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_spoofed = function _emote_spoofed(exp, fitness_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].spoofed: `;
+	try
+	{
+		//@todo spoofed logic?
 		return this._emote_seekTarget(exp, fitness_index)
 	}
 	catch(e)
@@ -2602,7 +2635,7 @@ MAGPIE_ENTITY.prototype._marker_get_queue = function _marker_get_queue()
 	return this._get_exps().map(exp => exp.getKeys()).flat(Infinity)
 		.flatMap(key => {
 			if(key.originID === key.originID === K.MARKER)
-				return [JSON.parse(key.label)]
+				return [key._marker_getLabel()]
 			return []
 		})
 }
@@ -2634,6 +2667,30 @@ MAGPIE_ENTITY.prototype._marker_queue_geodetic = function()
 		})
 	}
 }
+/**
+ * 
+ * @param {coords} coords 
+ * @returns {database_result}
+ */
+MAGPIE_ENTITY.prototype._marker_setTarget = function _marker_setTarget(coords)
+{
+	const ePrefix = `[ENTITY-${this.ID}].markerSetTarget: `;
+	try
+	{
+		if(!MAGPIE_PHYSICS.isValidCoords(coords))
+			throw new Error(`${coords} is invalid coords`)
+		const target = this._get_target();
+		if(!(target instanceof MAGPIE_ENTITY))
+			throw new Error(`${target} is invalid target`)
+		target._set_C1(coords);
+		return target.setSync();
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -2839,16 +2896,21 @@ MAGPIE_ENTITY.exp = {};
  */
 MAGPIE_ENTITY.prototype._get_exps = function _get_exps()
 {
-	const exps = this._get_array_expID();
-	if(exps.length < 1) return []
-	let list = [];
-	for(const expID of exps)
-	{
+	// const exps = this._get_array_expID();
+	// if(exps.length < 1) return []
+	// let list = [];
+	// for(const expID of exps)
+	// {
+	// 	const exp = MAGPIE_ENTITY._hive_getExp(expID);
+	// 	if(exp instanceof MAGPIE_EXP)
+	// 		list.push(exp)
+	// }
+	// return list
+	return this._get_array_expID().reduce((list, expID) => {
 		const exp = MAGPIE_ENTITY._hive_getExp(expID);
-		if(exp instanceof MAGPIE_EXP)
-			list.push(exp)
-	}
-	return list
+		if(exp instanceof MAGPIE_EXP) list.push(exp);
+		return list
+	}, [])
 }
 /**
  * 
@@ -2869,7 +2931,8 @@ MAGPIE_ENTITY.prototype._get_exp_target = function _get_exp_target(expID)
  */
 MAGPIE_ENTITY.prototype._get_target = function _get_target()
 {
-	return MAGPIE_ENTITY.__hiveSync("_get_entity", [this._get_exps()[0].targetID])
+	if(this.exps.length < 1) return []
+	return MAGPIE_ENTITY.__hiveSync("_get_entity", [this._get_exps()[0]?.targetID])
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -3000,7 +3063,7 @@ MAGPIE_ENTITY.prototype._target_get_queue = function getTargetQueue()
 	return this._get_exps().map(exp => exp.getKeys()).flat(Infinity)
 		.flatMap(key => {
 			if(key.originID === K.TARGET)
-				return [Number(key.label)];
+				return [key._target_getLabel()];
 			return []
 		})
 }
@@ -3087,6 +3150,24 @@ MAGPIE_ENTITY.prototype._target_isSensed = function isTargetSensed(target, dist)
 //------------------------------------------------------------------------
 /**
  * 
+ * @param {MAGPIE_ENTITY} target 
+ * @param {MAGPIE_EXP} exp
+ * @returns {entityID}
+ */
+MAGPIE_ENTITY.prototype._set_target = async function _set_target(target, exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}].setTarget: `;
+	try
+	{
+		
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
  * @returns {Promise<entityID>}
  */
 MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
@@ -3094,33 +3175,71 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 	const ePrefix = `[ENTITY-${this.ID}].nextTarget: `;
 	try
 	{
-		const exp = this._get_exps().find(exp => exp._get_key_target())
-		if(!(exp instanceof MAGPIE_EXP))
-			throw new Error("unable to find target exp")
-		const targetID = await exp._key_target_next();
-		if(isNaN(targetID))
-			throw new Error(`unable to resolve targetID`)
-		/** @type {MAGPIE_ENTITY} */
-		const target = MAGPIE_ENTITY.__hiveSync("_get_entity", [targetID])
-		if(!(target instanceof MAGPIE_ENTITY))
-			throw new Error(`${target} is invalid entity`)
-		exp.targetID = targetID;
-		const result = await exp.set();
-		if(!result)
-			throw new Error(`unable to save [EXP-${exp.ID}]`)
-		const index = this.exps.findIndex(expID => expID === exp.ID);
+		const exp = this._get_exps().find(exp => 
+			exp._get_key_target() || exp._get_key_marker()
+		)
+		if(!this.isValidExp(exp))
+			throw new Error(`${exp} is invalid target.exp`)
+		const index = this._get_expIndex(exp);
+		if(Number(index) < 0)
+			throw new Error(`${index} is invalid exps index`)
+		const next = await exp._target_next()
+		if(!next) 
+			return
+		const swap = this._exp_swapWith(index, exp);
+		const target = this._get_target();
+		if(!target)
+			throw new Error(`unable to set [TARGET-${next}]`)
+		MAGPIE_SYSTEM.logging.log_exp(ePrefix + `[ENTITY-${next}].name[${target.name}]`)
+		return next
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		this.selfKick()
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {index}
+ */
+MAGPIE_ENTITY.prototype._get_expIndex = function _get_expIndex(exp)
+{
+	return this.exps.findIndex(expID => expID === exp.ID);
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {Boolean}
+ */
+MAGPIE_ENTITY.prototype.isValidExp = function isValidExp(exp)
+{
+	return (exp instanceof MAGPIE_EXP)
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {Boolean}
+ */
+MAGPIE_ENTITY.prototype._exp_swapWith = function _exp_swapWith(index, exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}].expSwapWith: `;
+	try
+	{
+		if(index === 0)
+			return true
 		const entry = this.exps[index];
 		if(isNaN(entry))
 			throw new Error(`unable to swap [EXP-${exp.ID}] with [EXP-${this.exps[0]}]`);
 		this.exps[index] = this.exps[0];
 		this.exps[0] = exp.ID;
-		//@todo centralized entity.exps manipulation
-		MAGPIE_SYSTEM.log(ePrefix + `[ENTITY-${targetID}].name[${target.name}]`)
-		return targetID
+		return true
 	}
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return false
 	}
 }
 // #endregion

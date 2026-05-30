@@ -1058,6 +1058,7 @@ MAGPIE_DATABASE.prepareContext = function prepareContext(context)
 	const payload = {
 		ID: context.ID,
 		type: context.type,
+		name: context?.name,
 		updated: context.updated,
 		data: context
 	}

@@ -462,7 +462,11 @@ const SPOOFED = {
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: () => {},
+	onUpdate: (exp, entity, process, fitness_index) => {
+		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
+		if(!target || !process) return {exp: exp}
+		return entity._emote_spoofed(exp, fitness_index)
+	},
 	onRemove: () => {},
 	onExpire: () => {}
 }

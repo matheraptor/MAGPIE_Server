@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.26.1
+ * @version 0.27.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,11 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.27.0 2026 05 30
+ * - ADDED: hive slot conflict check
+ * - FIXED: hive context handling
+ * - FIXED: hive host/kick
  * 
  * @version 0.26.1 2026 05 28
  * - ADDED: Component.forces
@@ -414,9 +419,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 26, 1],
+			version: [0, 27, 0],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260528"
+			firmwareDate: "20260530"
 		};
 	}
 }
@@ -974,36 +979,42 @@ MAGPIE.KEY.INDEX.URGENCY = new Map();
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_STRATEGIC = 10001;
 MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_STRATEGIC, {
+	name: "STRATEGIC",
 	value: -1, 
 	desc: "neutral urgency to always keep in mind"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE = 10100;
 MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE, {
+	name: "IMMEDIATE",
 	value: 4,
 	desc: "Must do NOW"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_DIRE = 10101;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_DIRE, {
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_DIRE, {
+	name: "DIRE",
 	value: 3,
 	desc: "Must do NEXT"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_CRITICAL = 10102;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_CRITICAL, {
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_CRITICAL, {
+	name: "CRITICAL",
 	value: 2,
 	desc: "Must do AS SOON AS POSSIBLE (ASAP)"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_SIGNIFICANT = 10103;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_SIGNIFICANT, {
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_SIGNIFICANT, {
+	name: "SIGNIFICANT",
 	value: 1,
 	desc: "Should do SOON"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.URGENCY_LATENT = 10104;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.URGENCY_LATENT, {
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_LATENT, {
+	name: "LATENT",
 	value: 0,
 	desc: "Can do if and when possible"
 });
@@ -1017,36 +1028,42 @@ MAGPIE.KEY.INDEX.GRAVITY = new Map()
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_TACTICAL = 10199;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TACTICAL, {
+	name: "TACTICAL",
 	value: -1,
 	desc: "Neutral gravity to keep in mind"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_VITAL = 10200;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_VITAL, {
+	name: "VITAL",
 	value: 4,
 	desc: "Must care about this ABOVE ALL"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_SEVERE = 10201;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_SEVERE, {
+	name: "SEVERE",
 	value: 3,
 	desc: "Must care about this AS MUCH AS POSSIBLE"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_PRESSING = 10202;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_PRESSING, {
+	name: "PRESSING",
 	value: 2,
 	desc: "Should care about this when possible"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT = 10203;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT, {
+	name: "IMPORTANT",
 	value: 1,
 	desc: "Might care sometimes; probably unsafe to ignore"
 });
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL = 10204;
 MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL, {
+	name: "TRIVIAL",
 	value: 0,
 	desc: "Probably safe to ignore"
 });
@@ -2044,12 +2061,116 @@ MAGPIE.KEY.CONTEXT.TYPE = new Map();
 MAGPIE.KEY.CONTEXT.DEFAULT = 0;
 MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.DEFAULT, {
 	name: "Default",
-	desc: ""
+	desc: "",
+	allowedTypes: []
 });
+MAGPIE.KEY.CONTEXT.GALAXY = 10;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.GALAXY, {
+	name: "Galactic",
+	desc: "",
+	allowedTypes: [
+		"GALAXY",
+		"NEBULA",
+		"STAR_CLUSTER",
+		"MARKER"
+	]
+})
+MAGPIE.KEY.CONTEXT.STAR = 30;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.STAR, {
+	name: "Star system",
+	desc: "",
+	allowedTypes: [
+		"STAR",
+		"PLANET",
+		"ASTEROID",
+		"MARKER"
+	]
+})
+MAGPIE.KEY.CONTEXT.PLANET = 40;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.PLANET, {
+	name: "Planetary system",
+	desc: "",
+	allowedTypes: [
+		"PLANET",
+		"MOON",
+		"ASTEROID",
+		"MARKER"
+	]
+})
+MAGPIE.KEY.CONTEXT.ORBIT = 50;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.ORBIT, {
+	name: "Orbital",
+	desc: "",
+	allowedTypes: [
+		"MARKER",
+		"PLANET",
+		"PLANET_MARKER",
+		"MOON_MARKER",
+		"GEOMARKER",
+		"ORBITAL_MARKER",
+		"BIOME"
+	]
+})
+MAGPIE.KEY.CONTEXT.SURFACE = 60;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.SURFACE, {
+	name: "Surface",
+	desc: "",
+	allowedTypes: [
+		"MARKER",
+		"PLANET_MARKER",
+		"MOON_MARKER",
+		"GEOMARKER",
+		"ORBITAL_MARKER",
+		"BIOME",
+		"REGION_MARKER"
+	]
+})
+MAGPIE.KEY.CONTEXT.REGION = 60;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.REGION, {
+	name: "Regional",
+	desc: "",
+	allowedTypes: [
+		"MARKER",
+		"PLANET_MARKER",
+		"MOON_MARKER",
+		"GEOMARKER",
+		"ORBITAL_MARKER",
+		"BIOME",
+		"REGION",
+		"TERRITORY_MARKER"
+	]
+})
+MAGPIE.KEY.CONTEXT.TERRITORY = 60;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.TERRITORY, {
+	name: "Territorial",
+	desc: "",
+	allowedTypes: [
+		"MARKER",
+		"PLANET_MARKER",
+		"MOON_MARKER",
+		"GEOMARKER",
+		"ORBITAL_MARKER",
+		"BIOME",
+		"REGION",
+		"TERRITORY",
+		"UNIT_MARKER"
+	]
+})
 MAGPIE.KEY.CONTEXT.LOCAL = 100;
 MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.LOCAL, {
 	name: "Local",
-	desc: ""
+	desc: "",
+	allowedTypes: [
+		"MARKER",
+		"PLANET_MARKER",
+		"MOON_MARKER",
+		"GEOMARKER",
+		"ORBITAL_MARKER",
+		"BIOME_MARKER",
+		"REGION_MARKER",
+		"TERRITORY_MARKER",
+		"UNIT"
+	]
 });
 // #endregion
 //------------------------------------------------------------------------

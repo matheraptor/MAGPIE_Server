@@ -120,6 +120,7 @@ function MAGPIE_SYMBOL(data)
  * @typedef {import("./index").stamina_index} stamina_index
  * @typedef {import("./index").vector3} vector3
  * @typedef {import("./index").bivector} bivector
+ * @typedef {import("./physics").coords} coords
  * @typedef {import("./entity").action_output} action_output
  * 
  * @name COMPONENT
@@ -967,17 +968,26 @@ MAGPIE_EXP.prototype._get_key_target = function getKeyTarget()
 	return this.getKeys()?.find(key => key.originID === MAGPIE.KEY.INDEX.TARGET);
 }
 /**
- * @returns {entityID} entityID
+ * 
+ * @returns {MAGPIE_KEY}
  */
-MAGPIE_EXP.prototype._emote_onTarget = function _emote_onTarget()
+MAGPIE_EXP.prototype._get_key_marker = function getKeyMarker()
+{
+	return this.getKeys()?.find(key => key.originID === MAGPIE.KEY.INDEX.MARKER);
+}
+/**
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_EXP.prototype._set_target = async function _set_target(targetID)
 {
 	const ePrefix = `[EXP-${this.ID}].emoteArrived: `;
 	try
 	{
-		const next = this._key_target_next()
-		if(isNaN(next))
+		const next = targetID
+		if(!next || isNaN(next))
 			return
-		return this.targetID = next;
+		this.targetID = next;
+		return await this.set()
 	}
 	catch(e)
 	{
@@ -1000,6 +1010,26 @@ MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 		if(!result) 
 			throw new Error(`unable to remove 'target' origin from [KEY-${key.ID}]`)
 		return Number(key.label);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_EXP.prototype._target_next = async function _target_next()
+{
+	const ePrefix = `[EXP-${this.ID}].targetNext: `;
+	try
+	{
+		const targetID = this._key_target_next()
+		const set = await this._set_target(targetID);
+		if(!set)
+			throw new Error(`unable to set targetID[${targetID}]`)
+		return targetID
 	}
 	catch(e)
 	{
@@ -1180,6 +1210,7 @@ MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 	this._firmware = "MAGPIE_CONTEXT";
 	this.ID = Number(data?.ID) || Date.now();
 	this.type = Number(data?.type) || 0;
+	this.name = String(data?.name) || "";
 	this.updated = Number(data?.updated) || this.ID;
 	this.entities = new Float64Array(data?.entities || 0);
 	this.exps = new Float64Array(data?.exps || 0) 
@@ -1260,10 +1291,10 @@ MAGPIE_CONTEXT.prototype._set_element = async function _set_element(elementType,
 	{
 		if(isNaN(elementID))
 			throw new Error(`${elementID} is invalid entityID`)
-		const record = this[elementType];
+		const record = Array.from(this[elementType]);
 		if(!record) 
 			throw new Error(`${elementType} is invalid elementType`)
-		const arr = new Array(...record);
+		const arr = structuredClone(record);
 		arr.push(elementID)
 		this[elementType] = new Float64Array(arr);
 		return await this.set();
@@ -1740,6 +1771,42 @@ MAGPIE_KEY.prototype._get_entity_label = function getEntityFromLabel()
  * 
  */
 //------------------------------------------------------------------------
+// #region > Marker
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {coords}
+ */
+MAGPIE_KEY.prototype._marker_getLabel = function ()
+{
+	return this.label.split(",").map(Number)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Target
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {entityID}
+ */
+MAGPIE_KEY.prototype._target_getLabel = function()
+{
+	return Number(this.label)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
 // #region > Utility
 //------------------------------------------------------------------------
 /**
@@ -1766,6 +1833,10 @@ MAGPIE_KEY.prototype._U_clone = async function clone()
 	key.ID = Date.now();
 	await key.set();
 	return key
+}
+MAGPIE_KEY.prototype._U_hydrate = function()
+{
+	Object.setPrototypeOf(this, MAGPIE_KEY.prototype);
 }
 // #endregion
 //------------------------------------------------------------------------
