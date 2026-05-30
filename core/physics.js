@@ -755,6 +755,7 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, optio
 	// MAGPIE_SYSTEM._logging_debug(`Ot_hdg: ${this._rotor_toHeadingAbs(Ot, P0)}`)
 	// MAGPIE_SYSTEM._logging_debug(`Vt: ${this._get_V0_heading(P0, this.targetVelocity(P0, P1, {cruise: 8.7}))}`)
 	const dO = this._getDeltaO(O0, Ot);
+	// MAGPIE_SYSTEM._logging_debug(`[DEBUG-SCALE] O0: ${JSON.stringify(O0)} | Ot: ${JSON.stringify(Ot)} | dO: ${JSON.stringify(dO)}`)
 	// // MAGPIE_SYSTEM._logging_debug(`dO_hdg: ${this._rotor_toHeadingAbs(dO, P0)}`)
 	const dR = this._getDeltaR(dO);
 	const dRmag = this.mag(dR);
@@ -1153,6 +1154,7 @@ MAGPIE_PHYSICS._calculate_localDir = function calculateLocalDIr(P0, P1)
 MAGPIE_PHYSICS._getOtToP1 = function _getOtToP1(P0, P1)
 {
 	const up = this._get_localUp(P0);
+	MAGPIE_SYSTEM._logging_debug(`[DEBUG-SCALE] _getOtToP1: up = ${JSON.stringify(up)}`)
 	const localNorth = this._get_localNorth(up);
 	const localDir = this._calculate_localDir(P0, P1);
 	const localRotor = this._get_localRotor(localDir);
@@ -1483,19 +1485,18 @@ MAGPIE_PHYSICS._getDeltaO = function _getDeltaO(O0, O1)
 MAGPIE_PHYSICS._getDeltaR = function _getDeltaR(dO)
 {
 	let [yz,xz,xy,w] = dO;
-	// return this.rotorApply(dO, [0,0,1])
-	return [yz,xz,xy]
-	// const sinHalfTheta = this.mag([yz,xz,xy]);
-	// if(sinHalfTheta < 1e-6)
-	// 	return [0,0,0];
-	// const halfTheta = Math.atan2(sinHalfTheta, w);
-	// const theta = halfTheta * 2;
-	// const multiplier = theta / sinHalfTheta;
-	// return [
-	// 	yz * multiplier,
-	// 	xz * multiplier,
-	// 	xy * multiplier
-	// ]
+	// return [yz,xz,xy]
+	const sinHalfTheta = this.mag([yz,xz,xy]);
+	if(sinHalfTheta < 1e-6)
+		return [0,0,0];
+	const halfTheta = Math.atan2(sinHalfTheta, w);
+	const theta = halfTheta * 2;
+	const multiplier = theta / sinHalfTheta;
+	return [
+		yz * multiplier,
+		xz * multiplier,
+		xy * multiplier
+	]
 }
 /**
  * 
