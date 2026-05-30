@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.28.0
+ * @version 0.29.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,8 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.28.0 2026 05 30
+ * @version 0.29.0 2026 05 30
+ * - ADDED: physics 2body gravity
  * - ADDED: physics: velocity fwd clamping
  * - ADDED: hive slot conflict check
  * - FIXED: hive context handling
@@ -28,6 +29,7 @@
  * - FIXED: hive host bug actually caused by entity *194.type 0
  * - FIXED: Vspeeds improperly indexed
  * - FIXED: exp.targetNext not awaiting key target next
+ * - FIXED: physics.getAt not triggering cruising dampener
  * 
  * @version 0.26.1 2026 05 28
  * - ADDED: Component.forces
@@ -423,7 +425,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 28, 0],
+			version: [0, 29, 0],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260530"
 		};

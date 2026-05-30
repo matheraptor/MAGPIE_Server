@@ -1,7 +1,7 @@
 /**
  * @name 
  * @desc 
- * @version 0.28.0
+ * @version 0.29.0
  * 
  */
 //========================================================================
@@ -305,7 +305,7 @@ MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(r, C0, POVART0
 	{
 		const [lat,lon,ASL] = C0;
 		// return { clamped: false }
-		if(ASL >= 0.05) return { clamped: false };
+		if(ASL >= 1) return { clamped: false };
 		const { P0, O0, V0 } = this.decomp_POVART(POVART0);
 		const up = this.normalizeVector(P0);
 		const Pg = this.scaleVector(up, r);
@@ -1013,10 +1013,10 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 		{
 			const Vt = this.targetVelocity(P0, P1, Vcruise);
 			const dV = this.subVectors(Vt, V0);
-			const accelerate = S0 < this.mag(Vt);
-			const cruising = !accelerate && this.mag(dV) < options.tolerance * Amax;
+			const Verror = Math.abs(S0 - this.mag(Vt));
+			const cruising = Verror < options.tolerance * Amax * 2;
 			const A_transit = cruising ? [0,0,0] : this.vector_clamp_mag(dV, Asafe)
-			// MAGPIE_SYSTEM._logging_debug(`At: ${this.mag(A_transit)}`)
+			// MAGPIE_SYSTEM._logging_debug(`cruising: ${cruising}`)
 			return {
 				At_raw: A_transit, Vstate: STATE_INDEX.SEEKING_TARGET
 			}
@@ -1030,10 +1030,19 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 }
 /**
  * 
- * @param {vector3} P0  
+ * @param {POVART_P} P0  
  * @returns {vector3}
  */
 MAGPIE_PHYSICS._get_localUp = function getLocalUp(P0)
+{
+	return this.normalizeVector(P0);
+}
+/**
+ * 
+ * @param {POVART_P} P0 
+ * @returns {vector3}
+ */
+MAGPIE_PHYSICS._get_localDown = function getLocalDown(P0)
 {
 	return this.normalizeVector(P0);
 }
@@ -1741,7 +1750,7 @@ MAGPIE_PHYSICS._apply_forces = function _apply_forces(data)
 		//@todo include inertia 
 		// const AT = this._POVART_applyTargetAT()
 		// const I = this._calculateInertiaTensor()
-		const { r, P_C, P0, O0, V0, R0, dt, STATS } = data;
+		const { r, P_C, P0, C0, O0, V0, R0, dt, STATS } = data;
 		const K = MAGPIE.KEY.STATS;
 		const S = data.STATS;
 		const Cf = S[K.CF];
@@ -1757,8 +1766,12 @@ MAGPIE_PHYSICS._apply_forces = function _apply_forces(data)
 		const fwd = MAGPIE.KEY.POVART.FWD;
 		const AoA = this._aero_calculateAoArad(O0, V0, fwd);
 		// const forces = this._geod_calculateForces(P_C, P0, C0, V0, R0, Cf, Cl, Cd, CoM, CoL, AoA)
-		const forces = [];
-		const Af = [0,0,0];
+		const FG_mag = P_C.STATS[MAGPIE.KEY.CELESTIAL.G];
+		const Cmass = P_C.STATS[MAGPIE.KEY.CELESTIAL.MASS]
+		const [lat,lon,ASL] = C0;;
+		const Afg = ASL < 0.5 ? [0,0,0] : this._forces_calculate2BodyGravityVector(P0, Cmass);
+		const forces = [FG_mag];
+		const Af = Afg;
 		const Tf = [0,0,0];
 		return { Af, Tf, forces }
 	}

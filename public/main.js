@@ -76,7 +76,8 @@ const inspector = {
 		update('val-asl', Math.floor(data.coords[2]));
 		update('val-Vmag', data.Vmag.toFixed(3));
 		update('val-knots', Math.floor(data.Vknots));
-		update('val-Amag', data.Amag?.toFixed(3));
+		if(!isNaN(data?.Amag))
+			update('val-Amag', data.Amag?.toFixed(3));
 		update("val-Tmag", data.Tmag?.toFixed(3));
 		update("val-Rmag", data.Rmag.toFixed(3));
 		update("val-states", data.states);

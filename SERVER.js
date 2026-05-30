@@ -2,7 +2,7 @@
  * 
  * @namespace MAGPIE_Server
  * @author Matheraptor
- * @version 0.27.0
+ * @version 0.29.0
  * @desc server frontend
  * {@link MAGPIE}
  */
@@ -1013,15 +1013,16 @@ MAGPIE_ENTITY.__hive = async function __hive(method, arguments)
 }
 /**
  * 
- * @param {*} output 
+ * @param {Number[]} output 
  * @param {MAGPIE_EXP} exp 
  * @param {MAGPIE_ENTITY} entity 
- * @param {*} P_C 
- * @param {*} POVART1 
- * @param {*} dt 
- * @param {*} switchID 
+ * @param {MAGPIE_ENTITY} P_C 
+ * @param {POVART} POVART1 
+ * @param {Number} dt 
+ * @param {Number} switchID 
+ * @param {Number} layer_frame
  */
-MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POVART1, dt, switchID)
+MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POVART1, dt, switchID, layer_frame)
 {
 	const ePrefix = `[ENTITY-${entity.ID}].socketEmit: `;
 	try
@@ -1080,7 +1081,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 			states: entity._get_states(this).map(n => states(n)),
 			Vmag: Vmag,
 			Vknots: Vknots,
-			Amag: Amag,
+			Amag: switchID !== 1 ? Amag : layer_frame % 10 === 0 ? Amag : undefined,
 			Rmag: Rmag,
 			Tmag: Tmag,
 			dR_mag: dR_mag,

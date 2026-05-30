@@ -1486,7 +1486,7 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 			output.target = target;
 		if(emote)
 			output.emote = emote;
-		const emit = MAGPIE_ENTITY.__socketEmit(output, input, this, C, POVART1, dt, switchID);
+		const emit = MAGPIE_ENTITY.__socketEmit(output, input, this, C, POVART1, dt, switchID, layer_frame);
 		if(!emit)
 			return false
 		return true
@@ -1782,12 +1782,12 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, int
 			C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
 		}
 		// @todo entity.updatePhysics check obstacles and calculate Ac/Tc
-		const forcesData = { dt, r, P0, O0, V0, A0, R0, T0, C0, CB, STATS: this.STATS, switchID };
+		const forcesData = { dt, r, P0, P_C: C, O0, V0, A0, R0, T0, C0, CB, STATS: this.STATS, switchID };
 		const { Af, Tf, forces } = MAGPIE_PHYSICS._apply_forces(forcesData);
 		const state = { Af, Tf, A0, T0, forces };
 		const { Ax, Tx } = this._apply_intent(intent, state, forces, switchID, dt);
-		const dA = MAGPIE_PHYSICS.scaleVector(Ax, dt)
-		const dT = MAGPIE_PHYSICS.scaleVector(Tx, dt);
+		const dA = MAGPIE_PHYSICS.scaleVector(MAGPIE_PHYSICS.addVectors(Af, Ax), dt)
+		const dT = MAGPIE_PHYSICS.scaleVector(MAGPIE_PHYSICS.addVectors(Tf, Tx), dt);
 		const T1 = dT//MAGPIE_PHYSICS.addVectors(T0, dT);
 		const R1 = MAGPIE_PHYSICS.addVectors(R0, T1);
 		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
