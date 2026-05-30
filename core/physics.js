@@ -1321,10 +1321,10 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 		const Rmax = options.hasOwnProperty(Rmax_axis) ? Number(options[Rmax_axis]) : Number(options?.Rmax);
 		if(isNaN(Rmax))
 			return 
-		const Rsafe = Array.isArray(options?.Rsafe) ? options.Rsafe[axis] : Rmax * reserve;
-		const Bdist = (Math.abs(R0_comp)**2) / (2 * Tsafe) || 0;
-		const dR_error = Math.abs(dR_comp)
 		const R0_abs = Math.abs(R0_comp);
+		const Rsafe = Array.isArray(options?.Rsafe) ? options.Rsafe[axis] : Rmax * reserve;
+		const Bdist = (R0_abs**2) / (2 * Tsafe) || 0;
+		const dR_error = Math.abs(dR_comp)
 		const Rcruise_margin = Math.abs(R0_abs - Rsafe);
 		const Rt_error = Math.abs(dR_error - R0_abs);
 		const seek_threshold = options?.seek_threshold ?? 0.0005;

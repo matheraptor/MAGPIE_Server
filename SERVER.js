@@ -1745,8 +1745,15 @@ MAGPIE_SERVER.BOOT.shutdown = async function shutdown(signal = 0)
 		try
 		{
 			await MAGPIE_HIVE.save();
+			MAGPIE_SERVER.CLI._incrementLoadBar(10);
 			MAGPIE_SERVER.log(ePrefix + "save complete; terminating database worker...")
+			const workerExitPromise = new Promise((resolve) => {
+				MAGPIE_DATABASE.worker.once('exit', () => {
+					resolve()
+				})
+			})
 			MAGPIE_DATABASE.worker.postMessage({method: "close"})
+			await workerExitPromise;
 			MAGPIE_SERVER.CLI._incrementLoadBar(10);
 			await new Promise((resolve) => {
 				io.close((err) => {
@@ -1763,7 +1770,6 @@ MAGPIE_SERVER.BOOT.shutdown = async function shutdown(signal = 0)
 					resolve();
 				})
 			})
-			MAGPIE_SERVER.CLI._incrementLoadBar(10);
 			MAGPIE_SERVER.CLI._updateLoadBar(100);
 			MAGPIE_SERVER.log(ePrefix + "sequence complete. Exiting...\n" + 
 					"----------------------------------\n\n", null, true)

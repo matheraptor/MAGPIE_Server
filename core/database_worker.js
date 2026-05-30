@@ -85,7 +85,7 @@ worker.ping = function ping()
 	return "pong"
 }
 const { parentPort } = require("worker_threads");
-parentPort?.on("message", async ({ method, args, requestID }) => {
+parentPort?.on("message", async ({ method, args = [], requestID }) => {
 	if(!parentPort) return
 	try
 	{
@@ -96,6 +96,7 @@ parentPort?.on("message", async ({ method, args, requestID }) => {
 	}
 	catch(e)
 	{
+		console.error("[DATABASE WORKER ERROR]: ", e)
 		parentPort.postMessage({ requestID, error: e.message })
 	}
 })

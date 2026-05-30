@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.30.1
+ * @version 0.30.2
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,7 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.30.1 2026 05 30
+ * @version 0.30.2 2026 05 30
  * - ADDED: exp.waypoint logic and options based on exp.keys and their order
  * - ADDED: physics 2body gravity
  * - ADDED: physics: velocity fwd clamping
@@ -32,6 +32,7 @@
  * - FIXED: exp.targetNext not awaiting key target next
  * - FIXED: physics.getAt not triggering cruising dampener
  * - FIXED: physics.getTt confused logic
+ * - FIXED: public telemetry
  * 
  * @version 0.26.1 2026 05 28
  * - ADDED: Component.forces
@@ -427,7 +428,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 30, 1],
+			version: [0, 30, 2],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260530"
 		};

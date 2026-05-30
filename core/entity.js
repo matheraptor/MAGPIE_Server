@@ -3202,9 +3202,11 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 	const ePrefix = `[ENTITY-${this.ID}].nextTarget: `;
 	try
 	{
-		const key = exp._get_key_target() || exp._get_key_marker();
 		/** @type {MAGPIE_EXP} */
-		const exp = this._get_exps().find(exp => exp.keys.includes(key.ID))
+		const exp = this._get_exps().find(exp => {
+			const key = exp._get_key_target() || exp._get_key_marker();
+			return exp.keys.includes(key?.ID)
+		})
 		if(!this.isValidExp(exp))
 			return false// throw new Error(`${exp} is invalid target.exp`)
 		const index = this._get_expIndex(exp);

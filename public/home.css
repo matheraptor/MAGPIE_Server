@@ -1,3 +1,4 @@
+/* version 0.30.2 */
 /* 1. Main Containers */
 .monitor-box {
     width: 100%;
@@ -12,7 +13,7 @@
 #physics-stream {
     display: grid;
     /* This creates the columns for the small items (ID, ASL, etc) */
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(8, 160px);
     gap: 8px 15px;
     width: 100%;
     padding: 15px;
@@ -28,6 +29,11 @@
 /* 3. Grid Items */
 .grid-item {
     white-space: nowrap; /* Keep small telemetry on one line */
+}
+
+.grid-item-vector {
+    grid-column: span 2;
+    white-space: nowrap;
 }
 
 /* 4. The Name/Meta "Break-out" Fix */
