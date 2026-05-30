@@ -1,7 +1,7 @@
 /**
  * @name 
  * @desc 
- * @version 0.26.0
+ * @version 0.28.0
  * 
  */
 //========================================================================
@@ -324,9 +324,11 @@ MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(r, C0, POVART0
 		// const Og = this.rotorFromFrame(Tfwd, up);
 		const hdg = this._rotor_toHeadingAbs(O0, Pg);
 		const Og = this._rotor_fromEulerAbs(hdg, 0, 0, Pg)
+		const dir = this.rotorApply(Og, MAGPIE.KEY.POVART.FWD);
+		const Vv = this.scaleVector(dir, this.mag(Vg));
 		// const Og = O0
 		// MAGPIE_SYSTEM._logging_debug(`Og: ${this._rotor_toHeadingAbs(Og, Pg)}`)
-		return { clamped: true, Pg, Vg, Og: O0 };
+		return { clamped: true, Pg, Vg: Vv, Og: O0 };
 	} 
 	catch(e)
 	{

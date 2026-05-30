@@ -40,7 +40,7 @@ const {
  const diego = new MAGPIE_ENTITY()
 //========================================================================
 // #region - Scratchpad
-
+ diego._set_O1(PHYSICS._rotor_fromEulerAbs(180,0,0, diego._get_P0()))
 // #endregion
 //========================================================================
 r.context.setVspeed(4011, "Rcruise_x")
@@ -77,7 +77,7 @@ r.context.HIVE._kick_context(1779288098611)
   [ 1779026102091, 'Sol' ]
 ]
 r.context.diego = r.context.HIVE._get_entity(1773811141134)
- diego._set_O1(PHYSICS._rotor_fromEulerAbs(180,0,0, diego._get_P0()))
+ diego._set_O1(PHYSICS._rotor_fromEulerAbs(300,0,0, diego._get_P0()))
  diego._set_P1(PHYSICS.addVectors(diego._get_P0(), PHYSICS.scaleVector(diego._get_V0(), 60 * 52)))
 r.context.diego._get_target()._set_C1([12.420031, 43.544629,0])
 r.context.diego.exps.push(r.context.METASTATE.contents.exp)

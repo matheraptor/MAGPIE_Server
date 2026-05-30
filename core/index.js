@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.27.1
+ * @version 0.28.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,8 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.27.1 2026 05 30
+ * @version 0.28.0 2026 05 30
+ * - ADDED: physics: velocity fwd clamping
  * - ADDED: hive slot conflict check
  * - FIXED: hive context handling
  * - FIXED: hive host/kick
@@ -422,7 +423,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 27, 1],
+			version: [0, 28, 0],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260530"
 		};
