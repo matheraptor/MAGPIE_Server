@@ -581,6 +581,36 @@ MAGPIE_SYSTEM.Utility._printInterval = function _printInterval(interval)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
 	}
 }
+/**
+ * 
+ * @param {duration} seconds 
+ * @returns {time_interval}
+ */
+MAGPIE_SYSTEM.Utility._makeInterval = function makeInterval(seconds)
+{
+	const interval = {};
+	interval.seconds = Math.round(seconds % 60);
+	if(seconds < 60)
+		return interval
+	const minute = (60**2)
+	interval.minutes = Math.floor(seconds % minute);
+	if(seconds < minute)
+		return interval
+	const hour
+	interval.hours = Math.floor(seconds % hour);
+	if(seconds < hour)
+		return interval
+	const month = (60**2 * 24 * 30.25)
+	interval.days = Math.floor(seconds % month)
+	if(seconds < month)
+		return interval
+	const year = (60**2 * 24 * 30.25 * 365)
+	interval.months = Math.floor(seconds % year)
+	if(seconds < year)
+		return interval
+	interval.years = Math.floor(seconds / year)
+	return interval
+}
 MAGPIE_SYSTEM.prototype._printInterval = MAGPIE_SYSTEM.Utility._printInterval;
 /**
  * 

@@ -1483,19 +1483,18 @@ MAGPIE_PHYSICS._getDeltaO = function _getDeltaO(O0, O1)
 MAGPIE_PHYSICS._getDeltaR = function _getDeltaR(dO)
 {
 	let [yz,xz,xy,w] = dO;
-	// return this.rotorApply(dO, [0,0,1])
-	return [yz,xz,xy]
-	// const sinHalfTheta = this.mag([yz,xz,xy]);
-	// if(sinHalfTheta < 1e-6)
-	// 	return [0,0,0];
-	// const halfTheta = Math.atan2(sinHalfTheta, w);
-	// const theta = halfTheta * 2;
-	// const multiplier = theta / sinHalfTheta;
-	// return [
-	// 	yz * multiplier,
-	// 	xz * multiplier,
-	// 	xy * multiplier
-	// ]
+	// return [yz,xz,xy]
+	const sinHalfTheta = this.mag([yz,xz,xy]);
+	if(sinHalfTheta < 1e-6)
+		return [0,0,0];
+	const halfTheta = Math.atan2(sinHalfTheta, w);
+	const theta = halfTheta * 2;
+	const multiplier = theta / sinHalfTheta;
+	return [
+		yz * multiplier,
+		xz * multiplier,
+		xy * multiplier
+	]
 }
 /**
  * 
@@ -4154,6 +4153,17 @@ MAGPIE_PHYSICS._get_agilityModifier = function agilityModifier(dex, a)
 	const MAX = MAGPIE.KEY.STATS.AGILITY_MOD_MAX;
 	const multiplier = MOD + (dex / MAX);
 	return a * multiplier
+}
+/**
+ * @typedef {import("./system").interval_text} interval_text
+ * @param {distance} distance 
+ * @param {velocity} cruiseSpeed
+ * @returns {interval_text} 
+ */
+MAGPIE_PHYSICS._U_ETE = function EstimatedTimeEnroute(distance, cruiseSpeed)
+{
+	const interval = MAGPIE_SYSTEM.Utility._makeInterval(distance / cruiseSpeed)
+	return MAGPIE_SYSTEM.Utility._printInterval(interval)
 }
 /**
  * 

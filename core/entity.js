@@ -3111,16 +3111,21 @@ MAGPIE_ENTITY.prototype._target_fetch_queue = async function()
  * coords: coords
  * course: heading,
  * distance: distance,
- * }}
+ * }} target_route
+ * @param {{
+ * ETE: Boolean,
+ * Vcruise: velocity
+ * }} options
  * @returns {target_route}
  */
-MAGPIE_ENTITY.prototype._target_queue_geodetic = async function()
+MAGPIE_ENTITY.prototype._target_queue_geodetic = async function(options)
 {
 	const ePrefix = `[ENTITY-${this.ID}].targetQueue: `;
 	try
 	{
 		const queue = await this._target_fetch_queue();
 		const route = new Map();
+		let totDist = 0;
 		for(let i = 0; i < queue.length; i++)
 		{
 			const P0 = queue[i]._get_P0();
@@ -3128,15 +3133,26 @@ MAGPIE_ENTITY.prototype._target_queue_geodetic = async function()
 			const r = queue[i]._get_celestial()._get_radius();
 			const course = P1 ? MAGPIE_PHYSICS._geod_getCourse(P0, P1) : undefined;
 			const distance = P1 ? MAGPIE_PHYSICS._geod_distanceTo(P0, P1, r) : undefined;
-			route.set(i + 1, {
-				leg: i + 1,
-				ID: queue[i].ID,
-				name: queue[i].name,
-				coords: queue[i]._get_C0(),
-				course: Math.floor(course),
-				distance: Math.floor(distance)
-			})
+			const contents = {};
+			contents.leg = i + 1;
+			contents.ID = queue[i]?.ID;
+			contents.name = queue[i]?.name;
+			contents.coords = queue[i]?._get_C0();
+			contents.course = Math.floor(course);
+			contents.distance = Math.floor(distance);
+			if(options?.Vcruise)
+				contents.Vcruise = options.Vcruise;
+			if(options?.ETE && options?.Vcruise)
+				contents.ETE = MAGPIE_PHYSICS._U_ETE(distance, options.Vcruise)
+			contents.distance = Math.floor(distance);
+			route.set(i + 1, contents)
+			totDist += contents.distance ? contents.distance : 0;
 		}
+		const final = {};
+		final.Tdist = totDist;
+		if(options?.Vcruise)
+			final.TTE = MAGPIE_PHYSICS._U_ETE(totDist, options.Vcruise)
+		route.set(queue.length + 1, final)
 		return route
 	}
 	catch(e)
