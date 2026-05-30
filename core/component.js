@@ -915,6 +915,19 @@ MAGPIE_EXP.prototype._key_splice = function spliceInKey(keyID, index)
 }
 /**
  * 
+ * @param {index} index 
+ * @returns {keyID}
+ */
+MAGPIE_EXP.prototype._key_bookend = function _key_bookend(index)
+{
+	const keyID = this.keys[index]
+	if(!keyID)
+		return
+	this.keys.splice(index,1);
+	return this.keys.push(keyID);
+}
+/**
+ * 
  * @param {keyID} keyID 
  * @returns {Boolean}
  */
@@ -976,6 +989,7 @@ MAGPIE_EXP.prototype._get_key_marker = function getKeyMarker()
 	return this.getKeys()?.find(key => key.originID === MAGPIE.KEY.INDEX.MARKER);
 }
 /**
+ * @param {entityID}
  * @returns {Promise<database_result>}
  */
 MAGPIE_EXP.prototype._set_target = async function _set_target(targetID)
@@ -985,7 +999,7 @@ MAGPIE_EXP.prototype._set_target = async function _set_target(targetID)
 	{
 		const next = targetID
 		if(!next || isNaN(next))
-			return
+			throw new Error(`${targetID} is invalid targetID`)
 		this.targetID = next;
 		return await this.set()
 	}
@@ -1252,6 +1266,28 @@ MAGPIE_CONTEXT.prototype._awake = async function _awake()
 MAGPIE_CONTEXT.prototype._sleep = async function _sleep()
 {
 	return await MAGPIE_CONTEXT.__hive("_kick_context", [this, "context_sleep"])
+}
+/**
+ * 
+ * @returns {Boolean}
+ */
+MAGPIE_CONTEXT.prototype.isAwake = function isAwake()
+{
+	return MAGPIE_CONTEXT.__hiveSync("_context_isAwake", [this.ID])
+}
+/**
+ * 
+ * @returns {Boolean}
+ */
+MAGPIE_CONTEXT.prototype.isActive = function isActive()
+{
+	const entities = this.entities.length > 0;
+	const exps = this.exps.length > 0;
+	const keys = this.keys.length > 0;
+	const symbols = this.symbols.length > 0;
+	if([entities, exps, keys, symbols].some(n => !!n))
+		return true
+	return false
 }
 // #endregion
 //------------------------------------------------------------------------

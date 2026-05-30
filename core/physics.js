@@ -981,18 +981,19 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 				? false 
 				: state.onTarget ? false : true;
 		// MAGPIE_SYSTEM._logging_debug(Object.entries(state))
+		const unitV0 = this.normalizeVector(V0);
+		const brake = this.scaleVector(unitV0, -Bsafe);
 		if(state.onTarget)
 		{
-			const unitV0 = this.normalizeVector(V0);
 			const S0_threshold = S0 > 0.001;
 			const Bmin = 0.001;
 			const Bstop = this._U_clampRange(Bsafe, Bmin, S0)
-			const At = S0_threshold ? this.scaleVector(unitV0, -Bsafe) : [0,0,0]
+			const At = S0_threshold ? brake : [0,0,0]
 			const Vstate = S0_threshold ? STATE_INDEX.REACHING_TARGET : STATE_INDEX.ON_TARGET;
 			// MAGPIE_SYSTEM._logging_debug(S0)
 			return { At_raw: At, Vstate: Vstate }
 		}
-		if(state.reachingTarget)
+		else if(state.reachingTarget)
 		{
 			const stopDistance = K.LENGTH;
 			const Bt = this.getBrakingA(P0, P1, V0, Bmax, stopDistance);
@@ -1001,7 +1002,7 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 				At_raw: A_clamped, Vstate: STATE_INDEX.REACHING_TARGET
 			}
 		}
-		if(state.approachingTarget)
+		else if(state.approachingTarget)
 		{
 			const Bt = this.getBrakingA(P0, P1, V0, options.tolerance);
 			const A_clamped = this.vector_clamp_mag(Bt, Bsafe);
@@ -1009,7 +1010,7 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 				At_raw: A_clamped, Vstate: STATE_INDEX.APPROACHING_TARGET
 			}
 		}
-		if(state.seekingTarget)
+		else if(state.seekingTarget)
 		{
 			const Vt = this.targetVelocity(P0, P1, Vcruise);
 			const dV = this.subVectors(Vt, V0);
@@ -1020,6 +1021,13 @@ MAGPIE_PHYSICS._getAt = function _getAt(P0, V0, P1, params, options)
 			return {
 				At_raw: A_transit, Vstate: STATE_INDEX.SEEKING_TARGET
 			}
+		}
+		else 
+		{
+			const stopped = S0 < 1e-6;
+			const At_raw = stopped ? [0,0,0] : brake;
+			const Vstate = stopped ? STATE_INDEX.IDLING : STATE_INDEX.IDLING;
+			return { At_raw, Vstate }
 		}
 	}
 	catch(e)

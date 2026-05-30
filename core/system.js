@@ -2764,6 +2764,27 @@ MAGPIE_HIVE._set_contextSync = function setContextSync(context)
  * 
  */
 //------------------------------------------------------------------------
+// #region > Context
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {contextID} contextID
+ * @returns {Boolean} 
+ */
+MAGPIE_HIVE._context_isAwake = function _context_isAwake(contextID)
+{
+	if(MAGPIE_HIVE._contextBuffer.get(contextID))
+		return true
+	return false
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
 // #region > Utility
 //------------------------------------------------------------------------
 MAGPIE_HIVE._time_advance = function timeAdvance(dt)

@@ -53,18 +53,17 @@ r.context.HIVE._kick_context(1779288098611)
   [ 1773811061892, 'Terra' ],
   [ 1773811141134, "HTP A9805 'Diego Marea'" ],
   [ 1779288098611, "DIEGO context" ],
-  [ 1779734993195, 'WP-249-06' ],
-  [ 1778493972858, 'WP-249-09' ],
-  [ 1779734993194, 'WP-249-10' ],
-  [ 1778365115809, "WP-249-11" ],
-  [ 1779732886642, 'WP-249-12' ],
-  [ 1780036463811, 'WP-249-13' ],
-  [ 1779732928566, 'WP-249-14' ],
-  [              , 'WP-249-15' ],
+  [ 1779732928566, 'WP-249-15' ],
   [ 1779732886641, 'WP-249-16' ],
-  [ 1779732928567, 'undefined' ],
-  [ 1779733071469, 'undefined' ],
-  [ 1779733071470, 'undefined' ],
+  [ 1779734993195, 'WP-249-17' ],
+  [ 1780036463811, 'WP-249-18' ],
+  [ 1779732886642, 'WP-249-19' ],
+  [ 1778365115809, "WP-249-20" ],
+  [ 1779734993194, 'WP-249-21' ],
+  [ 1778493972858, 'WP-249-22' ],
+  [ 1779732928567, 'WP-249-23' ],
+  [ 1779733071469, 'WP-249-24' ],
+  [ 1779733071470, 'WP-249-25' ],
   [ 1779733399798, 'undefined' ],
   [ 1779733399799, 'undefined' ],
   [ 1779735513215, 'undefined' ],
@@ -78,8 +77,8 @@ r.context.HIVE._kick_context(1779288098611)
 ]
 r.context.diego = r.context.HIVE._get_entity(1773811141134)
  diego._set_O1(PHYSICS._rotor_fromEulerAbs(300,0,0, diego._get_P0()))
- diego._set_P1(PHYSICS.addVectors(diego._get_P0(), PHYSICS.scaleVector(diego._get_V0(), 60 * 10)))
- METASTATE.date.minute += 10;
+ diego._set_P1(PHYSICS.addVectors(diego._get_P0(), PHYSICS.scaleVector(diego._get_V0(), 60 * 60)))
+ METASTATE.date.megaTICK();
 r.context.diego._get_target()._set_C1([12.420031, 43.544629,0])
 r.context.diego.exps.push(r.context.METASTATE.contents.exp)
 r.context.exp = r.context.DATABASE

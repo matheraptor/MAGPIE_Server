@@ -2361,8 +2361,11 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp, fitness_
 	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
 	try
 	{
-		this._target_next()
-		//@todo entity._emote_onTarget
+		const next = this._target_next()
+		if(!next)
+		{
+			//@todo entity._emote_onTarget
+		}
 		return this._emote_seekTarget(exp, fitness_index);
 	}
 	catch(e)
@@ -3203,7 +3206,7 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 			exp._get_key_target() || exp._get_key_marker()
 		)
 		if(!this.isValidExp(exp))
-			throw new Error(`${exp} is invalid target.exp`)
+			return false// throw new Error(`${exp} is invalid target.exp`)
 		const index = this._get_expIndex(exp);
 		if(Number(index) < 0)
 			throw new Error(`${index} is invalid exps index`)
