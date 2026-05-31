@@ -1,6 +1,6 @@
 /**
  * @name MAGPIE_ENTITY
- * @version 0.26.0
+ * @version 0.30.3
  * @desc 
  * @param {{
  * name: String,
@@ -414,30 +414,19 @@ MAGPIE_ENTITY.prototype.setup = async function setup(data)
  */
 MAGPIE_ENTITY.prototype.setupSTATS = function setupSTATS(STATS)
 {
-	if(!STATS) return
 	const ePrefix = `[ENTITY-${this.ID}].setupSTATS: `;
 	try
 	{
-		// this.STATS = new Float64Array(MAGPIE.KEY.STATS.ARRAY).fill(0);
-		// const offset = MAGPIE.KEY.POVART.ARRAY + 1;
-		// const povart = STATS.slice(0, offset);
-		// const stats = STATS.slice(offset);
-		// if(!MAGPIE_ENTITY.isValidPOVART(povart))
-		// 	throw new Error(`${povart} is invalid POVART`)
-		// povart.forEach((value, index) => {
-		// 	this.STATS[index] = value;
-		// })
-		// if(!MAGPIE_ENTITY.isValidEntityStats(stats))
-		// 	throw new Error(`${stats} is invalid STATS`);
-		// stats.forEach((stat, index) => {
-		// 	this.STATS[index + offset] = stat;
-		// })
-		const length = STATS.length === MAGPIE.KEY.STATS.ARRAY;
-		const array = Array.isArray(STATS) && STATS.every(n => !isNaN(n));
-		if(!array || !length)
-			return
-		this.STATS = new Float64Array(STATS);
-		this.STATS[MAGPIE.KEY.POVART.E_ID] = this.ID;
+		const length = MAGPIE.KEY.STATS.ARRAY;
+		const valid = STATS?.length === length;
+		const array = valid ? Array.from(STATS) : length;
+		this.STATS = new Float64Array(array);
+		const K = MAGPIE.KEY.POVART
+		this.STATS[K.E_ID] = this.ID;
+		if(!this.STATS[K.P_C])
+			this.STATS[K.P_C] = MAGPIE.KEY.ENTITY.UNIVERSE;
+		if(!MAGPIE_PHYSICS.isValidRotor(this._get_O0()))
+			this._set_O1(MAGPIE_PHYSICS._rotor_identity())
 	}
 	catch(e)
 	{
@@ -1763,16 +1752,26 @@ MAGPIE_ENTITY.prototype.updatePhysics = function updatePhysics(switchID, dt, int
 {
 	const ePrefix = `[ENTITY-${this.ID}].updatePhysics: `;
 	const defaults = { output: null, POVART1: null }
+	const nonPhys = { output: [], POVART1: POVART0 }
 	try
 	{
 		const valid = MAGPIE_PHYSICS.isValidPOVART(POVART0) && POVART0[MAGPIE.KEY.POVART.E_ID] === this.ID
 		if(!valid)
 			throw new Error(`${POVART0} is invalid POVART₀`)
 		let { P0, orbit, O0, V0, A0, R0, T0, E_ID } = MAGPIE_ENTITY._get_decomp_POVART(POVART0);
-		const CB = MAGPIE_PHYSICS._calculate_collisionBox(this);
-		const r = C._get_radius();
-		// MAGPIE_SYSTEM._logging_debug(`C: ${C?.name}`)
+		if(MAGPIE_PHYSICS.mag(P0) < 1) 
+			return nonPhys
+		const r = C?._get_radius();
+		if(!Number(r))
+			return defaults
 		let C0 = MAGPIE_PHYSICS.cartesianToGeodetic(P0, r);
+		if(O0[3] === 1)
+		{
+			nonPhys.output = [C0[0], C0[1], C0[2], r]
+			return nonPhys
+		}
+		const CB = MAGPIE_PHYSICS._calculate_collisionBox(this);
+		// MAGPIE_SYSTEM._logging_debug(`C: ${C?.name}`)
 		const floor = MAGPIE_PHYSICS._geod_clampToGround(r, C0, POVART0, dt);
 		if(floor.clamped)
 		{
@@ -3078,6 +3077,43 @@ MAGPIE_ENTITY.prototype._set_ASL = function setASL(meters)
 	if(P1)
 		return [lat,lon,ASL]
 } 
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - CELESTIAL
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Set
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {entityID} celestialID 
+ * @returns {entityID}
+ */
+MAGPIE_ENTITY.prototype._set_celestial = function(celestialID)
+{
+	if(!Number(celestialID))
+		return
+	return this.STATS[MAGPIE.KEY.POVART.P_C] = celestialID
+}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * 
  * @desc back to {@link }

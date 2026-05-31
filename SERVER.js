@@ -2,7 +2,7 @@
  * 
  * @namespace MAGPIE_Server
  * @author Matheraptor
- * @version 0.29.0
+ * @version 0.30.3
  * @desc server frontend
  * {@link MAGPIE}
  */
@@ -1043,7 +1043,8 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const lat = Number(output[0]);
 		const lon = Number(output[1]);
 		const ASL = Number(output[2]);
-		const forces = output.slice(4);
+		const r = Number(output[3]);
+		const forces = output?.slice(4);
 		const Vmag = Number(MAGPIE_PHYSICS.mag(V1));
 		const Vknots = Number(MAGPIE_PHYSICS._U_MPStoKnots(Vmag));
 		const Amag = Number(MAGPIE_PHYSICS.mag(A1) / dt);
@@ -1056,7 +1057,6 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const target = entity._get_target();
 		const Pt = target?.STATS?.slice(0, Kp.P_C) || [NaN,NaN,NaN]
 		const validTarget = MAGPIE_PHYSICS.isValidVector(Pt);
-		const r = Number(output[3]);
 		// MAGPIE_SERVER._debug(`output: ${output}`)
 		const Ct = validTarget && r > 1 ? MAGPIE_PHYSICS.cartesianToGeodetic(Pt, r) : [NaN, NaN, NaN];
 		const dist = validTarget && r > 1 ? Number(MAGPIE_PHYSICS._geod_distanceTo(P1, Pt, r)) : NaN;

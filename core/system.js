@@ -1,7 +1,7 @@
 /**
  * @name 
  * @desc 
- * @version 0.27.0
+ * @version 0.30.3
  */
 //========================================================================
 // #region - INDEX
@@ -2612,7 +2612,9 @@ MAGPIE_HIVE._get_context = function _get_context(contextID)
  */
 MAGPIE_HIVE._get_all_contexts = function getAllContext()
 {
-	return Array.from(MAGPIE_HIVE._contextBuffer.values())
+	const arr = [];
+	MAGPIE_HIVE._contextBuffer.forEach((context) => arr.push(context))
+	return arr
 }
 /**
  * 

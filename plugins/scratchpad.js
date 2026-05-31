@@ -43,6 +43,7 @@ const {
 
 // #endregion
 //========================================================================
+r.context.diego = r.context.HIVE._get_entity(1773811141134)
 r.context.HIVE._host_context(r.context.HIVE._get_context(1779288098611))
 r.context.HIVE._kick_context(1779288098611)
 [
@@ -50,8 +51,12 @@ r.context.HIVE._kick_context(1779288098611)
   [ 1780067307221, 'Milky Way context' ],
   [ 1780065722808, 'Sol context' ],
   [ 1773811061892, 'Terra' ],
+  [ 1780232437463, 'TERRA context'], 
   [ 1773811141134, "HTP A9805 'Diego Marea'" ],
   [ 1779288098611, "DIEGO context" ],
+  [ 1780224844436, "test ecosystem"],
+  [ 1780230954989, "nature archetypes"],
+  [ 1779733399799, 'test territory' ],
   [ 1779732886641, 'WP-249-27' ],
   [ 1779734993195, 'WP-249-28' ],
   [ 1780036463811, 'WP-249-29' ],
@@ -64,17 +69,16 @@ r.context.HIVE._kick_context(1779288098611)
   [ 1779733071470, 'WP-249-36' ],
   [ 1779732928566, 'WP-249-37' ],
   [ 1779733399798, 'WP-249-38' ],
-  [ 1779733399799, 'undefined' ],
-  [ 1779735513215, 'undefined' ],
-  [ 1779735513216, 'undefined' ],
-  [ 1779747270776, 'undefined' ],
-  [ 1779749838615, 'undefined' ],
-  [ 1780060918485, 'undefined' ],
+  [ 1779735513215, 'test creature 1' ],
+  [ 1779735513216, 'test creature 2' ],
+  [ 1779747270776, 'test creature 3' ],
+  [ 1780235663887, 'test creature 4' ],
+  [ 1780060918485, 'test creature 5' ],
   [ 1780061063318, 'undefined' ],
   [ 1779026345447, 'Milky Way' ],
   [ 1779026102091, 'Sol' ]
 ]
-r.context.diego = r.context.HIVE._get_entity(1773811141134)
+
  diego._set_O1(PHYSICS._rotor_fromEulerAbs(300,0,0, diego._get_P0()))
  diego._set_P1(PHYSICS.addVectors(diego._get_P0(), PHYSICS.scaleVector(diego._get_V0(), 60 * 60)))
  METASTATE.date.megaTICK();

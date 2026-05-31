@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.30.2
+ * @version 0.30.3
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,9 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.30.3 2026 05 31
+ * - FIXED: context handling
  * 
  * @version 0.30.2 2026 05 30
  * - ADDED: exp.waypoint logic and options based on exp.keys and their order
@@ -428,9 +431,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 30, 2],
+			version: [0, 30, 3],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260530"
+			firmwareDate: "20260531"
 		};
 	}
 }
@@ -1799,6 +1802,7 @@ MAGPIE.KEY.POVART.R_AXES = new Map();
 MAGPIE.KEY.POVART.R_AXES.set("pitch", 0);
 MAGPIE.KEY.POVART.R_AXES.set("roll", 1);
 MAGPIE.KEY.POVART.R_AXES.set("heading", 2);
+MAGPIE.KEY.POVART.O_
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -2211,7 +2215,7 @@ MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.SURFACE, {
 		"REGION_MARKER"
 	]
 })
-MAGPIE.KEY.CONTEXT.REGION = 60;
+MAGPIE.KEY.CONTEXT.REGION = 70;
 MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.REGION, {
 	name: "Regional",
 	desc: "",
@@ -2226,7 +2230,22 @@ MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.REGION, {
 		"TERRITORY_MARKER"
 	]
 })
-MAGPIE.KEY.CONTEXT.TERRITORY = 60;
+MAGPIE.KEY.CONTEXT.ECOSYSTEM = 80;
+MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.ECOSYSTEM, {
+	name: "Ecosystem",
+	desc: "",
+	allowedTypes: [
+		"MARKER",
+		"PLANET_MARKER",
+		"MOON_MARKER",
+		"GEOMARKER",
+		"ORBITAL_MARKER",
+		"BIOME_MARKER",
+		"REGION_MARKER",
+		"TERRITORY_MARKER"
+	]
+})
+MAGPIE.KEY.CONTEXT.TERRITORY = 90;
 MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.TERRITORY, {
 	name: "Territorial",
 	desc: "",

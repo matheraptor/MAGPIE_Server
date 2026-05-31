@@ -1,7 +1,7 @@
 /**
  * @name INDEX
  * @desc 
- * @version 0.30.0
+ * @version 0.30.3
  */
 //========================================================================
 // #region - INDEX
@@ -1367,6 +1367,7 @@ MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 	this._firmware = "MAGPIE_CONTEXT";
 	this.ID = Number(data?.ID) || Date.now();
 	this.type = Number(data?.type) || 0;
+	this.host = Number(data?.host) || MAGPIE.KEY.ENTITY.UNIVERSE;
 	this.name = String(data?.name) || "";
 	this.updated = Number(data?.updated) || this.ID;
 	this.entities = new Float64Array(data?.entities || 0);
@@ -1374,9 +1375,9 @@ MAGPIE_CONTEXT.prototype.initialize = function initialize(data)
 	this.keys = new Float64Array(data?.keys || 0);
 	this.symbols = new Float64Array(data?.symbols || 0);
 	this.metadate = Number(data?.metadate) || 0;
-	this.urgency = Number(data?.urgency || NaN);
-	this.gravity = Number(data?.gravity || NaN);
-	this.ambiguity = Number(data?.ambiguity || NaN);
+	this.urgency = Number(data?.urgency) || NaN;
+	this.gravity = Number(data?.gravity) || NaN;
+	this.ambiguity = Number(data?.ambiguity) || NaN;
 }	
 /**
  * 
@@ -1603,6 +1604,14 @@ MAGPIE_CONTEXT.prototype._get_type = function getType()
 }
 /**
  * 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_CONTEXT.prototype._get_host = function getContextHost()
+{
+	return this._get_entity(this.host)
+}
+/**
+ * 
  * @returns {MAGPIE_ENTITY[]}
  */
 MAGPIE_CONTEXT.prototype._get_all_entities = function getAllEntities()
@@ -1729,9 +1738,19 @@ MAGPIE_CONTEXT.prototype._get_ambiguity = function getAmbiguity()
  */
 MAGPIE_CONTEXT.prototype._add_new_entity = async function addNewEntity(entity_data)
 {
-	const entity = await MAGPIE_CONTEXT.__hive("_set_new_entity", [entity_data]);
-	if(entity?.constructor?.name === "MAGPIE_ENTITY")
-		this._set_entity(entity.ID);
+	const ePrefix = `[CONTEXT-${this.ID}].addNewEntity: `;
+	try
+	{
+		const entity = await MAGPIE_CONTEXT.__hive("_new_entity", [entity_data]);
+		if(entity?.constructor?.name !== "MAGPIE_ENTITY")
+			throw new Error(`${entity} is invalid entity`)	
+		entity.STATS[MAGPIE.KEY.POVART.P_C] = this.host;
+		await this._set_entity(entity.ID);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------
