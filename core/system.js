@@ -1924,48 +1924,6 @@ MAGPIE_HIVE._save_buffers = async function _save_buffers()
 //------------------------------------------------------------------------
 // #region > Host
 //------------------------------------------------------------------------
-// /**
-//  * @audit-issue broken
-//  * @param {MAGPIE_ENTITY} entity 
-//  * @param {layerID} layerID 
-//  * @param {layerID} targetLayerID 
-//  * @param {contextID} contextID 
-//  * @returns {MAGPIE_ENTITY}
-//  */
-// MAGPIE_HIVE.host = function host(entity, layerID, targetLayerID, contextID)
-// {
-// 	const ePrefix = "[HIVE].host: ";
-// 	try
-// 	{
-// 		const valid = this.isValidGuest(entity, layerID, targetLayerID)
-// 		if(!valid)	
-// 			return
-// 		const material = entity.type >= MAGPIE.KEY.ENTITY.TYPE.get("MATERIA").type;
-// 		const buffer = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE;
-// 		if(!material && buffer)
-// 			layerID = 2
-// 		/** @type {hive_record} */
-// 		const layer = this._registry.get(layerID);
-// 		if(layer.nextSlot >= MAGPIE.KEY.RUNTIME.LAYER.get(layerID).slots)
-// 			throw new Error(`[ENTITY-${entity.ID}] failed because [LAYER-${layerID}] is full`)
-// 		/** @type {hive_entry} */
-// 		this._registry.set(entity.ID, {
-// 			layerID: valid.layerID,
-// 			slot: layer.nextSlot,
-// 			target: valid.targetLayerID,
-// 			retain: true,
-// 			context: Number(contextID) ? [contextID] : []
-// 		})
-// 		const record = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? entity : entity.ID
-// 		this[MAGPIE.KEY.RUNTIME.LAYER.get(layerID).name][entry.slot] = record;
-// 		layer.nextSlot++
-// 		return MAGPIE_HIVE._get_entity(entity.ID)
-// 	}
-// 	catch(e)
-// 	{
-// 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-// 	}
-// }
 /**
  * 
  * @param {MAGPIE_ENTITY} entity 
@@ -2044,7 +2002,7 @@ MAGPIE_HIVE.host = function hostOnHive(entity, layerID, targetLayerID = NaN, con
 			if(exists.layerID < layerID)
 				return MAGPIE_HIVE.move(entity.ID, layerID, targetLayerID)
 			const message_exists = `[ENTITY-${entity.ID}] is already at [LAYER-${exists.layerID}][${exists.slot}]`;
-			return MAGPIE_SYSTEM.log(message_exists, "console", true)
+			return MAGPIE_SYSTEM.log(message_exists, "console", false)
 			// if(MAGPIE_HIVE[K.name][exists.slot] === entity.ID)
 			// {
 			// }
@@ -2099,7 +2057,7 @@ MAGPIE_HIVE.host = function hostOnHive(entity, layerID, targetLayerID = NaN, con
 		if(!MAGPIE_HIVE._registry.get(entity.ID))
 			throw new Error(`unable to host [ENTITY-${entity.ID}]`)
 		const message = `${ePrefix} on [${layerName}][${slot}] with target [LAYER-${targetLayerID}]`
-		MAGPIE_SYSTEM.log(ePrefix + message + stale, "console", true)
+		MAGPIE_SYSTEM.log(ePrefix + message + stale, "console", false)
 		return entity
 	}
 	catch(e)

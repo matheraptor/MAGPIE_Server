@@ -1397,8 +1397,8 @@ MAGPIE.KEY.ENTITY.UNIVERSE = 101;
  */
 MAGPIE.KEY.ENTITY.CONTAINER = {};
 MAGPIE.KEY.ENTITY.CONTAINER.meta = {
-	name = "container-entity",
-	desc = ""
+	name: "container-entity",
+	desc: ""
 }
 /** 
  * @type {Enumerator<Number>} 
