@@ -2263,7 +2263,9 @@ MAGPIE_HIVE.move = function move(entityID, layerB_ID, targetLayerID = NaN)
 		const layerA = MAGPIE.KEY.RUNTIME.LAYER.get(layerID);
 		if(!layerA)
 			throw new Error(`${layerA} is invalid HIVE layer`)
-		if(MAGPIE_HIVE[layerA.name][slot] !== entityID)
+		const record = MAGPIE_HIVE[layerA.name][slot]
+		const ID = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? record.ID : record
+		if(ID !== entityID)
 			throw new Error(`[ENTITY-${entityID}] not at layer${entry.layerID}[${slot}]`)
 		const layerB = MAGPIE.KEY.RUNTIME.LAYER.get(layerB_ID);
 		if(!layerB)
