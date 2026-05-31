@@ -1,41 +1,41 @@
 #!/bin/bash
-# throttle_node v6 (Optimized for GCP e2-micro)
+# throttle_node v7 (Fixed for GCP e2-micro)
 
-# 1. PREVENT DUPLICATES: Exit immediately if another copy of this script is running
 if [ $(pgrep -f "$(basename "$0")" | wc -l) -gt 2 ]; then
     exit 0
 fi
 
 cd /home/hamedahastral/MAGPIE_Server
-CPU_LIMIT=30
-LAST_THROTTLED_PID=""
+CPU_LIMIT=20  # Dropped to 20% to respect e2-micro sustained limits
+CPULIMIT_PID=""
 
-echo "Passive MAGPIE Governor v6 loaded. Waiting for manual node start..."
+echo "Passive MAGPIE Governor v7 loaded. Waiting for manual node start..."
 
 while true; do
-    # 2. Look for the active Node process safely
-    NODE_PID=$(pgrep -f "SERVER.js")
+    NODE_PID=$(pgrep -f "node.*SERVER.js")
 
     if [ ! -z "$NODE_PID" ]; then
-        # 3. Check if cpulimit is already attached to this specific PID using pgrep
-        if ! pgrep -f "cpulimit.*-p $NODE_PID" > /dev/null; then
-
-            # Kill any orphaned cpulimit processes left over from old server runs
+        # If Node is running but we haven't spawned cpulimit yet, or if our spawned cpulimit died
+        if [ -z "$CPULIMIT_PID" ] || ! kill -0 "$CPULIMIT_PID" 2>/dev/null; then
+            
+            # Wipe any orphaned cpulimit instances just in case
             pkill -f "cpulimit" 2>/dev/null
 
-            echo "Manual Node process detected (PID: $NODE_PID). Applying 30% CPU throttle..."
-            # Launch cpulimit in the background securely
+            echo "Manual Node process detected (PID: $NODE_PID). Applying ${CPU_LIMIT}% CPU throttle..."
+            
+            # Launch cpulimit and grab its exact PID ($!)
             /usr/bin/cpulimit -p "$NODE_PID" -l "$CPU_LIMIT" -b
-            LAST_THROTTLED_PID="$NODE_PID"
+            sleep 0.5
+            CPULIMIT_PID=$(pgrep -f "cpulimit.*-p $NODE_PID")
         fi
     else
-        # If the Node server stopped, clean up the running cpulimit process immediately
-        if [ ! -z "$LAST_THROTTLED_PID" ]; then
+        # If Node stopped, kill our tracked cpulimit process
+        if [ ! -z "$CPULIMIT_PID" ]; then
+            echo "Node stopped. Cleaning up cpulimit..."
             pkill -f "cpulimit" 2>/dev/null
-            LAST_THROTTLED_PID=""
+            CPULIMIT_PID=""
         fi
     fi
 
-    # Rest quietly for 2 seconds using zero idle CPU
-    sleep 2
+    sleep 5 # Increased to 5 seconds to reduce CPU wakeups on your e2-micro
 done
