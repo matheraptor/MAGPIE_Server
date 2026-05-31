@@ -619,6 +619,18 @@ MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_8, 8);
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.STAMINA_9 = 109;
 MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX_9, 9);
+/** @type {Map<String, keyID>} */
+MAGPIE.KEY.INDEX.CCG = new Map();
+MAGPIE.KEY.INDEX.CCG.set("FITNESS", 120);
+MAGPIE.KEY.INDEX.CCG.set("RESERVE", 121);
+MAGPIE.KEY.INDEX.CCG.set("STAMINA", 122);
+MAGPIE.KEY.INDEX.CCG.set("ENDURANCE", 123);
+MAGPIE.KEY.INDEX.CCG.set("ENERGY", 124);
+MAGPIE.KEY.INDEX.CCG.set("MASS", 131);
+MAGPIE.KEY.INDEX.CCG.set("POWER", 132);
+MAGPIE.KEY.INDEX.CCG.set("DEXTERITY", 133);
+MAGPIE.KEY.INDEX.CCG.set("SENSE", 134);
+MAGPIE.KEY.INDEX.CCG.set("GROWTH", 141);
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.REQUIREMENTS = 1001;
 /** @type {key_index} */
@@ -1187,42 +1199,56 @@ MAGPIE.KEY.RUNTIME.meta = {
 	name: "M.A.G.P.I.E. runtime"
 };
 MAGPIE.KEY.RUNTIME.DELTA = new Float64Array([0.001,0.033,1,60,60**2,60**2*24])
-/** @type {Map<Number, {name: String, delta: duration, dt: duration, slots: Number}} */
+/** 
+ * @type {Map<Number, {
+ * name: String, 
+ * delta: duration, 
+ * dt: duration,
+ * switch: Number, 
+ * slots: Number
+ * }} 
+ * */
 MAGPIE.KEY.RUNTIME.LAYER = new Map();
 MAGPIE.KEY.RUNTIME.LAYER.set(0, { 
 	name: "_GuestsBase", 		
 	delta: MAGPIE.KEY.RUNTIME.DELTA[0],	
 	dt: MAGPIE.KEY.RUNTIME.DELTA[0],
+	switch: 0,
 	slots: 100
 });
 MAGPIE.KEY.RUNTIME.LAYER.set(1, { 
 	name: "_GuestsGame", 		
 	delta: MAGPIE.KEY.RUNTIME.DELTA[1], 	
 	dt: MAGPIE.KEY.RUNTIME.DELTA[1],
+	switch: 1,
 	slots: 1000 
 });
 MAGPIE.KEY.RUNTIME.LAYER.set(2, { 
 	name: "_GuestsStandard", 	
 	delta: MAGPIE.KEY.RUNTIME.DELTA[2], 		
 	dt: MAGPIE.KEY.RUNTIME.DELTA[2],
+	switch: 2,
 	slots: 5000 
 });
 MAGPIE.KEY.RUNTIME.LAYER.set(3, { 
 	name: "_GuestsSuper", 	
 	delta: MAGPIE.KEY.RUNTIME.DELTA[3], 		
 	dt: MAGPIE.KEY.RUNTIME.DELTA[3],
+	switch: 3,
 	slots: 10000 
 });
 MAGPIE.KEY.RUNTIME.LAYER.set(4, { 
 	name: "_GuestsMega", 		
 	delta: MAGPIE.KEY.RUNTIME.DELTA[4], 	
 	dt: MAGPIE.KEY.RUNTIME.DELTA[4],
+	switch: 4,
 	slots: 50000 
 });
 MAGPIE.KEY.RUNTIME.LAYER.set(5, { 
 	name: "_GuestsUltra", 	
 	delta: MAGPIE.KEY.RUNTIME.DELTA[5],
 	dt: MAGPIE.KEY.RUNTIME.DELTA[5],
+	switch: 5,
 	slots: 100000 
 });
 // #endregion
@@ -2034,9 +2060,11 @@ MAGPIE.KEY.FITNESS.WASTE = 3;
 /** @type {offset_mult} */
 MAGPIE.KEY.FITNESS.INJURY = 4;
 /** @type {offset_mult} */
-MAGPIE.KEY.FITNESS.STAMINA = 5;
+MAGPIE.KEY.FITNESS.TRIBUTE = 5;
 /** @type {offset_mult} */
-MAGPIE.KEY.FITNESS.ZONES = MAGPIE.KEY.FITNESS.INJURY + 1;
+MAGPIE.KEY.FITNESS.STAMINA = 6;
+/** @type {offset_mult} */
+MAGPIE.KEY.FITNESS.ZONES = MAGPIE.KEY.FITNESS.STAMINA
 /** @type {Map<String, index>} */
 MAGPIE.KEY.FITNESS.OUTPUT = new Map();
 /** @type {index} */
@@ -2133,6 +2161,8 @@ MAGPIE.KEY.SYMBOL.TYPE.SERVICE = 7;
 MAGPIE.KEY.SYMBOL.TYPE.INTERACTION = 8;
 /** @type {symbol_type} */
 MAGPIE.KEY.SYMBOL.TYPE.CONCEPT = 9;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.SPECIES = 11;
 MAGPIE.KEY.SYMBOL.INDEX = {};
 // #endregion
 //------------------------------------------------------------------------

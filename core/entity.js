@@ -1486,10 +1486,15 @@ MAGPIE_ENTITY.prototype.refresh = function refresh(switchID, dt, layer_frame)
 		return false
 	}
 }
-MAGPIE_ENTITY.prototype.selfKick = function selfKick()
+/**
+ * 
+ * @param {String} reason 
+ * @returns {entityID}
+ */
+MAGPIE_ENTITY.prototype.selfKick = function selfKick(reason = "dev")
 {
 	const ID = structuredClone(this.ID);
-	return MAGPIE_ENTITY.__hiveSync("kick", [ID, "self-kick"])
+	return MAGPIE_ENTITY.__hiveSync("kick", [ID, reason])
 }
 /**
  * @name 
@@ -1652,9 +1657,8 @@ MAGPIE_ENTITY.prototype.processStates = function processStates(switchID, dt, exp
 				const state = MAGPIE_STATE.INDEX.get(stateID);
 				if(!(state instanceof MAGPIE_STATE))
 					throw new Error(`${stateID} is invalid MAGPIE_STATE`);
-				const process = switchID >= standardSwitch ? true : false;
 				const state_index = this._get_index_state(index);
-				const output = state.onUpdate(exp, this, process, state_index);
+				const output = state.onUpdate(exp, this, switchID, state_index);
 				// MAGPIE_SYSTEM._logging_debug(Object.entries(output))
 				if(output?.exp)
 					Object.keys(output).forEach(k => {
@@ -2234,7 +2238,99 @@ MAGPIE_ENTITY.prototype._get_index_trait = function _get_index_trait(fitness_ind
 //========================================================================
 // #region - FITNESS
 //========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Get
+//------------------------------------------------------------------------
 
+/**
+ * 
+ * @param {index} index 
+ * @param {Number} zone 
+ * @returns {fitness_index}
+ */
+MAGPIE_ENTITY.prototype._fitness_offset = function fitnessOffset(index, zone)
+{
+	const ePrefix = `[ENTITY-${this.ID}].fitnessOffset: `;
+	try
+	{
+		if(isNaN(index) || index < this.fitness.length || index >= this.fitness.length)
+			return
+		const K = MAGPIE.KEY.FITNESS;
+		const zones = K.ZONES;
+		const deckSize = K.DECKSIZE;
+		const offset = K.TRAITS + (deckSize * zones) + index;
+		if(this.fitness[offset])
+			return this.fitness[offset]
+		return
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {index} index 
+ * @param {Enumerator<Number>} zoneID 
+ * @returns {fitness_index}
+ */
+MAGPIE_ENTITY.prototype._trait_offset = function traitOffset(index, zoneID)
+{
+	const ePrefix = `[ENTITY-${this.ID}].traitOffset: `;
+	try
+	{
+		if(isNaN(index) || index < 0 || index >= this.fitness.length)
+			return
+		const K = MAGPIE.KEY.FITNESS;
+		const trait_index = K.TRAITS + index
+		if(this._get_traits()[trait_index] !== this.fitness[trait_index])
+			return
+		return this.fitness[trait_index]
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > CCG
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {fitness_index}
+ */
+MAGPIE_ENTITY.prototype._fitness_draw = function drawFitness()
+{
+	const ePrefix = `[ENTITY-${this.ID}].fitnessDraw: `;
+	try
+	{
+		const reserve = this._get_RESERVE();
+		const index = Math.floor(Math.random() * (reserve.length - 1))
+		const traits = this._get_traits()
+		const fitness_index = traits.indexOf(reserve[index]) - 2
+		if(this.fitness[fitness_index])
+			return fitness_index
+		return
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * 
  * @desc back to {@link }
@@ -2793,6 +2889,26 @@ MAGPIE_ENTITY.prototype._marker_setTarget = function _marker_setTarget(coords)
 // #region - STATE
 //========================================================================
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Handling
+//------------------------------------------------------------------------
+/**
+ * @returns {stateID}
+ */
+MAGPIE_ENTITY.prototype._get_Rstate = function getRstate()
+{
+	const states = this._get_states();
+	const Rstates = MAGPIE_STATE.TYPE.get(STATE.TYPE.FSM_POSTURE);
+	Rstates.forEach(n => {
+		if(states.includes(n))
+			return n
+	})
+}
+/**
  *  
  * @param {stamina_index} stamina_index
  * @returns {Boolean}
@@ -2810,6 +2926,58 @@ MAGPIE_ENTITY.prototype.addState = function addState(stamina_index)
 			throw new Error(`fitness[${index}] is occupied by [STATE-${slot}]`)
 		this.fitness[index] = stateID
 		return true
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {stamina_index} stamina_index 
+ * @returns {Boolean}
+ */
+MAGPIE_ENTITY.prototype.removeState = function removeState(stamina_index)
+{
+	const ePrefix = `[ENTITY-${this.ID}].removeState: `;
+	try
+	{
+		if(!this.isValidStamina(stamina_index))
+			throw new Error(`${stamina_index} is invalid STA index`)
+		const slot = this.fitness[index];
+		if(isNaN(slot))
+			throw new Error(`fitness[${index}] is already empty`)
+		this.fitness[index] = NaN;
+		return true
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {fitness_index} fitness_index 
+ * @param {stateID} stateID 
+ * @returns {Boolean}
+ */
+MAGPIE_ENTITY.prototype.switchState = function switchState(fitness_index, stateID)
+{
+	const ePrefix = `[ENTITY-${this.ID}].switchState: `;
+	try
+	{
+		const state = MAGPIE_STATE.INDEX.get(stateID);
+		if(!(state instanceof MAGPIE_STATE))
+			throw new Error(`[STATE-${stateID}] is invalid MAGPIE_STATE`)
+		if(isNaN(fitness_index) || fitness_index < 0 || fitness_index >= this.fitness.length)
+			throw new Error(`${fitness_index} is invalid fitness_index`)
+		const current = this.fitness[fitness_index];
+		if(!(MAGPIE_STATE.INDEX.get(current) instanceof MAGPIE_STATE))
+			throw new Error(`this.fitness[${current}] is invalid state`)
+		if(current === stateID)
+			return current
+		this.fitness[fitness_index] = stateID;
+		return stateID
 	}
 	catch(e)
 	{
@@ -2867,29 +3035,7 @@ MAGPIE_ENTITY.prototype._get_stamina = function _get_stamina(index)
 		throw new Error(`${traitID} at [FITNESS-${offset + index}] is invalid traitID`)
 	return traitID
 }
-/**
- * 
- * @param {stamina_index} stamina_index 
- * @returns {Boolean}
- */
-MAGPIE_ENTITY.prototype.removeState = function removeState(stamina_index)
-{
-	const ePrefix = `[ENTITY-${this.ID}].removeState: `;
-	try
-	{
-		if(!this.isValidStamina(stamina_index))
-			throw new Error(`${stamina_index} is invalid STA index`)
-		const slot = this.fitness[index];
-		if(isNaN(slot))
-			throw new Error(`fitness[${index}] is already empty`)
-		this.fitness[index] = NaN;
-		return true
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-	}
-}
+
 /**
  * 
  * @param {stamina_index} index
@@ -2899,29 +3045,39 @@ MAGPIE_ENTITY.prototype.isValidStamina = function isValidStamina(index)
 {
 	!isNaN(index) && index > 0 && index < 10
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Injury
+//------------------------------------------------------------------------
 /**
  * 
- * @param {fitness_index} fitness_index 
- * @param {stateID} stateID 
- * @returns {Boolean}
+ * @param {stateID} injuryID 
+ * @returns {traitIndex}
  */
-MAGPIE_ENTITY.prototype.switchState = function switchState(fitness_index, stateID)
+MAGPIE_ENTITY.prototype.addInjury = function addInjury(injuryID)
 {
-	const ePrefix = `[ENTITY-${this.ID}].switchState: `;
+	const ePrefix = `[ENTITY-${this.ID}].addInjury: `;
 	try
 	{
-		const state = MAGPIE_STATE.INDEX.get(stateID);
-		if(!(state instanceof MAGPIE_STATE))
-			throw new Error(`[STATE-${stateID}] is invalid MAGPIE_STATE`)
-		if(isNaN(fitness_index) || fitness_index < 0 || fitness_index >= this.fitness.length)
-			throw new Error(`${fitness_index} is invalid fitness_index`)
-		const current = this.fitness[fitness_index];
-		if(!(MAGPIE_STATE.INDEX.get(current) instanceof MAGPIE_STATE))
-			throw new Error(`this.fitness[${current}] is invalid state`)
-		if(current === stateID)
-			return current
-		this.fitness[fitness_index] = stateID;
-		return stateID
+		const injury = MAGPIE_STATE.INDEX.get(injuryID);
+		if(!injury || injury.type !== STATE.TYPE.ACCUMULATOR_INJURY)
+			throw new Error(`${injuryID} is invalid injury state`)
+		const fitness_index = this._fitness_draw();
+		const injury_index = this._fitness_offset(traitIndex, MAGPIE.KEY.FITNESS.INJURY)
+		this.fitness[injury_index] = injuryID;
+		const output = injury.onApply(exp, this, fitness_index)
+		if(!output)
+		{
+			this.selfKick("state apply error")
+			throw new Error(`${output} is invalid [INJURY-${injuryID}].onApply output`)
+		}
+		return traitIndex
 	}
 	catch(e)
 	{
@@ -2929,17 +3085,35 @@ MAGPIE_ENTITY.prototype.switchState = function switchState(fitness_index, stateI
 	}
 }
 /**
- * @returns {stateID}
+ * 
+ * @param {stateID} injuryID 
  */
-MAGPIE_ENTITY.prototype._get_Rstate = function getRstate()
+MAGPIE_ENTITY.prototype.healInjury = function healInjury(injuryID)
 {
-	const states = this._get_states();
-	const Rstates = MAGPIE_STATE.TYPE.get(STATE.TYPE.FSM_POSTURE);
-	Rstates.forEach(n => {
-		if(states.includes(n))
-			return n
-	})
+	const ePrefix = `[ENTITY-${this.ID}].healInjury: `;
+	try
+	{
+		const injury = MAGPIE_STATE.INDEX.get(injuryID);
+		if(!injury || injury.type !== STATE.TYPE.ACCUMULATOR_INJURY)
+			throw new Error(`${injuryID} is invalid injury state`)
+		const K = MAGPIE.KEY.FITNESS;
+		const index = this.fitness.indexOf(ID => ID === injuryID)
+		const fitness_index = this._trait_offset(index, K.INJURY)
+		if(!fitness_index)
+			throw new Error(`${fitness_index} is invalid fitness_index`)
+		this.fitness[index] = 0;
+		const output = injury.onRemove(exp, this, fitness_index)
+		if(!output)
+			throw new Error(`${output} is invalid [INJURY-${injuryID}].onRemove output`)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
+// #endregion
+//------------------------------------------------------------------------
+
 /**
  * 
  * @desc back to {@link }
@@ -3329,7 +3503,7 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 	catch(e)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
-		this.selfKick()
+		this.selfKick("failed update")
 	}
 }
 /**
@@ -3374,6 +3548,88 @@ MAGPIE_ENTITY.prototype._exp_swapWith = function _exp_swapWith(index, exp)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 		return false
 	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - BIO
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > NewDay
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @param {fitness_index} fitness_index 
+ */
+MAGPIE_ENTITY.prototype._switch_newDay = function newDay(exp, fitness_index)
+{
+	this.addInjury(STATE.INDEX.HUNGER)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Metabolism
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns 
+ */
+MAGPIE_ENTITY.prototype._bio_metabolism = function metabolism()
+{
+	const ePrefix = `[ENTITY-${this.ID}].metabolism: `;
+	try
+	{
+		const mass = this._get_MASS();
+		const pwr = this._get_PWR();
+		const dex = this._get_DEX();
+		const sen = this._get_SEN();
+		const endurance = this._get_endurance();
+		const diet = (mass + pwr + dex + sen) * endurance
+		const energy = this._get_NRG();
+		const recover = energy >= diet
+		if(!recover)
+			return
+		this._bio_recover(diet)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {Number} diet 
+ */
+MAGPIE_ENTITY.prototype._bio_recover = function recover(diet)
+{
+	if(!Number(diet))
+		return
+	this._consume_NRG(diet)
+	this.healInjury(STATE.INDEX.HUNGER);
 }
 // #endregion
 //------------------------------------------------------------------------

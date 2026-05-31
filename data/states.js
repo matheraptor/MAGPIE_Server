@@ -37,24 +37,34 @@ const TYPE = {};
 /** @type {state_type} @desc permanent state type */
 TYPE.PERMANENT = 0;
 /** @type {state_type} @desc growth level state type */
-TYPE.G_LVL = 1;
+TYPE.G_LVL = 10;
 /** @type {state_type} @desc accumulator state type */
-TYPE.ACCUMULATOR = 2;
+TYPE.ACCUMULATOR = 20;
+/** @type {state_type} */
+TYPE.ACCUMULATOR_STATE = 21;
+/** @type {state_type} */
+TYPE.ACCUMULATOR_EQUIP = 22;
+/** @type {state_type} */
+TYPE.ACCUMULATOR_WASTE = 23;
+/** @type {state_type} */
+TYPE.ACCUMULATOR_INJURY = 24;
+/** @type {state_type} */
+TYPE.ACCUMULATOR_TRIBUTE = 25;
 /** @type {state_type} @desc Finite-State-Machine type */
-TYPE.FSM = 10;
+TYPE.FSM = 100;
 /** @type {state_type} @desc Finite-State-Machine type */
-TYPE.FSM_STATUS = 11;
+TYPE.FSM_STATUS = 110;
 /** @type {state_type} @desc Finite-State-Machine type */
-TYPE.FSM_POSTURE = 12;
+TYPE.FSM_POSTURE = 120;
 /** @type {state_type} @desc Finite-State-Machine type */
-TYPE.FSM_MOVEMENT = 13;
+TYPE.FSM_MOVEMENT = 130;
 /** @type {state_type} @desc Finite-State-Machine type */
-TYPE.FSM_MOOD = 14;
+TYPE.FSM_MOOD = 140;
 /** @type {state_type} @desc Finite-State-Machine type */
-TYPE.FSM_ENERGY = 15;
+TYPE.FSM_ENERGY = 150;
 //TEMPORARY STATES (1 turn)
 /** @type {state_type} @desc temporary state type */
-TYPE.TEMP = 100;
+TYPE.TEMP = 1000;
 // INDEX
 const effect = {
 	expire: true,
@@ -96,6 +106,70 @@ const TEMPLATE = {
 states.push(TEMPLATE)
 /** @type {Enumerator<Number>}  */
 INDEX.TEMPLATE = TEMPLATE.ID;
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Bio
+//------------------------------------------------------------------------
+const BIO_DEAD = {
+	ID: 20,
+	type: TYPE.PERMANENT,
+	name: "BIO_DEAD",
+	description: "",
+	stack: 1,
+	onApply: () => {
+		//death effect
+	},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} switchID 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: (exp, entity, switchID, fitness_index) => {
+		//degrade
+	},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(BIO_DEAD);
+/** @type {Enumerator<Number>}  */
+INDEX.BIO_DEAD = BIO_DEAD.ID;
+//------------------------------------------------------------------------
+const BIO_ALIVE = {
+	ID: 21,
+	type: TYPE.PERMANENT,
+	name: "BIO_ALIVE",
+	description: "",
+	stack: 1,
+	onApply: () => {
+		//death effect
+	},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} switchID 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onUpdate: (exp, entity, switchID, fitness_index) => {
+		if(switchID === MAGPIE.KEY.RUNTIME.LAYER.get(2).switch)
+			return entity._switch_newDay(exp, fitness_index)
+	},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(BIO_ALIVE);
+/** @type {Enumerator<Number>}  */
+INDEX.BIO_ALIVE = BIO_ALIVE.ID;
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -147,11 +221,47 @@ INDEX.TEMPLATE = TEMPLATE.ID;
  * 
  */
 //------------------------------------------------------------------------
+// #region > Hunger
+//------------------------------------------------------------------------
+const HUNGER = {
+	ID: 201,
+	type: TYPE.ACCUMULATOR_INJURY,
+	name: "HUNGER",
+	description: "",
+	stack: 99,
+	onApply: (exp, entity, fitness_index) => {
+		return true
+	},
+	onUpdate: () => {},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} switchID 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onRemove: (exp, entity, switchID, fitness_index) => {
+		//@todo hunger remove
+	},
+	onExpire: () => {}
+}
+states.push(HUNGER);
+/** @type {Enumerator<Number>}  */
+INDEX.HUNGER = HUNGER.ID
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
 // #region > Fat
 //------------------------------------------------------------------------
 const FAT = {
 	ID: 219,
-	type: TYPE.ACCUMULATOR,
+	type: TYPE.ACCUMULATOR_INJURY,
 	name: "FAT",
 	description: "",
 	stack: 99,
@@ -203,13 +313,13 @@ const SEEKING_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_seekTarget(exp, fitness_index);
 	},
 	onRemove: () => {},
@@ -230,13 +340,13 @@ const REACHING_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_reachTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
@@ -257,13 +367,13 @@ const APPROACHING_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_approachTarget(exp, fitness_index);
 	}
 }
@@ -282,13 +392,13 @@ const ON_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_onTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
@@ -310,7 +420,7 @@ const IDLING = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
@@ -318,13 +428,13 @@ const IDLING = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_Idling(exp, fitness_index)
 	},
 	onRemove: () => {},
@@ -346,13 +456,13 @@ const ALIGNING_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_aligningTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
@@ -374,13 +484,13 @@ const LOCKING_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_lockingTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
@@ -402,13 +512,13 @@ const FACING_TARGET = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_facingTarget(exp, fitness_index)
 	},
 	onRemove: () => {},
@@ -430,13 +540,13 @@ const DRIFTING = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_drifting(exp, fitness_index)
 	},
 	onRemove: () => {},
@@ -458,13 +568,13 @@ const SPOOFED = {
 	 * 
 	 * @param {MAGPIE_EXP} exp 
 	 * @param {MAGPIE_ENTITY} entity 
-	 * @param {Boolean} process 
+	 * @param {Boolean} switchID 
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onUpdate: (exp, entity, process, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
 		const target = exp.keys.includes(MAGPIE.KEY.INDEX.TARGET);
-		if(!target || !process) return {exp: exp}
+		if(!target || !switchID) return {exp: exp}
 		return entity._emote_spoofed(exp, fitness_index)
 	},
 	onRemove: () => {},
