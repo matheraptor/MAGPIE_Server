@@ -1391,6 +1391,21 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_429 = {
 MAGPIE.KEY.ENTITY = {};
 MAGPIE.KEY.ENTITY.TYPE = require("../data/entity_types");
 MAGPIE.KEY.ENTITY.UNIVERSE = 101;
+/**
+ * {@link MAGPIE_ENTITY.container}
+ * 
+ */
+MAGPIE.KEY.ENTITY.CONTAINER = {};
+MAGPIE.KEY.ENTITY.CONTAINER.meta = {
+	name = "container-entity",
+	desc = ""
+}
+/** 
+ * @type {Enumerator<Number>} 
+ * @desc values = container.fitness.length / 4 
+ * @desc offset = i * values 
+ * */
+MAGPIE.KEY.ENTITY.CONTAINER.SERIES = 4;
 // #endregion
 //------------------------------------------------------------------------
 /**

@@ -607,17 +607,15 @@ MAGPIE_SYMBOL.prototype._get_processors = function getProcessors()
 		stats.forEach((n, index) => {
 			if(n === K.get("INGREDIENT"))
 			{
-				obj.ingredients.push(stats[index + 1])
-				if(stats[index + 2] === K.get("PROCESS_RATE"))
-					obj.ingredients.push(stats[index + 3])
-				else obj.ingredients.push(1)
+				const ingredient = [stats[index + 1]]
+				const hasRate = stats[index + 2] === K.get("PROCESS_RATE");
+				ingredient[1] = hasRate ? stats[index + 3] : 1;
 			}
 			if(n === K.get("PRODUCT"))
 			{
-				obj.products.push(stats[index + 1])
-				if(stats[index + 2 === K.get("PROCESS_RATE")])
-					obj.products.push(stats[index + 3])
-				else obj.products.push(1)
+				const product = [stats[index + 1]]
+				const hasRate = stats[index + 2 === K.get("PROCESS_RATE")]
+				product[1] = hasRate ? stats[index + 3] : 1
 			}
 			if(n === K.get("PROCESS_MAX"))
 				obj.Rmax = stats[index + 1]
@@ -640,31 +638,73 @@ MAGPIE_SYMBOL.prototype._get_processors = function getProcessors()
 	}
 }
 /**
- * 
- * @param {{
- * rate: Number
- * }} options 
- * @param {Number} dt 
+ * @todo decompose and modularize with keys
+ * @typedef {Number} return_code
  * @param {MAGPIE_ENTITY} container 
+ * @param {Number} dt 
+ * @param {{
+ * rate: Number,
+ * killswitch: Boolean,
+ * }} options 
+ * @returns {return_code}
  */
-MAGPIE_SYMBOL.prototype._apply_processor = function applyProcessor(options, dt, container)
+MAGPIE_SYMBOL.prototype._apply_processor = function applyProcessor(container, dt, options)
 {
 	const ePrefix = `[SYMBOL-${this.ID}].applyProcessor: `;
 	try
 	{
+		const exhaustedResource = -1
+		const missingResource = -2
+		const fullContainer = -3
+		const noProcessor = -4
+		const noContainer = -5
+		const killswitch = -6
 		const processors = this._get_processors();
-		const Rmax = processors?.Rmax;
-		const Rsafe = processors?.Rsafe;
-		const Rcomfort = processors?.Rcomfort;
-		const Rmin = processors?.Rmin;
-		const Rdegrade = processors?.Rdegrade;
-		const Rdamage = processors?.Rdamage;
+		if(!processors)
+			return noProcessor
+		const resources = container?._container_get_resources()
+		if(!resources)
+			return noContainer
+		const Rmax = processors?.Rmax || 2;
+		const Rsafe = processors?.Rsafe || 1.5;
+		const Rcomfort = processors?.Rcomfort || 1;
+		const Rmin = processors?.Rmin || 0;
+		const Rdegrade = processors?.Rdegrade || 0.9;
+		const Rdamage = processors?.Rdamage || 0.5;
 		const rate = MAGPIE_SYSTEM.Math.clampRange(Number(options?.rate) || 1, Rmin, Rmax);
 		const degrade = rate > Rcomfort ? Rdegrade : 1
 		const damage = rate > Rsafe ? Rdamage : 1
-		options.rate = rate * degrade * damage
+		options.rate = rate * degrade * damage * dt
+		options.output = structuredClone(options.rate)
 		const stats = Array.from(this.STATS);
-		processors
+		if(processors.Ingredients.some(i => !resources.get(i[0])))
+			return missingResource
+		processors.Ingredients.forEach(i => {
+			const ID = i[0];
+			const rate = i[1] * options.rate;
+			const resource = resources.get(ID)
+			const low = resource.amount < rate
+			if(low && options.killswitch)
+				return exhaustedResource
+			resource.amount -= rate;
+			if(resource.amount < 0)
+			{
+				resource.amount = 0
+				options.output = 0;
+			}
+		})
+		processors.Products.forEach(i => {
+			const ID = i[0];
+			const rate = i[1] * options.rate;
+			const r = resources.get(ID);
+			const resource = r ? r : resources.set(ID);
+			const max = resource.maxAmount;
+			const topup = resource.amount + rate
+			const full = max && max > topup;
+			resource.amount += full ? max - topup : topup
+			if(full)
+				return fullContainer
+		})
 	}
 	catch(e)
 	{

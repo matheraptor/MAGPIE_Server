@@ -1914,6 +1914,55 @@ MAGPIE_ENTITY.prototype._get_type = function getType()
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * {@link MAGPIE.KEY.ENTITY.CONTAINER.meta}
+ */
+//------------------------------------------------------------------------
+// #region > Container
+//------------------------------------------------------------------------
+MAGPIE_ENTITY.container = {};
+/**
+ * @typedef {Map<keyID, {
+ * amount: Number, 
+ * maxAmount: Number, 
+ * contextKey: keyID
+ * }>} container {@link MAGPIE.KEY.ENTITY.CONTAINER.meta}
+ * @returns {container}
+ */
+MAGPIE_ENTITY.prototype._container_get_resources = function()
+{
+	const ePrefix = `[ENTITY-${this.ID}]: `;
+	try
+	{
+		const arr = Array.from(this.fitness)
+		if(arr.length < 1)
+			return 
+		const values = MAGPIE.KEY.ENTITY.CONTAINER.SERIES;
+		const series = arr.length / values
+		if(series % Math.floor(series) > 0)
+			return MAGPIE_SYSTEM.log(`container fitness not a multiple of ${values}`)
+		/** @type {container} */
+		const resources = new Map();
+		for(let i = 0; i < series; i++)
+		{
+			const offset = i * values
+			resources.set(arr[offset], {
+				amount: arr[offset + 1],
+				maxAmount: arr[offset + 2],
+				contextKey: arr[offset + 3]
+			})
+		}
+		return resources
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *
