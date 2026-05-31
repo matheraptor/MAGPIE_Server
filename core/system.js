@@ -2078,7 +2078,7 @@ MAGPIE_HIVE.host = function hostOnHive(entity, layerID, targetLayerID = NaN, con
 		{
 			slot = MAGPIE_HIVE.findNextSlot(layerID);
 			if(MAGPIE_HIVE.checkConflict(slot, layerID))
-				throw new Error(`conflict!`)
+				throw new Error(`conflict at [LAYER-${layerID}][${slot}]!`)
 		}
 		MAGPIE_HIVE[layerName][slot] = layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE ? entity : entity.ID;
 		MAGPIE_HIVE._registry.set(entity.ID, {
