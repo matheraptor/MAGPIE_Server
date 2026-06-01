@@ -1,6 +1,6 @@
 /**
  *
- * @version 0.30.2
+ * @version 0.31.0
  * 
  * @changelog 
  * @version 0.18.9 2026 03 31
@@ -83,9 +83,12 @@ const inspector = {
 		update("val-states", data.states);
 		if(data?.dR_mag && !isNaN(data.dR_mag))
 			update("val-dR_mag", Number(data.dR_mag)?.toFixed(3));
-		update('val-heading', data.heading?.toFixed(1));
-		update("val-pitch", data.pitch?.toFixed(1));
-		update("val-roll", data?.roll?.toFixed(1));
+		if(Number(data?.heading))
+			update('val-heading', data.heading?.toFixed(1));
+		if(Number(data?.pitch))
+			update("val-pitch", data.pitch?.toFixed(1));
+		if(Number(data?.roll))
+			update("val-roll", data?.roll?.toFixed(1));
 		update('val-body', data.CelestialBody);
 		update('val-meta', data.metadate);
 		update("val-targetID", data?.targetID);

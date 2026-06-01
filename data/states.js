@@ -230,9 +230,9 @@ const HUNGER = {
 	description: "",
 	stack: 99,
 	onApply: (exp, entity, fitness_index) => {
+		exp.keys.push(MAGPIE.KEY.INDEX.HUNGRY)
 		return true
 	},
-	onUpdate: () => {},
 	/**
 	 * 
 	 * @param {MAGPIE_EXP} exp 
@@ -241,7 +241,20 @@ const HUNGER = {
 	 * @param {fitness_index} fitness_index 
 	 * @returns {state_output}
 	 */
-	onRemove: (exp, entity, switchID, fitness_index) => {
+	onUpdate: (exp, entity, switchID, fitness_index) => {
+		const TICK = 2;
+		if(switchID >= TICK && entity._emote_dice(7 - switchID))
+			return entity._emote_seekNRG(exp)
+	},
+	/**
+	 * 
+	 * @param {MAGPIE_EXP} exp 
+	 * @param {MAGPIE_ENTITY} entity 
+	 * @param {Boolean} switchID 
+	 * @param {fitness_index} fitness_index 
+	 * @returns {state_output}
+	 */
+	onRemove: (exp, entity, fitness_index) => {
 		//@todo hunger remove
 	},
 	onExpire: () => {}

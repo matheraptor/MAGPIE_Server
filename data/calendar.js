@@ -1,5 +1,17 @@
 /**
- * @type {Map<Number, Object>}
+ * @typedef {{
+ * calendarID: Number,
+ * name: String,
+ * desc: String,
+ * days: Number,
+ * months: {monthName: Number},
+ * weekDays: {weekDay: String},
+ * leapMonth: Number,
+ * leapYear: Number,
+ * dayLength: Number,
+ * epochYear: Number
+ * }} calendar
+ * @type {Map<Number, calendar>}
  * 
  */
 const INDEX = new Map();

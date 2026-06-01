@@ -1,6 +1,6 @@
 /**
  * @name MAGPIE_ENTITY
- * @version 0.30.3
+ * @version 0.31.0
  * @desc 
  * @param {{
  * name: String,
@@ -354,6 +354,8 @@ MAGPIE_ENTITY._setDependency = async function setDependency(property, propertyNa
  * @typedef {import("./index").keyID} keyID
  * @typedef {import("./component").emoteID} emoteID
  * 
+ * @typedef {Number} STAT  
+ * 
  * @param {entity_data} data
  * @returns {new MAGPIE_ENTITY}
  * 
@@ -644,6 +646,14 @@ MAGPIE_ENTITY.prototype._get_host = function _get_host()
 }
 /**
  * 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_ENTITY.prototype._get_guestsSync = function _get_guestsSync()
+{
+	return MAGPIE_ENTITY.__hiveSync("_get_databaseSync", ["loadEquipsSync", [this.ID]])
+}
+/**
+ * 
  * @returns {distance}
  */
 MAGPIE_ENTITY.prototype._get_radius = function getRadius()
@@ -739,24 +749,58 @@ MAGPIE_ENTITY.prototype._get_states = function getStates()
 }
 /**
  * 
+ * @returns {entityID}
+ */
+MAGPIE_ENTITY.prototype._get_equips = function _get_equips()
+{
+	const K = MAGPIE.KEY.FITNESS;
+	const deckSize = K.DECKSIZE;
+	const zone = K.EQUIPS;
+	const start = K.TRAITS + (deckSize * zone)
+	const end = start + deckSize
+	return this.fitness.slice(start, end + 1)
+}
+/**
+ * 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_ENTITY.prototype._get_equipEntities = function()
+{
+	return this._get_equips().map(entityID => {
+		if(entityID)
+			return MAGPIE_ENTITY.__hiveSync("_get_entity", [entityID])
+	})
+}
+/**
+ * 
  * @returns {Number}
  */
 MAGPIE_ENTITY.prototype._get_growthLevel = function _get_growthLevel()
 {
 	return this.STATS[MAGPIE.KEY.STATS.G_LVL];
 }
+/**
+ * 
+ * @returns {stateID[]}
+ */
+MAGPIE_ENTITY.prototype._get_injuries = function _get_injuries()
+{
+	const K = MAGPIE.KEY.FITNESS;
+	const deckSize = K.DECKSIZE;
+	const zone = K.INJURY;
+	const start = K.TRAITS + (deckSize * zone);
+	const end = start + deckSize;
+	return this.fitness.slice(start, end + 1)
+}
+/**
+ * 
+ * @returns {Number}
+ */
 MAGPIE_ENTITY.prototype._get_fatLevel = function _get_fatLevel()
 {
-	let fat = 0;
-	const states = MAGPIE_ENTITY._get_States();
-	const FAT = STATE.INDEX.FAT;
-	if(states.length < 1) return 0;
-	for(const stateID of states)
-	{
-		const state = MAGPIE_STATE.INDEX.get(stateID);
-		if(state.type === FAT)
-			fat += 1;
-	}
+	const injuries = this._get_injuries();
+	if(injuries.length < 1) return 0;
+	const fat = injuries.filter(injuryID => injuryID === STATE.INDEX.FAT)
 	return fat
 }
 /**
@@ -1896,6 +1940,112 @@ MAGPIE_ENTITY.prototype.processKeys = function processKeys(exp)
  * 
  */
 //========================================================================
+// #region - STAT
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Get
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_MASS = function getMASS()
+{
+	return this.STATS[MAGPIE.KEY.STATS.MASS]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_PWR = function getPWR()
+{
+	return this.STATS[MAGPIE.KEY.STATS.PWR]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_DEX = function getDEX()
+{
+	return this.STATS[MAGPIE.KEY.STATS.DEX]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_SEN = function getSEN()
+{
+	return this.STATS[MAGPIE.KEY.STATS.SEN]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_END = function getEND()
+{
+	return this.STATS[MAGPIE.KEY.STATS.END]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_RT = function getRT()
+{
+	return this.STATS[MAGPIE.KEY.STATS.RT]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_EVO = function getEVO()
+{
+	return this.STATS[MAGPIE.KEY.STATS.EVO]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_GLVL = function getGLVL()
+{
+	return this.STATS[MAGPIE.KEY.STATS.G_LVL]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_GI = function getGI()
+{
+	return this.STATS[MAGPIE.KEY.STATS.G_I]
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype._get_GR = function getGR()
+{
+	return this.STATS[MAGPIE.KEY.STATS.G_R]
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
 // #region - SYMBOLS
 //========================================================================
 /**
@@ -2385,6 +2535,15 @@ MAGPIE_ENTITY.prototype._act_emote = function _act_emote(emoteID, exp)
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+/**
+ * 
+ * @param {Number} dice 
+ * @returns {Boolean}
+ */
+MAGPIE_ENTITY.prototype._emote_dice = function _emote_dice(dice = 6)
+{
+	return Math.ceil(Math.random() * dice) === dice
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -2420,14 +2579,14 @@ MAGPIE_ENTITY.prototype._emote_eval = function _emote_eval(exp)
 // #endregion
 //------------------------------------------------------------------------
 /**
- * @name 
+ * @name seekTarget
  * @desc 
  * 
  */
 //------------------------------------------------------------------------
-// #region > Seek
+// #region > Seek1
 //------------------------------------------------------------------------
-
+MAGPIE_ENTITY._seekTarget = 1;
 /**
  * 
  * @param {MAGPIE_EXP} exp 
@@ -2670,6 +2829,125 @@ MAGPIE_ENTITY.prototype._emote_spoofed = function _emote_spoofed(exp, fitness_in
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name seekFood
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Seek2
+//------------------------------------------------------------------------
+MAGPIE_ENTITY._seekFood = 2
+/**
+ * 
+ * @param {MAGPIE_EXP} exp 
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_seekNRG = function seekNRG(exp)
+{
+	const ePrefix = `[ENTITY-${this.ID}].seekFood: `;
+	try
+	{
+		const oldExp = exp;
+		exp = new MAGPIE_EXP({subject: this.ID, keys: [MAGPIE.KEY.INDEX.ECG_HUNGRY]})
+		//@todo target food?
+		const equips = this._get_equipEntities()
+		if(equips.length > 0)
+		{
+			const species = MAGPIE.KEY.SYMBOL.TYPE.SPECIES
+			const food = equips.find(e => 
+				!!e && e._get_type() && e._get_type().type === species
+			)
+			if(food)
+			{
+				const fitness_index = this.fitness.indexOf(food.ID)
+				return this._emote_eat(exp, food, fitness_index)
+			}
+		}
+		const SEN = this._get_SEN()
+		const findNRG = this._sense_for(MAGPIE.KEY.INDEX.ECG.get("ENERGY"), SEN)
+		if(!findNRG)
+			return
+		const territory = findNRG._get_territories()[0]
+		if(!territory)
+			return
+		if(exp.targetID === territory.ID)
+			exp.targetID = territory._territory_explore()
+		exp.targetID = territoryID;
+		const fitness_index = this._get_states().findIndex(stateID => 
+			MAGPIE_STATE.INDEX.get(stateID)?.type === STATE.TYPE.FSM_POSTURE
+		)
+		if(fitness_index > -1)
+			return this._emote_seekTarget(exp, fitness_index)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		this.selfKick("error")
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_EXP} exp
+ * @param {MAGPIE_ENTITY} entity
+ * @param {fitness_index} fitness_index
+ * @returns {state_output}
+ */
+MAGPIE_ENTITY.prototype._emote_eat = function _emote_eat(exp, entity, fitness_index)
+{
+	if(!entity instanceof MAGPIE_ENTITY)
+		return
+	const MASS = entity._get_MASS()
+	entity._get_MASS() -= 1;
+	if(MASS < 1)
+	{
+		entity.STATS[MAGPIE.KEY.STATS.HOST] = 101;
+		entity.selfKick("digested")
+	}
+	exp.targetID = entity.ID
+	const key_index = exp.keys.indexOf(keyID === MAGPIE.KEY.INDEX.ECG_HUNGRY)
+	if(key_index)
+		exp.keys[key_index] = MAGPIE.KEY.INDEX.ECG_SATIATED
+	/** @type {action_output} */
+	const raw = {fitness_index: fitness_index}
+	return raw
+}
+/**
+ * 
+ * @param {keyID} keyID
+ * @param {SEN} SENSE
+ * @returns {MAGPIE_CONTEXT} 
+ */
+MAGPIE_ENTITY.prototype._sense_for = function _sense_for(keyID, SENSE)
+{
+	const contexts = this._get_contexts()
+	if(contexts.length < 1)
+		return false
+	const local = MAGPIE.KEY.CONTEXT.LOCAL
+	return contexts.find(context => 
+		context.type === local && context.keys.includes(keyID === keyID))
+}
+/**
+ * 
+ * @returns {MAGPIE_CONTEXT[]}
+ */
+MAGPIE_ENTITY.prototype._get_contexts = function getContexts()
+{
+	return MAGPIE_ENTITY.__hiveSync("_fetch_entity_context", [this.ID])
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > 
+//------------------------------------------------------------------------
+
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -3058,7 +3336,7 @@ MAGPIE_ENTITY.prototype.isValidStamina = function isValidStamina(index)
 /**
  * 
  * @param {stateID} injuryID 
- * @returns {traitIndex}
+ * @returns {fitness_index}
  */
 MAGPIE_ENTITY.prototype.addInjury = function addInjury(injuryID)
 {
@@ -3069,7 +3347,7 @@ MAGPIE_ENTITY.prototype.addInjury = function addInjury(injuryID)
 		if(!injury || injury.type !== STATE.TYPE.ACCUMULATOR_INJURY)
 			throw new Error(`${injuryID} is invalid injury state`)
 		const fitness_index = this._fitness_draw();
-		const injury_index = this._fitness_offset(traitIndex, MAGPIE.KEY.FITNESS.INJURY)
+		const injury_index = this._fitness_offset(fitness_index, MAGPIE.KEY.FITNESS.INJURY)
 		this.fitness[injury_index] = injuryID;
 		const output = injury.onApply(exp, this, fitness_index)
 		if(!output)
@@ -3077,7 +3355,7 @@ MAGPIE_ENTITY.prototype.addInjury = function addInjury(injuryID)
 			this.selfKick("state apply error")
 			throw new Error(`${output} is invalid [INJURY-${injuryID}].onApply output`)
 		}
-		return traitIndex
+		return fitness_index
 	}
 	catch(e)
 	{
@@ -3087,6 +3365,7 @@ MAGPIE_ENTITY.prototype.addInjury = function addInjury(injuryID)
 /**
  * 
  * @param {stateID} injuryID 
+ * @returns {fitness_index}
  */
 MAGPIE_ENTITY.prototype.healInjury = function healInjury(injuryID)
 {
@@ -3105,6 +3384,7 @@ MAGPIE_ENTITY.prototype.healInjury = function healInjury(injuryID)
 		const output = injury.onRemove(exp, this, fitness_index)
 		if(!output)
 			throw new Error(`${output} is invalid [INJURY-${injuryID}].onRemove output`)
+		return fitness_index
 	}
 	catch(e)
 	{
@@ -3302,23 +3582,6 @@ MAGPIE_ENTITY.prototype._set_celestial = function(celestialID)
  * 
  */
 //========================================================================
-// #region - ACTION
-//========================================================================
-
-/**
- * 
- * @desc back to {@link }
- *
- */
-//========================================================================
-// #endregion - 
-//========================================================================
-/**
- * @name 
- * @desc 
- * 
- */
-//========================================================================
 // #region - TARGET
 //========================================================================
 /**
@@ -3398,17 +3661,16 @@ MAGPIE_ENTITY.prototype._target_queue_geodetic = async function(options)
 			contents.name = queue[i]?.name;
 			contents.coords = queue[i]?._get_C0();
 			contents.course = Math.floor(course);
-			contents.distance = Math.floor(distance);
+			contents.distance = MAGPIE_PHYSICS._U_printDistance(distance)
 			if(options?.Vcruise)
 				contents.Vcruise = options.Vcruise;
 			if(options?.ETE && options?.Vcruise)
 				contents.ETE = MAGPIE_PHYSICS._U_ETE(distance, options.Vcruise)
-			contents.distance = Math.floor(distance);
 			route.set(i + 1, contents)
-			totDist += contents.distance ? contents.distance : 0;
+			totDist += distance ? distance : 0;
 		}
 		const final = {};
-		final.Tdist = totDist;
+		final.Tdist = MAGPIE_PHYSICS._U_printDistance(totDist);
 		if(options?.Vcruise)
 			final.TTE = MAGPIE_PHYSICS._U_ETE(totDist, options.Vcruise)
 		route.set(queue.length + 1, final)
@@ -3603,17 +3865,9 @@ MAGPIE_ENTITY.prototype._bio_metabolism = function metabolism()
 	const ePrefix = `[ENTITY-${this.ID}].metabolism: `;
 	try
 	{
-		const mass = this._get_MASS();
-		const pwr = this._get_PWR();
-		const dex = this._get_DEX();
-		const sen = this._get_SEN();
-		const endurance = this._get_endurance();
-		const diet = (mass + pwr + dex + sen) * endurance
-		const energy = this._get_NRG();
-		const recover = energy >= diet
-		if(!recover)
-			return
-		this._bio_recover(diet)
+		const fat = this._get_fatLevel()
+		if(!fat) return
+		this._bio_recover()
 	}
 	catch(e)
 	{
@@ -3622,14 +3876,46 @@ MAGPIE_ENTITY.prototype._bio_metabolism = function metabolism()
 }
 /**
  * 
- * @param {Number} diet 
+ * 
  */
-MAGPIE_ENTITY.prototype._bio_recover = function recover(diet)
+MAGPIE_ENTITY.prototype._bio_recover = function recover()
 {
-	if(!Number(diet))
-		return
-	this._consume_NRG(diet)
-	this.healInjury(STATE.INDEX.HUNGER);
+	if(!this._consume_FAT(1))
+		return 
+	this.healInjury(STATE.INDEX.HUNGER)
+}
+/**
+ * @param {Number} amount
+ */
+MAGPIE_ENTITY.prototype._consume_FAT = function _consume_FAT(amount)
+{
+	const index = this.fitness.indexOf(ID => ID === STATE.INDEX.FAT)
+	if(!this.fitness[index])
+		return false
+	this.fitness[index] = 0
+	return true
+}
+/**
+ * @typedef {Number} NRG standardized energy coefficient
+ * @returns {NRG}
+ */
+MAGPIE_ENTITY.prototype._get_NRG = function getNRG()
+{
+	//@todo get NRG
+}
+/**
+ * 
+ * @returns {NRG}
+ */
+MAGPIE_ENTITY.prototype._get_diet = function getDiet()
+{
+	const mass = this._get_MASS();
+	const pwr = this._get_PWR();
+	const dex = this._get_DEX();
+	const sen = this._get_SEN();
+	const endurance = this._get_END();
+	const diet = (mass + pwr + dex + sen) * endurance
+	return diet
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -3770,6 +4056,34 @@ MAGPIE_ENTITY.prototype.processS3 = function processS3(switchID, exp1, exp2, key
 
 // #endregion
 //------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - TERRITORY
+//========================================================================
+/**
+ * 
+ * @returns {entityID}
+ */
+MAGPIE_ENTITY.prototype._territory_explore = function exploreTerritory()
+{
+	const guests = this._get_guestsSync();
+	const index = Math.floor(Math.random() * guests.length) 
+	const ID = guests[index]?.ID
+	if(ID) return ID
+	return this.ID
+}
 /**
  * 
  * @desc back to {@link }

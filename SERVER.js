@@ -2,7 +2,7 @@
  * 
  * @namespace MAGPIE_Server
  * @author Matheraptor
- * @version 0.30.3
+ * @version 0.31.0
  * @desc server frontend
  * {@link MAGPIE}
  */
@@ -37,7 +37,8 @@ const {
 	MAGPIE_HIVE,
 	MAGPIE_RUNTIME,
 	MAGPIE_METASTATE,
-	MAGPIE_DATE
+	MAGPIE_DATE,
+	MAGPIE_CALENDAR
 } = SYSTEM;
 
 const { MAGPIE_PHYSICS } = require("./core/physics");
@@ -63,6 +64,7 @@ MAGPIE_SERVER.registry = {
 	MAGPIE_HIVE,
 	MAGPIE_METASTATE,
 	MAGPIE_DATE,
+	MAGPIE_CALENDAR,
 	MAGPIE_PHYSICS,
 	MAGPIE_COMPONENT,
 	MAGPIE_EXP,
@@ -1035,7 +1037,7 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const P1 = entity._get_P0();
 		const O1 = entity._get_O0();
 		const V1 = entity._get_V0();
-		const V1hdg = MAGPIE_PHYSICS._get_V0_heading(P1, V1);
+		// const V1hdg = MAGPIE_PHYSICS._get_V0_heading(P1, V1);
 		// MAGPIE_SERVER._debug(`V1hdg: ${V1hdg}`)
 		const A1 = entity._get_A0();
 		const R1 = entity._get_R0();
@@ -1051,9 +1053,8 @@ MAGPIE_ENTITY.__socketEmit = function __socketEmit(output, exp, entity, P_C, POV
 		const Rmag = Number(MAGPIE_PHYSICS.mag(R1));
 		const Tmag = Number(MAGPIE_PHYSICS.mag(T1) / dt);
 		const normP1 = MAGPIE_PHYSICS.normalizeVector(P1);
-		const hdg = Number(MAGPIE_PHYSICS._rotor_toHeadingAbs(O1, normP1));
-		const pitch = Number(MAGPIE_PHYSICS._rotor_toPitchAbs(O1, normP1));
-		const roll = Number(MAGPIE_PHYSICS._rotor_toRollAbs(O1, normP1));
+		const unitP1mag = MAGPIE_PHYSICS.mag(normP1)
+		const [roll, pitch, hdg] = unitP1mag !== 1 ? [NaN,NaN,NaN] : MAGPIE_PHYSICS._rotor_toEulerAbs(O1, P1)
 		const target = entity._get_target();
 		const Pt = target?.STATS?.slice(0, Kp.P_C) || [NaN,NaN,NaN]
 		const validTarget = MAGPIE_PHYSICS.isValidVector(Pt);

@@ -74,15 +74,16 @@ r.context.HIVE._kick_context(1779288098611)
   [ 1779747270776, 'test creature 3' ],
   [ 1780235663887, 'test creature 4' ],
   [ 1780060918485, 'test creature 5' ],
-  [ 1780061063318, 'undefined' ],
+  [ 1780061063318, 'test species 1' ],
   [ 1779026345447, 'Milky Way' ],
   [ 1779026102091, 'Sol' ]
   [ 1780237604510, 'free key']
 ]
-
- diego._set_O1(PHYSICS._rotor_fromEulerAbs(300,0,0, diego._get_P0()))
- diego._set_P1(PHYSICS.addVectors(diego._get_P0(), PHYSICS.scaleVector(diego._get_V0(), 60 * 60)))
- METASTATE.date.megaTICK();
+diego = HIVE._get_entity(1773811141134)
+diego._set_O1(PHYSICS._rotor_fromEulerAbs(86,50,170, diego._get_P0()))
+diego._set_R1([0,0,0])
+diego._set_P1(PHYSICS.addVectors(diego._get_P0(), PHYSICS.scaleVector(diego._get_V0(), 60 * 60)))
+METASTATE.date.megaTICK();
 r.context.diego._get_target()._set_C1([12.420031, 43.544629,0])
 r.context.diego.exps.push(r.context.METASTATE.contents.exp)
 r.context.exp = r.context.DATABASE

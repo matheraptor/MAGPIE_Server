@@ -1246,6 +1246,32 @@ MAGPIE_DATABASE.loadEquips = async function loadEquips(hostID)
 }
 /**
  * 
+ * @param {entityID} hostID 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_DATABASE.loadEquipsSync = function loadEquipsSync(hostID)
+{
+	const ePrefix = "[DATABASE].loadEquips: ";
+	try
+	{
+		const result = MAGPIE_DATABASE.sync.getWorldRelatedRows(
+			hostID, 
+			"hostID", 
+			"equipID", 
+			"entity_equips", 
+			"MAGPIE_ENTITY"
+		)
+		if(!result) 
+			throw new Error(`unable to find equips for [ENTITY-${hostID}]`)
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
  * @param {entityID} compoundID 
  * @returns {MAGPIE_ENTITY[]}
  */

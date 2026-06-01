@@ -1,7 +1,7 @@
 /**
  * @name 
  * @desc 
- * @version 0.30.3
+ * @version 0.31.0
  * 
  */
 //========================================================================
@@ -328,7 +328,7 @@ MAGPIE_PHYSICS._geod_clampToGround = function _geod_clampToGround(r, C0, POVART0
 		const Vv = this.scaleVector(dir, this.mag(Vg));
 		// const Og = O0
 		// MAGPIE_SYSTEM._logging_debug(`Og: ${this._rotor_toHeadingAbs(Og, Pg)}`)
-		return { clamped: true, Pg, Vg: Vv, Og: O0 };
+		return { clamped: true, Pg, Vg: Vv, Og: Og };
 	} 
 	catch(e)
 	{
@@ -591,7 +591,7 @@ MAGPIE_PHYSICS._POVART_getTargetAT = function(POVART0, A1, T1, dt)
 		//
 		const O0 = MAGPIE_PHYSICS.getOrientation(POVART_AT);
 		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
-		const cO = MAGPIE_PHYSICS.rotorCompose(dO, O0);
+		const cO = MAGPIE_PHYSICS.rotorCompose(O0, dO);
 		const O1 = MAGPIE_PHYSICS.rotorNormalize(cO);
 		//
 		const V0 = MAGPIE_PHYSICS.getVelocity(POVART_AT);
@@ -752,15 +752,12 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, optio
 	const targetDir = this.normalizeVector(this.subVectors(P1, P0));
 	const alignment = this.dotProduct(fwd, targetDir);
 	const steerIntensity = 1.0 - alignment;
-	// MAGPIE_SYSTEM._logging_debug(`Ot_hdg: ${this._rotor_toHeadingAbs(Ot, P0)}`)
-	// MAGPIE_SYSTEM._logging_debug(`Vt: ${this._get_V0_heading(P0, this.targetVelocity(P0, P1, {cruise: 8.7}))}`)
 	const dO = this._getDeltaO(O0, Ot);
-	// // MAGPIE_SYSTEM._logging_debug(`dO_hdg: ${this._rotor_toHeadingAbs(dO, P0)}`)
-	const dR = this._getDeltaR(dO);
+	const dR_global = this._getDeltaR(dO);
+	const O0_inv = this.rotorReverse(O0)
+	const dR = this.rotorApply(O0_inv, dR_global);
+	// const dR = this._getDeltaR_euler(O0, Ot, P0)	const dR = this._getDeltaR(dO);
 	const dRmag = this.mag(dR);
-	// const dR = this.rotorApply(dO, [0,0,1])
-	// MAGPIE_SYSTEM._logging_debug(`dR: ${this.mag(dR)}`)
-	// const pR_dR = 1 - Math.min(this.mag(dR), 1);
 	const pR = this._getATpR(dRmag, V0, R0, getAt.Vstate, options)
 	options.pR = pR;
 	const getTt = this._getTt(dR, R0, O0, options);
@@ -792,6 +789,25 @@ MAGPIE_PHYSICS._emote_seekTarget = function _emote_seekTarget(POVART0, P1, optio
 		state: options.state, 
 		dR_mag: dRmag, dR: dR, Bdist: raw.Bdist
 	}
+}
+/**
+ * 
+ * @param {POVART_O} O0 
+ * @param {rotor} Ot 
+ * @param {POVART_P} P0
+ * @returns {bivector} 
+ */
+MAGPIE_PHYSICS._getDeltaR_euler = function  _getDeltaR_euler(O0, Ot, P0)
+{
+	const O0_euler = this._rotor_toEulerAbs(O0, P0)
+	const Ot_euler = this._rotor_toEulerAbs(Ot, P0);
+	// @audit is roll really rotor[0]? 
+	const dRoll_rad = this._U_deg_to_rad(Ot_euler[0] - O0_euler[0])
+	// @audit is pitch really rotor[1]?
+	const dPitch_rad = this._U_deg_to_rad(Ot_euler[1] - O0_euler[1])
+	const dHeading_rad = this._U_deg_to_rad(Ot_euler[2] - O0_euler[2])
+	// @audit is the order and sign of these elements in the bivector correct?
+	return [-dPitch_rad, dRoll_rad, -dHeading_rad]
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1316,11 +1332,10 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 		const reserve = 1 - (this._U_clampRange(Number(options?.reserve) || 20, 0, 99.9) / 100);
 		const Tsafe = Tmax * reserve;
 		const last_state = options?.Rstate;
-		// if(axis === 2)
-		// 	MAGPIE_SYSTEM._logging_debug(`axis: ${axis} | Tres: ${Treserve} | Tsafe: ${Tsafe}`)
 		const Rmax = options.hasOwnProperty(Rmax_axis) ? Number(options[Rmax_axis]) : Number(options?.Rmax);
 		if(isNaN(Rmax))
 			return 
+		const hold_threshold = options?.hold_threshold ?? this._U_deg_to_rad(10); 
 		const R0_abs = Math.abs(R0_comp);
 		const Rsafe = Array.isArray(options?.Rsafe) ? options.Rsafe[axis] : Rmax * reserve;
 		const Bdist = (R0_abs**2) / (2 * Tsafe) || 0;
@@ -1332,9 +1347,8 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 		const R0_isStable = seek_deadzone < Rsafe * 0.05;
 		const brake_deadzone = Rsafe * 0.25;
 		const aligned_deadzone = 0.0001;
-		const hold_threshold = options?.hold_threshold ?? this._U_deg_to_rad(10) / 100; 
-		const brake_threshold = Bdist;
-		const decel_threshold = brake_threshold * 1.1;
+		const brake_threshold = Bdist * 1.5;
+		const decel_threshold = brake_threshold * 2;
 		const Rhold = R0_abs < brake_deadzone;
 		const Rcrawl = 0.001;
 		const sticky_align = dR_error < brake_threshold;
@@ -1352,9 +1366,10 @@ MAGPIE_PHYSICS._getTt_axis = function getTtAxis(dR_comp, R0_comp, options, axis)
 		const adjust = R0_abs < Rcrawl ? accel * 0.25 : Tt_brake * 0.25;
 		const Tt_align = dR_error > aligned_deadzone ? adjust : R_stop;
 		const distanceFactor = Math.min(dR_error / (Bdist * 2.0), 1.0);
-		// if(axis === 2)
+		// if(axis === 1)
 		// 	MAGPIE_SYSTEM._logging_debug(`D_decel: ${decel_threshold.toFixed(5)} | `
 		// 	+ `D_brake: ${brake_threshold.toFixed(5)} | `
+		// 	+ `Rsafe: ${Rsafe.toFixed(5)} | `
 		// 	+ `Rt_err: ${Rt_error.toFixed(5)} | `
 		// 	+ `dR_err: ${dR_error.toFixed(5)} | `
 		// 	+ `HOLD: ${HOLD} | `
@@ -1434,7 +1449,8 @@ MAGPIE_PHYSICS._getTt_local = function getLocalTt(dR, R0, O0, options)
 		const heading = this._getTt_axis(dR_heading, R0_heading, options, AXES.get("heading"));
 		const raw = {};
 		/** @type {bivector} */
-		raw.Tt = [0, 0, heading.Tt];
+		// raw.Tt = [pitch.Tt, roll.Tt, heading.Tt];
+		raw.Tt = [pitch.Tt,roll.Tt,heading.Tt]
 		/** @type {stateID[]} */
 		raw.Bdist = [pitch.Bdist, roll.Bdist, heading.Bdist];
 		const Rstate = [pitch?.state || 0, roll?.state || 0, heading?.state || 0];
@@ -1602,7 +1618,7 @@ MAGPIE_PHYSICS._POVART_POV1fromDeltaAT = function _POVART_POV1fromDeltaAT(POVART
 		const dR = MAGPIE_PHYSICS.scaleVector(T1, dT);
 		const R1 = MAGPIE_PHYSICS.addVectors(R0, dR);
 		const dO = MAGPIE_PHYSICS.rotorFromBivector(R1, dt);
-		const cO = MAGPIE_PHYSICS.rotorCompose(dO, O0);
+		const cO = MAGPIE_PHYSICS.rotorCompose(O0, dO);
 		const O1 = MAGPIE_PHYSICS.rotorNormalize(cO);
 		const A1 = MAGPIE_PHYSICS.addVectors(A0, dA);
 		const dV = MAGPIE_PHYSICS.scaleVector(A1, dt);
@@ -3369,9 +3385,9 @@ MAGPIE_PHYSICS.rotorFromBivector = function rotorFromBivector(B, dt) {
  * @Math Rotor that rotates unit vector (a) to unit vector (b). 
  * `R = a·b + a∧b` = `dot(a,b) + wedge(a,b)`
  * Half-angle trick: normalise by `1 + dot(a,b)` to get the half-angle version.
- * @param {Number[]} a 
- * @param {Number[]} b 
- * @returns {Number[]} rotor[yz,xz,xy,w]
+ * @param {vector3} a 
+ * @param {vector3} b 
+ * @returns {rotor} rotor[yz,xz,xy,w]
  * @sanityCheck `rotorFromVectors([1,0,0], [1,0,0])` → `[0,0,0,1]` 
  * (identity — same vector) 
  * `rotorFromVectors([1,0,0], [0,1,0])` → 90° rotation in xy-plane
@@ -3550,6 +3566,35 @@ MAGPIE_PHYSICS._rotor_toHeadingAbs = function _rotor_toHeadingAbs(rotor, P0)
 			return NaN;
 		}
 	}
+
+/**
+ * Get all three Euler angles from a rotor in one call
+ * @param {rotor} rotor [yz,xz,xy,w]
+ * @param {vector3} P0 Entity position
+ * @returns {[number, number, number]} [roll_deg, pitch_deg, heading_deg]
+ */
+MAGPIE_PHYSICS._rotor_toEulerAbs = function _rotor_toEulerAbs(rotor, P0)
+{
+	const ePrefix = `[PHYSICS].rotorToEulerAbs: `;
+	try
+	{
+		// MAGPIE_SYSTEM._logging_debug(`unitP0: ${P0}`)
+		if(!this.isValidVector(P0))
+			return [NaN,NaN,NaN]
+		const localUp = MAGPIE.KEY.POVART.UP
+		const R_local = this._rotor_toLocal(rotor, P0)
+		const roll = this._rotor_toRollAbs(R_local, localUp);
+		const pitch = this._rotor_toPitchAbs(R_local, localUp);
+		const heading = this._rotor_toHeadingAbs(rotor, P0);
+		return [roll, pitch, heading];
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+		return [NaN, NaN, NaN];
+	}
+}
+
 /**
  *
  * @param {rotor} Ot [yz,xz,xy,w]
@@ -3557,64 +3602,96 @@ MAGPIE_PHYSICS._rotor_toHeadingAbs = function _rotor_toHeadingAbs(rotor, P0)
  * @param {rotor} O0 Orientation₀ [yz,xz,xy,w]
  * @returns {angle_rad} 0 to PI 
  */
-	/**
-	 * Creates an absolute orientation rotor from geodetic heading, pitch, and roll
-	 * @param {angle_deg} heading - Heading in degrees (0 = North, 90 = East)
-	 * @param {angle_deg} pitch - Pitch in degrees (positive = nose up)
-	 * @param {angle_deg} roll - Roll in degrees (positive = right wing down)
-	 * @param {vector3} P0 - Entity's geodetic position [x,y,z]
-	 * @returns {rotor} [yz,xz,xy,w]
-	 */
-	MAGPIE_PHYSICS._rotor_fromEulerAbs = function _rotor_fromEulerAbs(heading, pitch, roll, P0)
+/**
+ * Creates an absolute orientation rotor from geodetic heading, pitch, and roll
+ * @param {angle_deg} heading - Heading in degrees (0 = North, 90 = East)
+ * @param {angle_deg} pitch - Pitch in degrees (positive = nose up)
+ * @param {angle_deg} roll - Roll in degrees (positive = right wing down)
+ * @param {vector3} P0 - Entity's geodetic position [x,y,z]
+ * @returns {rotor} [yz,xz,xy,w]
+ */
+MAGPIE_PHYSICS._rotor_fromEulerAbs = function _rotor_fromEulerAbs(heading, pitch, roll, P0)
+{
+	const ePrefix = `[PHYSICS].rotorFromEulerAbs: `;
+	try
 	{
-		const ePrefix = `[PHYSICS].rotorFromEulerAbs: `;
-		try
-		{
-			// 1. Convert to radians
-			const hdgRad = heading * (Math.PI / 180);
-			const pitRad = pitch * (Math.PI / 180);
-			const rolRad = roll * (Math.PI / 180);
+		// 1. Convert to radians
+		const hdgRad = heading * (Math.PI / 180);
+		const pitRad = pitch * (Math.PI / 180);
+		const rolRad = roll * (Math.PI / 180);
 
-			// 2. Create intrinsic local rotors
-			// Heading: rotates North to East -> Positive rotation around Z [0,0,1]
-			const rYaw = this.rotorFromAxisAngle([0, 0, 1], hdgRad);
-			// Pitch: Nose up -> Negative rotation around X [1,0,0]
-			const rPitch = this.rotorFromAxisAngle([1, 0, 0], -pitRad);
-			// Roll: Right wing down -> Positive rotation around Y [0,1,0]
-			const rRoll = this.rotorFromAxisAngle([0, 1, 0], rolRad);
+		// 2. Create intrinsic local rotors
+		// Heading: rotates North to East -> Positive rotation around Z [0,0,1]
+		const rYaw = this.rotorFromAxisAngle([0, 0, 1], hdgRad);
+		// Pitch: Nose up -> Negative rotation around X [1,0,0]
+		const rPitch = this.rotorFromAxisAngle([1, 0, 0], -pitRad);
+		// Roll: Right wing down -> Positive rotation around Y [0,1,0]
+		const rRoll = this.rotorFromAxisAngle([0, 1, 0], rolRad);
 
-			// 3. Compose local intrinsic rotations: Yaw -> Pitch -> Roll
-			// HASTAL Right-Side rule applies here too for sequential local rotations
-			const R_local = this.rotorCompose(this.rotorCompose(rYaw, rPitch), rRoll);
+		// 3. Compose local intrinsic rotations: Yaw -> Pitch -> Roll
+		// HASTAL Right-Side rule applies here too for sequential local rotations
+		const R_local = this.rotorCompose(this.rotorCompose(rYaw, rPitch), rRoll);
 
-			// 4. Find the base unrotated frame at P0
-			const up = this.normalizeVector(P0);
-			const North = MAGPIE.KEY.POVART.UP; // [0,0,1]
-			const dotN = this.dotProduct(North, up);
+		// 4. Find the base unrotated frame at P0
+		const up = this.normalizeVector(P0);
+		const North = MAGPIE.KEY.POVART.UP; // [0,0,1]
+		const dotN = this.dotProduct(North, up);
 
-			let localNorth;
-			if (Math.abs(dotN) > 0.9999) {
-				// Geodetic singularity at poles
-				localNorth = [0, 1, 0];
-			} else {
-				localNorth = this.normalizeVector(this.subVectors(North, this.scaleVector(up, dotN)));
-			}
-
-			// 5. Construct base rotor that aligns absolute [0,1,0] to localNorth and [0,0,1] to up
-			const R_base = this.rotorFromFrame(localNorth, up);
-
-			// 6. Apply local Euler rotations to the base frame
-			const finalRotor = this.rotorCompose(R_base, R_local);
-
-			return this.rotorNormalize(finalRotor);
+		let localNorth;
+		if (Math.abs(dotN) > 0.9999) {
+			// Geodetic singularity at poles
+			localNorth = [0, 1, 0];
+		} else {
+			localNorth = this.normalizeVector(this.subVectors(North, this.scaleVector(up, dotN)));
 		}
-		catch(e)
-		{
-			MAGPIE_SYSTEM.error(ePrefix + e.message, e);
-			return [0,0,0,1];
-		}
+
+		// 5. Construct base rotor that aligns absolute [0,1,0] to localNorth and [0,0,1] to up
+		const R_base = this.rotorFromFrame(localNorth, up);
+
+		// 6. Apply local Euler rotations to the base frame
+		const finalRotor = this.rotorCompose(R_base, R_local);
+
+		return this.rotorNormalize(finalRotor);
 	}
-
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
+		return [0,0,0,1];
+	}
+}
+/**
+ * 
+ * @param {POVART_O} O0 
+ * @param {POVART_P} P0
+ * @returns {rotor} 
+ */
+MAGPIE_PHYSICS._rotor_toLocal = function _rotor_toLocal(O0, P0)
+{
+	const ePrefix = "[PHYSICS].rotorToLocal: ";
+	try
+	{
+		if(!this.isValidVector(P0))
+			throw new Error(`${P0} is invalid P₀ vector`)
+		if(!this.isValidRotor(O0))
+			throw new Error(`${O0} is invalid R₀ rotor`)
+		const up = this._get_localUp(P0)
+		if(!this.isValidVector(up))
+			throw new Error(`${up} is invalid up vector`)
+		// MAGPIE_SYSTEM._logging_debug(`upMag: ${this.mag(up)}`)
+		const localNorth = this._get_localNorth(up)
+		if(!this.isValidVector(localNorth))
+			throw new Error(`${localNorth} is invalid localNorth vector`)
+		const R_base = this.rotorFromFrame(localNorth, up)
+		if(!this.isValidRotor(R_base))
+			throw new Error(`${R_base} is invalid R_base rotor`)
+		return this.rotorCompose(this.rotorReverse(R_base), O0)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return O0
+	}
+}
 MAGPIE_PHYSICS._rotor_angle = function getRotorAngle(Ot, P0, O0)
 {
 	const ePrefix = "[PHYSICS].getRotorAngle: ";
@@ -4162,8 +4239,19 @@ MAGPIE_PHYSICS._get_agilityModifier = function agilityModifier(dex, a)
  */
 MAGPIE_PHYSICS._U_ETE = function EstimatedTimeEnroute(distance, cruiseSpeed)
 {
-	const interval = MAGPIE_SYSTEM.Utility._makeInterval(distance / cruiseSpeed)
-	return MAGPIE_SYSTEM.Utility._printInterval(interval)
+	// const interval = MAGPIE_SYSTEM.Utility._makeInterval(distance / cruiseSpeed)
+	return MAGPIE_SYSTEM.Utility.printETA(distance / cruiseSpeed)
+}
+/**
+ * 
+ * @param {distance} distance 
+ * @returns {String}
+ */
+MAGPIE_PHYSICS._U_printDistance = function printDistance(distance)
+{
+	return distance < 1000 
+				? `${Math.floor(distance)} m`
+				: `${(distance / 1000).toFixed(3)} km`
 }
 /**
  * 

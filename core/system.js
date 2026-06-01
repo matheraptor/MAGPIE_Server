@@ -1,7 +1,7 @@
 /**
  * @name 
  * @desc 
- * @version 0.30.3
+ * @version 0.31.0
  */
 //========================================================================
 // #region - INDEX
@@ -624,7 +624,7 @@ MAGPIE_SYSTEM.Utility.printETA = function printETA(seconds)
 	{
 		const ETA_s = seconds;
                 let ETA = "";
-                const ETA_sec = ETA_s % 60;
+                const ETA_sec = Math.floor(ETA_s % 60);
                 const ETA_min = Math.floor(ETA_s / 60) % 60;
                 const ETA_hour = Math.floor(ETA_s / 3600 ) % 24;
                 const ETA_days = Math.floor(ETA_s / (3600 * 24));
@@ -638,6 +638,26 @@ MAGPIE_SYSTEM.Utility.printETA = function printETA(seconds)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
 	}
+}
+/**
+ * 
+ * @param {MAGPIE_DATE} now
+ * @param {duration} ETA
+ * @param {{
+ * date: Boolean,
+ * seconds: Boolean
+ * }} options
+ * @param {variableCTZ} 
+ */
+MAGPIE_SYSTEM.Utility._printETZ = function _printETZ(now, ETA = 0, options)
+{
+	if(!(now instanceof MAGPIE_DATE)) return "n/a"
+	const targetEpoch = now.epoch + (ETA * 1000)
+	const targetDate = new MAGPIE_DATE({
+		calendar: now.calendar,
+		epoch: targetEpoch
+	})
+	return targetDate._printSTZ(options)
 }
 MAGPIE_SYSTEM.prototype.printETA = MAGPIE_SYSTEM.Utility.printETA;
 /**
@@ -949,10 +969,6 @@ MAGPIE_CALENDAR.prototype.initialize = function initialize(data)
 //========================================================================
 /**
  * 
- * @param {date_data} date 
- * @param {date_options} options 
- * @returns {new MAGPIE_DATE}
- * 
  * @typedef {{
  * 	calendar: calendarID,
  * 	year: year,
@@ -965,6 +981,10 @@ MAGPIE_CALENDAR.prototype.initialize = function initialize(data)
  * 	millisecond: millisecond,
  * 	epoch: epoch_game
  * }} date_data
+ * 
+ * @param {date_data} date 
+ * @param {date_options} options 
+ * @returns {new MAGPIE_DATE}
  */
 
 //------------------------------------------------------------------------
@@ -973,20 +993,73 @@ MAGPIE_CALENDAR.prototype.initialize = function initialize(data)
 
 MAGPIE_DATE.prototype.initialize = function initialize(date, options)
 {
-	const real = new Date();
 	const C = MAGPIE.KEY.CALENDAR.GREGORIAN;
-	this.calendar = Number(date?.calendar) || C;
-	this.year = date?.year || real.getUTCFullYear();
-	this.month = date?.month || real.getUTCMonth() + 1;
-	this.day = date?.day || real.getUTCDate();
-	this.weekDay = date?.weekDay || real.getUTCDay();
-	this.hour = date?.hour || real.getUTCHours();
-	this.minute = date?.minute || real.getUTCMinutes();
-	this.second = date?.second || real.getUTCSeconds();
-	this.millisecond = date?.millisecond || real.getUTCMilliseconds();
-	this.epoch = Number(date?.epoch) || this.getEpoch();
-	this._yearday = Number(this.yearday())
 	this._firmware = "MAGPIE_DATE";
+	this.calendar = Number(date?.calendar) || C;
+	this.epoch = Number(date?.epoch)
+	this.year = Number(date?.year)
+	this.month = Number(date?.month)
+	this.day = Number(date?.day)
+	this.weekDay = Number(date?.weekDay)
+	this.hour = Number(date?.hour)
+	this.minute = Number(date?.minute)
+	this.second = Number(date?.second)
+	this.millisecond = Number(date?.millisecond)
+	this._yearday = Number(this.yearday())
+	this.setup()
+}
+MAGPIE_DATE.prototype.setup = function()
+{
+	if(!this.epoch) this.getEpoch();
+	if(!this.epoch) this.setReal();
+	this.setupFromEpoch();
+}
+MAGPIE_DATE.prototype.setupFromEpoch = function(epoch)
+{
+	if(!epoch) epoch = this.epoch
+	if(!this.epoch) return
+	this.epoch = epoch;
+	const calendar = MAGPIE_CALENDAR.INDEX.get(this.calendar)
+	if(!calendar) return
+	const msPerDay = calendar.dayLength * 60**2 * 1000;
+	const msPerYear = calendar.days * msPerDay;
+	const yearRaw = epoch / msPerYear;
+	this.year = Math.floor(yearRaw) + calendar.epochYear;
+	const dayRaw = (epoch % msPerYear) / msPerDay;
+	this._yearday = Math.floor(dayRaw) + 1;
+	let accumulatedDays = 0;
+	let monthIndex = 1;
+	for (const [mName, mDays] of Object.entries(calendar.months))
+	{
+		if(dayRaw < accumulatedDays + mDays)
+		{
+			this.month = monthIndex;
+			this.day = Math.floor(dayRaw - accumulatedDays) + 1
+			break
+		}
+		accumulatedDays += mDays;
+		monthIndex++
+	}
+	const dayRemainderMs = (epoch % msPerYear) % msPerDay;
+	this.hour = Math.floor(dayRemainderMs / (60**2 * 1000))
+	this.minute = Math.floor((dayRemainderMs % (60**2 * 1000)) / (60 * 1000))
+	this.second = Math.floor((dayRemainderMs % (60 * 1000)) / 1000)
+	this.millisecond = Math.floor(dayRemainderMs % 1000)
+	const totalDaysPassed = Math.floor(epoch / msPerDay)
+	const totalWeekDays = Object.keys(calendar.weekDays).length || 7;
+	this.weekDay = totalDaysPassed % totalWeekDays
+}
+MAGPIE_DATE.prototype.setReal = function()
+{
+	const real = new Date();
+	this.year = real.getUTCFullYear();
+	this.month = real.getUTCMonth() + 1;
+	this.day = real.getUTCDate();
+	this.weekDay = real.getUTCDay();
+	this.hour = real.getUTCHours();
+	this.minute = real.getUTCMinutes();
+	this.second = real.getUTCSeconds();
+	this.millisecond = real.getUTCMilliseconds();
 }
 /**
  * 
@@ -1004,6 +1077,16 @@ MAGPIE_DATE.prototype.getEpoch = function getEpoch()
 	const ePrefix = "[DATE].getEpoch: ";
 	try
 	{
+		const values = [
+			this.second,
+			this.minute,
+			this.hour,
+			this.millisecond,
+			this.year,
+			this.calendar
+		]
+		if(values.some(n => isNaN(n)))
+			return
 		let seconds = 0;
 		seconds += this.second;
 		seconds += this.minute * 60;
@@ -1034,6 +1117,8 @@ MAGPIE_DATE.prototype.getWeekDayName = function getWeekDayName()
  */
 MAGPIE_DATE.prototype.yearday = function yearday()
 {
+	if(!this.day || !this.month)
+		return
 	let yearday = 0;
 	yearday += this.day;
 	const monthdays = Object.values(this.getCalendar().months)
@@ -1065,7 +1150,7 @@ MAGPIE_DATE.prototype.leapDay = function leapDay()
 	return 0
 }
 /**
- * @typedef {String} variableCTZ 
+ * @typedef {CTZ} variableCTZ
  * @param {{
  * date: Boolean,
  * time: Boolean,
@@ -1193,6 +1278,40 @@ MAGPIE_DATE.prototype.newYear = function newYear()
 	// const K = MAGPIE.KEY.SWITCHES;
 	// MAGPIE_SYSTEM.switches.setValue(K.NEW_YEAR, true);
 	this.year++;
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Utility
+//------------------------------------------------------------------------
+/**
+ * @typedef {String} STZ YYYY/MM/DD-HH:MM
+ * @typedef {STZ} STZD YYYY/MM/DD
+ * @typedef {STZ} STZT HH:MM
+ * @typedef {STZT} STZTF HH:MM:SS
+ * @typedef {STZ} STZF YYYY/MM/DD-HH:MM:SS
+ * @typedef {STZ} variableSTZ STZ/STZF/STZD/STZT/STZTF 
+ */
+/**
+ * @param {{
+ * date: Boolean,
+ * seconds: Boolean
+ * }} options
+ * @returns {variableCTZ} 
+ */
+MAGPIE_DATE.prototype._printSTZ = function _printSTZ(options)
+{
+	const pad = (num) => String(num).padStart(2, '0')
+	const dateStr = options?.date
+		? `${this.year}/${pad(this.month)}/${pad(this.day)}-`
+		: "";
+	const secondStr = options?.seconds ? `:${pad(this.second)}` : "";
+	return `${dateStr}${pad(this.hour)}:${pad(this.minute)}${secondStr}Z`
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -2768,6 +2887,16 @@ MAGPIE_HIVE._context_isAwake = function _context_isAwake(contextID)
 	if(MAGPIE_HIVE._contextBuffer.get(contextID))
 		return true
 	return false
+}
+/**
+ * 
+ * @param {entityID} entityID 
+ * @returns {MAGPIE_CONTEXT[]}
+ */
+MAGPIE_HIVE._fetch_entity_context = function(entityID)
+{
+	const contextIDs = MAGPIE_HIVE._registry.get(entityID)?.contexts
+	return contextIDs.map(ID => MAGPIE_HIVE._get_context(ID));
 }
 // #endregion
 //------------------------------------------------------------------------

@@ -1755,6 +1755,25 @@ MAGPIE_CONTEXT.prototype._add_new_entity = async function addNewEntity(entity_da
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Territory
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {MAGPIE_ENTITY[]}
+ */
+MAGPIE_CONTEXT.prototype._get_territories = function _get_territories()
+{
+	const territory = MAGPIE.KEY.SYMBOL.TYPE.TERRITORY
+	return this._get_all_entities().filter(e => e._get_type()?.type === territory)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *

@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.30.3
+ * @version 0.31.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,16 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.31.0 2026 06 01
+ * - ADDED: ECG phase 1
+ * - ADDED: entity.bio phase 1
+ * - ADDED: date._printSTZ
+ * - ADDED: physics._U_ETE
+ * - ADDED: physics._U_printDistance
+ * - TWEAKED: entity._target_queue_geodetic
+ * - FIXED: seekTarget not using proper rotor physics
+ * - FIXED: rotorToEuler
  * 
  * @version 0.30.3 2026 05 31
  * - FIXED: context handling
@@ -431,9 +441,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 30, 3],
+			version: [0, 31, 0],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260531"
+			firmwareDate: "20260601"
 		};
 	}
 }
@@ -620,17 +630,31 @@ MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_8, 8);
 MAGPIE.KEY.INDEX.STAMINA_9 = 109;
 MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX_9, 9);
 /** @type {Map<String, keyID>} */
-MAGPIE.KEY.INDEX.CCG = new Map();
-MAGPIE.KEY.INDEX.CCG.set("FITNESS", 120);
-MAGPIE.KEY.INDEX.CCG.set("RESERVE", 121);
-MAGPIE.KEY.INDEX.CCG.set("STAMINA", 122);
-MAGPIE.KEY.INDEX.CCG.set("ENDURANCE", 123);
-MAGPIE.KEY.INDEX.CCG.set("ENERGY", 124);
-MAGPIE.KEY.INDEX.CCG.set("MASS", 131);
-MAGPIE.KEY.INDEX.CCG.set("POWER", 132);
-MAGPIE.KEY.INDEX.CCG.set("DEXTERITY", 133);
-MAGPIE.KEY.INDEX.CCG.set("SENSE", 134);
-MAGPIE.KEY.INDEX.CCG.set("GROWTH", 141);
+MAGPIE.KEY.INDEX.ECG = new Map();
+MAGPIE.KEY.INDEX.ECG_FITNESS = 120;
+MAGPIE.KEY.INDEX.ECG.set("FITNESS", MAGPIE.KEY.INDEX.ECG_FITNESS);
+MAGPIE.KEY.INDEX.ECG_RESERVE = 121;
+MAGPIE.KEY.INDEX.ECG.set("RESERVE", MAGPIE.KEY.INDEX.ECG_RESERVE);
+MAGPIE.KEY.INDEX.ECG_STAMINA = 122
+MAGPIE.KEY.INDEX.ECG.set("STAMINA", MAGPIE.KEY.INDEX.ECG_STAMINA);
+MAGPIE.KEY.INDEX.ECG_ENDURANCE = 123;
+MAGPIE.KEY.INDEX.ECG.set("ENDURANCE", MAGPIE.KEY.INDEX.ECG_ENDURANCE);
+MAGPIE.KEY.INDEX.ECG_ENERGY = 124;
+MAGPIE.KEY.INDEX.ECG.set("ENERGY", MAGPIE.KEY.INDEX.ECG_ENERGY);
+MAGPIE.KEY.INDEX.ECG_MASS = 131;
+MAGPIE.KEY.INDEX.ECG.set("MASS", MAGPIE.KEY.INDEX.ECG_MASS);
+MAGPIE.KEY.INDEX.ECG_POWER = 132;
+MAGPIE.KEY.INDEX.ECG.set("POWER", MAGPIE.KEY.INDEX.ECG_POWER);
+MAGPIE.KEY.INDEX.ECG_DEXTERITY = 133;
+MAGPIE.KEY.INDEX.ECG.set("DEXTERITY", MAGPIE.KEY.INDEX.ECG_DEXTERITY);
+MAGPIE.KEY.INDEX.ECG_SENSE = 134;
+MAGPIE.KEY.INDEX.ECG.set("SENSE", MAGPIE.KEY.INDEX.ECG_SENSE);
+MAGPIE.KEY.INDEX.ECG_GROWTH = 141;
+MAGPIE.KEY.INDEX.ECG.set("GROWTH", MAGPIE.KEY.INDEX.ECG_GROWTH);
+MAGPIE.KEY.INDEX.ECG_HUNGRY = 201
+MAGPIE.KEY.INDEX.ECG.set("HUNGRY", MAGPIE.KEY.INDEX.ECG_HUNGRY);
+MAGPIE.KEY.INDEX.ECG_SATIATED = 202
+MAGPIE.KEY.INDEX.ECG.set("SATIATED", MAGPIE.KEY.INDEX.ECG_SATIATED)
 /** @type {key_index} */
 MAGPIE.KEY.INDEX.REQUIREMENTS = 1001;
 /** @type {key_index} */
@@ -1899,7 +1923,7 @@ MAGPIE.KEY.STATS = {};
  */
 MAGPIE.KEY.STATS.meta = {};
 /** @type {index} Fitness aka totalDeckSize */
-MAGPIE.KEY.STATS.FIT = MAGPIE.KEY.POVART.E_ID + 1;
+MAGPIE.KEY.STATS.FIT = MAGPIE.KEY.POVART.E_ID + 1; //@audit-ok can be repurposed becaused FIT can be derived by this.fitness[1]
 /** @type {index} Endurance aka LVL_STA */
 MAGPIE.KEY.STATS.END = MAGPIE.KEY.STATS.FIT + 1;
 /** @type {index} Power aka ATK */
@@ -2161,6 +2185,8 @@ MAGPIE.KEY.SYMBOL.TYPE.SERVICE = 7;
 MAGPIE.KEY.SYMBOL.TYPE.INTERACTION = 8;
 /** @type {symbol_type} */
 MAGPIE.KEY.SYMBOL.TYPE.CONCEPT = 9;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.TERRITORY = 10
 /** @type {symbol_type} */
 MAGPIE.KEY.SYMBOL.TYPE.SPECIES = 11;
 MAGPIE.KEY.SYMBOL.INDEX = {};
