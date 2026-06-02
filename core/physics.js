@@ -65,6 +65,7 @@ function MAGPIE_PHYSICS()
  * @typedef {Number} density kg/L
  * @typedef {Number} atmo_density atmospheric density = kg/m³ 
  * @typedef {Number} epoch_real_s time in s since epoch J2000
+ * @typedef {Number} flow L/s
  * 
  * @typedef {vector3} POVART_P POVART position vector | 3D cartesian from parent celestialBody center 
  * @typedef {distance} P_mag POVART position magnitude is m from celestial body center

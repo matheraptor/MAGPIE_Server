@@ -2133,6 +2133,10 @@ MAGPIE.KEY.TRAIT.ARRAY = 0;
 //#region > Comp
 //------------------------------------------------------------------------
 MAGPIE.KEY.COMPONENT = {};
+/** @type {Map<String, keyID>} */
+MAGPIE.KEY.COMPONENT.INDEX = new Map();
+/** @type {Enumerator<Number>} */
+MAGPIE.KEY.COMPONENT.PISTON_ENGINE = 20101;
 MAGPIE.KEY.COMPONENT.STATE = {};
 /** @type {Enumerator<Number>} @desc {@link MAGPIE.KEY.STATUS.meta} */
 MAGPIE.KEY.COMPONENT.STATE.STATUS = 0;

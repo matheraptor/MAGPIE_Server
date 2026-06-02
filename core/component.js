@@ -107,6 +107,25 @@ function MAGPIE_SYMBOL(data)
 }
 /**
  * 
+ */
+class MAGPIE_ENGINE
+{
+	//
+}
+class MAGPIE_PROPULSOR
+{
+	//
+}
+class MAGPIE_POWERTRAIN
+{
+	//
+}
+class MAGPIE_CONTAINER
+{
+	//
+}
+/**
+ * 
  * @desc back to {@link }
  *
  */
@@ -122,6 +141,7 @@ function MAGPIE_SYMBOL(data)
  * @typedef {import("./index").bivector} bivector
  * @typedef {import("./physics").coords} coords
  * @typedef {import("./entity").action_output} action_output
+ * @typedef {import("./physics").percentage} percentage
  * 
  * @name COMPONENT
  * @desc 
@@ -131,6 +151,15 @@ function MAGPIE_SYMBOL(data)
 // #region - COMPON.
 //========================================================================
 MAGPIE_COMPONENT.meta = {};
+MAGPIE_COMPONENT.setup = function()
+{
+	//
+}
+/** 
+ * @typedef {import("../data/components").component} component
+ * @type {Map<String, component>} 
+ * */
+MAGPIE_COMPONENT.INDEX = new Map()
 /**
  * @name 
  * @desc 
@@ -2066,7 +2095,219 @@ MAGPIE_KEY.prototype._U_hydrate = function()
 //========================================================================
 // #endregion - KEY
 //========================================================================
+/**
+ * @name 
+ * @desc 
+ * @typedef {import("./entity").fitness_index} fitness_index this.fitness[index]
+ * @typedef {import("./physics").power} power
+ * @typedef {import("./physics").force} force
+ * @typedef {import("./physics").percentage} regime % 
+ * @typedef {import("./physics").mass} mass in kg
+ * @typedef {import("./physics").flow} flow
+ * @typedef {import("./physics").coefficient} coefficient 
+ * @typedef {import("./physics").temperature} temperature in Kelvin (K)
+ * @typedef {[]} environment
+ */
+//========================================================================
+// #region - ENGINEER
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Engine
+//------------------------------------------------------------------------
 
+MAGPIE_ENGINE.meta = {
+	name: "M.A.G.P.I.E. engine",
+	desc: "power plant"
+}
+/**
+ * @typedef {{
+ * symbolID: symbolID,
+ * mass: mass,
+ * power: power,
+ * Rmax: regime,
+ * Rsafe: regime,
+ * Rcomfort: regime,
+ * Rmin: regime,
+ * Fmax: coefficient,
+ * Fsafe: coefficient,
+ * Fcomfort: coefficient,
+ * Fmin: coefficient,
+ * processor: []
+ * }} engine_data
+ * 
+ * @typedef {coefficient} process_rate 
+ * @typedef {coefficient} efficiency 1 - (degrade + damage)
+ * @typedef {[power, process_rate, efficiency]} engine_output
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {engine_data} data
+ */
+MAGPIE_ENGINE.setup = function(entity, data)
+{
+	//@todo engine.setup
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {fitness_index} fitness_index
+ * @param {environment} env
+ * @returns {engine_output}
+ */
+MAGPIE_ENGINE.start = function start(entity, fitness_index, env)
+{
+	//@todo engine.start
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {fitness_index} fitness_index
+ * @param {environment} env
+ * @returns {engine_output}
+ */
+MAGPIE_ENGINE.update = function update(entity, fitness_index, env)
+{
+	//@todo engine.update
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {fitness_index} fitness_index
+ * @param {environment} env
+ * @returns {engine_output} 
+ */
+MAGPIE_ENGINE.stop = function stop(entity, fitness_index, env)
+{
+	//@todo engine.stop
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {fitness_index} fitness_index 
+ * @param {percentage} amount
+ * @param {environment} env
+ * @returns {engine_data}
+ * @returns {engine_data}
+ */
+MAGPIE_ENGINE.degrade = function degrade(entity, fitness_index, amount, env)
+{
+	//@todo engine.degrade
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {fitness_index} fitness_index 
+ * @param {percentage} amount
+ * @param {environment} env
+ * @returns {engine_data}
+ * 
+ */
+MAGPIE_ENGINE.damage = function damage(entity, fitness_index, amount, env)
+{
+	//@todo engine.damage
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {fitness_index} fitness_index 
+ * @param {percentage} amount 
+ * @param {environment} env
+ * @returns {engine_data}
+ */
+MAGPIE_ENGINE.spool = function spool(entity, fitness_index, amount, env)
+{
+	//@todo engine.spool
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * @typedef {force} thrust N
+ * @typedef {coefficient} TWR thrust-to-weight ratio
+ * @typedef {coefficient} propulsor_efficiency 1 - (thrust_losses / thrust) 
+ * @typedef {temperature} EGT
+ * @typedef {[
+ * thrust, 
+ * propulsor_efficiency,
+ * EGT
+ * ]} propulsor_data
+ */
+//------------------------------------------------------------------------
+// #region > Propulsor
+//------------------------------------------------------------------------
+MAGPIE_PROPULSOR.meta = {
+	name: "M.A.G.P.I.E. propulsor",
+	desc: "thrust applier"
+}
+/**
+ * @param {MAGPIE_ENTITY} entity 
+ * @param {fitness_index} fitness_index 
+ * @param {percentage} amount 
+ * @param {environment} env
+ * @returns {propulsor_data}
+ */
+MAGPIE_PROPULSOR.applyThrust = function applyThrust(entity, fitness_index, amount, env)
+{
+	//@todo propulsor.applyThrust
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Powertrain
+//------------------------------------------------------------------------
+MAGPIE_POWERTRAIN.meta = {
+	name: "M.A.G.P.I.E. powertrain",
+	desc: "combined engine/propulsor propulsion system"
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - LOGISTICS
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Container
+//------------------------------------------------------------------------
+MAGPIE_CONTAINER.meta = {
+	name: "M.A.G.P.I.E. container"
+
+// #endregion
+//------------------------------------------------------------------------
+}
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
 module.exports = { 
 	MAGPIE_COMPONENT,
 	MAGPIE_STATE,
@@ -2075,7 +2316,11 @@ module.exports = {
 	MAGPIE_KEY,
 	MAGPIE_CONTEXT,
 	MAGPIE_TICKET,
-	MAGPIE_SYMBOL
+	MAGPIE_SYMBOL,
+	MAGPIE_ENGINE,
+	MAGPIE_PROPULSOR,
+	MAGPIE_POWERTRAIN,
+	MAGPIE_CONTAINER
 }
 /**
  * 

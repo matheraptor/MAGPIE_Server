@@ -40,7 +40,6 @@ const {
 	MAGPIE_DATE,
 	MAGPIE_CALENDAR
 } = SYSTEM;
-
 const { MAGPIE_PHYSICS } = require("./core/physics");
 const { 
 	MAGPIE_COMPONENT, 
@@ -50,7 +49,11 @@ const {
 	MAGPIE_STATE,
 	MAGPIE_SYMBOL,
 	MAGPIE_CONTEXT,
-	MAGPIE_TICKET 
+	MAGPIE_TICKET,
+	MAGPIE_ENGINE,
+	MAGPIE_PROPULSOR,
+	MAGPIE_POWERTRAIN,
+	MAGPIE_CONTAINER 
 } = require("./core/component");
 const { MAGPIE_ENTITY } = require("./core/entity");
 const { MAGPIE_PLAYER } = require("./core/player");
@@ -76,7 +79,11 @@ MAGPIE_SERVER.registry = {
 	MAGPIE_SYMBOL,
 	MAGPIE_CONTEXT,
 	MAGPIE_TICKET,
-	MAGPIE_STATE
+	MAGPIE_STATE,
+	MAGPIE_ENGINE,
+	MAGPIE_PROPULSOR,
+	MAGPIE_POWERTRAIN,
+	MAGPIE_CONTAINER
 };
 MAGPIE_SERVER.meta = {}
 MAGPIE_SERVER.perf = {};
@@ -84,6 +91,7 @@ MAGPIE_SERVER.perf.start = performance.now();
 MAGPIE_SERVER.perf.end = NaN;
 MAGPIE_SERVER.config = require("./core/config");
 const STATE = require("./data/states");
+const COMPONENTS = require("./data/components")
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1181,6 +1189,14 @@ MAGPIE_COMPONENT.__setSync = function setSync(method, arguments)
 	const callback = MAGPIE_HIVE[method];
 	return callback(...arguments)
 } 
+/**
+ * @typedef {import("./data/components").component} component
+ */
+MAGPIE_COMPONENT.setup = function()
+{
+	/** @type {Map<String, component>} */
+	MAGPIE_COMPONENT.INDEX = COMPONENTS.INDEX
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -2115,6 +2131,8 @@ const main = async function main()
 	await MAGPIE_EMOTE.setup();
 	MAGPIE_SERVER.CLI._incrementLoadBar(5);
 	MAGPIE_STATE.setup();
+	MAGPIE_SERVER.CLI._incrementLoadBar(5);
+	MAGPIE_COMPONENT.setup();
 	MAGPIE_SERVER.CLI._incrementLoadBar(5);
 	await MAGPIE_KEY.setup();
 	MAGPIE_SERVER.CLI._incrementLoadBar(5);
