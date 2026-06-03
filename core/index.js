@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.31.1
+ * @version 0.32.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,11 +20,14 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.31.1 2026 06 03
+ * @version 0.32.0 2026 06 03
+ * - ADDED: player auth phase 1
+ * - ADDED: player account phase 1
  * - ADDED: homepage CLI button
  * - ADDED: CLI socket phase 1
  * - ADDED: CLI account phase 1
  * - FIXED: CLI box sizing
+ * - FIXED: entity skipping next target
  * 
  * @version 0.31.0 2026 06 01
  * - ADDED: ECG phase 1
@@ -447,7 +450,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 31, 1],
+			version: [0, 32, 0],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260603"
 		};
@@ -2418,6 +2421,145 @@ MAGPIE.KEY.SWITCHES.LEAP_MONTH = MAGPIE.KEY.SWITCHES.LEAP_DAY + 1;
 MAGPIE.KEY.SWITCHES.LEAP_YEAR = MAGPIE.KEY.SWITCHES.LEAP_MONTH + 1;
 // #endregion
 //------------------------------------------------------------------------
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name HTML
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > HTML
+//------------------------------------------------------------------------
+MAGPIE.KEY.HTML = {};
+MAGPIE.KEY.HTML.VENDOR_PREFIX = [
+	["-webkit-", "Chrome, Safari, Edge, iOS"],
+	["-moz-", "Moizlla Firefox"],
+	["-ms-", "Internet Explorer / legacy Microsoft Edge"]
+]
+MAGPIE.KEY.HTML.INPUT = {};
+/** @type {Map<String, {type: String}>} */
+MAGPIE.KEY.HTML.INPUT = {};
+MAGPIE.KEY.HTML.INPUT.TYPE = {};
+/**
+ * @desc Default input for free text
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.TEXT = "text"
+/**
+ * @desc By default, the browser chooses the mask symbol 
+ * (usually a solid dot •). If you want to force it to be an 
+ * asterisk * or a custom character, you can use the CSS text-security 
+ * property. Note that this property requires vendor prefixes for 
+ * compatibility with WebKit-based browsers like Chrome and Safari.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.PASSWORD = "password"
+/**
+ * @desc Accepts only numeric characters. It provides up/down arrow 
+ * steppers in the input box.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.NUMBER = "number"
+/**
+ * @desc Displays a visual slider control. Use min and max attributes 
+ * to set the boundaries.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.RANGE = "range"
+/**
+ * @desc Formats the field for telephone numbers. It opens a numeric 
+ * keypad on mobile devices.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.TEL = "tel"
+/**
+ * @desc Opens a native calendar dropdown picker to select a year, month, and day.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.DATE = "date"
+/**
+ * @desc Opens a native time picker to select hours and minutes 
+ * (and sometimes seconds, depending on the browser).
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.TIME = "time"
+/**
+ * @desc Combines both the calendar picker and the time picker 
+ * into a single input field.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.DATETIME_LOCAL = "datetime-local"
+/**
+ * @desc Specialized input types for selecting a month of the year.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.MONTH = "month"
+/**
+ * @desc Specialized input types for selecting a week of the year.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.WEEK = "week"
+/**
+ * @desc Validates that the input is a properly formatted email address.
+ * It checks for the presence of an '@' symbol and a domain name. 
+ * On mobile devices, it often provides a keyboard optimized for email 
+ * input, including the '@' symbol and '.com' key.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.EMAIL = "email"
+/**
+ * @desc Validates that the input is a properly formatted URL. It checks
+ * for the presence of a valid protocol (like 'http://' or 'https://') 
+ * and a domain name. On mobile devices, it often provides a keyboard 
+ * optimized for URL input, including the '/' and '.com' keys.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.URL = "url"
+/**
+ * @desc Provides a search field with built-in features like a clear button
+ * to quickly erase the input. It is visually styled to indicate that it is
+ * meant for search queries.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.SEARCH = "search"
+/**
+ * @desc Allows users to select one or more files from their device. When
+ * clicked, it opens the file explorer dialog. The selected files can then be
+ * uploaded to a server or processed in the browser using JavaScript.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.CHECKBOX = "checkbox"
+/**
+ * @desc Allows users to select one option from a predefined set of options.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.RADIO = "radio"
+/**
+ * @desc Provides a color picker interface that allows users to select a color.
+ * When clicked, it opens the operating system's native color picker palette. 
+ * The selected color is typically returned as a Hex code value (e.g., #ff0000 for red).
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.COLOR = "color"
+/**
+ * @desc A button that allows users to upload files. When clicked, 
+ * it opens the file explorer dialog, allowing users to select one or 
+ * more files from their device. The selected files can then be uploaded 
+ * to a server or processed in the browser using JavaScript.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.FILE = "file"
+/**
+ * @desc Keeps data inside the form that the user cannot see or 
+ * interact with. It is used to pass system IDs.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.HIDDEN = "hidden"
+/**
+ * @desc A button that submits the form data to the server. When clicked,
+ * it triggers the form's submit event, sending all the input data to the 
+ * specified action URL using the defined method (GET or POST).
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.SUBMIT = "submit"
+/**
+ * @desc Standard clickable button.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.BUTTON = "button"
+/**
+ * @desc Standard clickable button thatclears all fields in the form 
+ * back to their default values.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.RESET = "reset"
+/**
+ * @desc Uses an image file as a clickable submit button. When clicked, it
+ * submits the form data to the server, just like a regular submit button. 
+ * The image is specified using the 'src' attribute, and it can be styled 
+ * with CSS to fit the design of the webpage.
+ */
+MAGPIE.KEY.HTML.INPUT.TYPE.IMAGE = "image"
 // #endregion
 //------------------------------------------------------------------------
 /**

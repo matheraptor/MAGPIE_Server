@@ -1,6 +1,6 @@
 /**
  * @name MAGPIE_ENTITY
- * @version 0.31.0
+ * @version 0.32.0
  * @desc 
  * @param {{
  * name: String,
@@ -2664,11 +2664,9 @@ MAGPIE_ENTITY.prototype._emote_onTarget = function _emote_onTarget(exp, fitness_
 	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
 	try
 	{
-		const next = this._target_next()
-		if(!next)
-		{
-			//@todo entity._emote_onTarget
-		}
+		if(this._target_next())
+			return this.switchState(fitness_index, STATE.INDEX.SEEKING_TARGET)
+		//@todo entity._emote_onTarget
 		return this._emote_seekTarget(exp, fitness_index);
 	}
 	catch(e)
@@ -2687,7 +2685,8 @@ MAGPIE_ENTITY.prototype._emote_approachTarget = function _emote_approachTarget(e
 	const ePrefix = `[ENTITY-${this.ID}].reachTarget: `;
 	try
 	{
-		this._target_next()
+		if(this._target_next()) 
+			return this.switchState(fitness_index, STATE.INDEX.SEEKING_TARGET)
 		return this._emote_seekTarget(exp, fitness_index)
 	}
 	catch(e)
@@ -2707,7 +2706,8 @@ MAGPIE_ENTITY.prototype._emote_reachTarget = function _emote_reachTarget(exp, fi
 	try
 	{
 		// MAGPIE_SYSTEM._logging_debug(ePrefix)
-		this._target_next()
+		if(this._target_next()) 
+			return this.switchState(fitness_index, STATE.INDEX.SEEKING_TARGET)
 		return this._emote_seekTarget(exp, fitness_index)
 	}
 	catch(e)
@@ -3732,9 +3732,9 @@ MAGPIE_ENTITY.prototype._set_target = async function _set_target(target, exp)
 }
 /**
  * 
- * @returns {Promise<entityID>}
+ * @returns {entityID}
  */
-MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
+MAGPIE_ENTITY.prototype._target_next = function nextTarget()
 {
 	const ePrefix = `[ENTITY-${this.ID}].nextTarget: `;
 	try
@@ -3749,7 +3749,7 @@ MAGPIE_ENTITY.prototype._target_next = async function nextTarget()
 		const index = this._get_expIndex(exp);
 		if(Number(index) < 0)
 			throw new Error(`${index} is invalid exps index`)
-		const next = await exp._target_next()
+		const next = exp._target_next()
 		if(!next) 
 			return
 		const swap = this._exp_swapWith(index, exp);

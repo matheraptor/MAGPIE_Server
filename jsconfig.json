@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "CommonJS",
+    "checkJs": false,
+    "allowSyntheticDefaultImports": true
+  },
+  "exclude": [
+    "node_modules",
+    ".git",
+    ".tmp",
+    ".logs",
+    "db",
+    "entities.json",
+    "**/*.pak"
+  ]
+}

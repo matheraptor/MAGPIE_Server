@@ -2,7 +2,7 @@
  * 
  * @namespace MAGPIE_Server
  * @author Matheraptor
- * @version 0.31.0
+ * @version 0.32.0
  * @desc server frontend
  * {@link MAGPIE}
  */
@@ -251,6 +251,18 @@ MAGPIE_SYSTEM._logging_debug = function server_debug(message)
 MAGPIE_SERVER.SYS._handlersPath = path.join(__dirname, "handlers");
 MAGPIE_SERVER.HANDLER = fs.readdirSync(MAGPIE_SERVER.SYS._handlersPath)
 	.map(file => require(path.join(MAGPIE_SERVER.SYS._handlersPath, file)))
+
+// Register handlers
+MAGPIE_SERVER.registerHandlers = (io) =>
+{
+    MAGPIE_SERVER.HANDLER.forEach(handler => 
+    {
+        io.on("connection", (socket) => 
+        {
+            handler(io, socket, MAGPIE_SERVER);
+        });
+    });
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1154,6 +1166,26 @@ MAGPIE_ENTITY._database_Sync = function _database_Sync(method, argument)
  * 
  */
 //------------------------------------------------------------------------
+// #region > Player
+//------------------------------------------------------------------------
+MAGPIE_PLAYER.__hive = async function __hive(method, arguments)
+{
+	const callback = MAGPIE_HIVE[method]
+	return await callback(...arguments)
+}
+MAGPIE_PLAYER.__hiveSync = function __hiveSync(method, arguments)
+{
+	const callback = MAGPIE_HIVE[method]
+	return callback(...arguments)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
 // #region > Compon.
 //------------------------------------------------------------------------
 /**
@@ -1569,12 +1601,12 @@ const app = express();
 const server = createServer(app);
 const io = new Server(server, {
 	cors: {
-		origin: [MAGPIE.KEY.SERVER.DOMAIN, "https://socket.io"],
+		origin: "*", // Temporarily allow all for debugging
 		methods: ["GET", "POST"],
 		credentials: true
 	},
-	transports: ["websocket"],
-	allowUpgrades: false
+	transports: ["polling", "websocket"],
+	allowUpgrades: true
 })
 instrument(io, {
 	auth: false,

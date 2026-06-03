@@ -1,4 +1,4 @@
-/* public/cli/cli.css version 0.31.1 */
+/* public/cli/cli.css version 0.32.0 */
 :root {
     --crt-green: #33ff33;
     --crt-bright: #00ff00;
@@ -93,6 +93,11 @@ body {
     outline: none;
     width: 100%;
     text-shadow: 0 0 8px var(--crt-bright);
+}
+
+/* This triggers automatically only when type="password" */
+#cli-input[type="password"] {
+    -webkit-text-security: asterisk;
 }
 
 .prompt {

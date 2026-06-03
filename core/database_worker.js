@@ -84,6 +84,7 @@ worker.ping = function ping()
 	console.log("[DATABASE WORKER]: 'ping'");
 	return "pong"
 }
+
 const { parentPort } = require("worker_threads");
 parentPort?.on("message", async ({ method, args = [], requestID }) => {
 	if(!parentPort) return

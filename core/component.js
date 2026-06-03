@@ -1,7 +1,7 @@
 /**
  * @name INDEX
  * @desc 
- * @version 0.30.3
+ * @version 0.32.0
  */
 //========================================================================
 // #region - INDEX
@@ -1084,9 +1084,9 @@ MAGPIE_EXP.prototype._get_key_marker = function getKeyMarker()
 }
 /**
  * @param {entityID}
- * @returns {Promise<database_result>}
+ * @returns {database_result}
  */
-MAGPIE_EXP.prototype._set_target = async function _set_target(targetID)
+MAGPIE_EXP.prototype._set_target = function _set_target(targetID)
 {
 	const ePrefix = `[EXP-${this.ID}].emoteArrived: `;
 	try
@@ -1095,7 +1095,7 @@ MAGPIE_EXP.prototype._set_target = async function _set_target(targetID)
 		if(!next || isNaN(next))
 			throw new Error(`${targetID} is invalid targetID`)
 		this.targetID = next;
-		return await this.set()
+		return this.setSync()
 	}
 	catch(e)
 	{
@@ -1104,9 +1104,9 @@ MAGPIE_EXP.prototype._set_target = async function _set_target(targetID)
 }
 /**
  * 
- * @returns {Promise<entityID>} entityID
+ * @returns {entityID} entityID
  */
-MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
+MAGPIE_EXP.prototype._key_target_next = function keyTargetNext()
 {
 	const ePrefix = `[EXP-${this.ID}].keyTargetNext`;
 	try
@@ -1114,7 +1114,7 @@ MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 		const key = this._get_key_target();
 		if(!key) 
 			return 
-		const result = await key.removeOrigin();
+		const result = key.removeOrigin();
 		if(!result) 
 			throw new Error(`unable to remove 'target' origin from [KEY-${key.ID}]`)
 		return Number(key.label);
@@ -1126,15 +1126,15 @@ MAGPIE_EXP.prototype._key_target_next = async function keyTargetNext()
 }
 /**
  * 
- * @returns {Promise<database_result>}
+ * @returns {database_result}
  */
-MAGPIE_EXP.prototype._target_next = async function _target_next()
+MAGPIE_EXP.prototype._target_next = function _target_next()
 {
 	const ePrefix = `[EXP-${this.ID}].targetNext: `;
 	try
 	{
-		const targetID = await this._key_target_next()
-		const set = await this._set_target(targetID);
+		const targetID = this._key_target_next()
+		const set = this._set_target(targetID);
 		if(!set)
 			throw new Error(`unable to set targetID[${targetID}]`)
 		return targetID
@@ -1962,10 +1962,14 @@ MAGPIE_KEY.prototype.setOrigin = async function setOrigin(keyID)
 	this.originID = keyID;
 	return this.set();
 }
-MAGPIE_KEY.prototype.removeOrigin = async function removeOrigin()
+/**
+ * 
+ * @returns {database_result}
+ */
+MAGPIE_KEY.prototype.removeOrigin = function removeOrigin()
 {
 	this.originID = null;
-	return this.set();
+	return this.setSync();
 }
 // #endregion
 //------------------------------------------------------------------------

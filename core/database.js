@@ -7,6 +7,7 @@
 // #region - DATABASE
 //========================================================================
 const { response } = require("express");
+const { verifyPassword } = require("./auth_util.js");
 const { MAGPIE } = require("./index");
 const { 
 	MAGPIE_LOG, 
@@ -99,7 +100,7 @@ MAGPIE_DATABASE.pingWorker = async function pingWorker()
 	}
 	catch(e)
 	{
-		MAGPIE_SYSTEM.error(ePrefix + ": " + e.message, e)
+		MAGPIE_SYSTEM.log(ePrefix + `: ${e.message}`, "error", true);
 	}
 }
 /**
@@ -226,15 +227,26 @@ MAGPIE_DATABASE.loadPlayerSync = function loadPlayer(playerID)
  * @typedef {String} password
  * @param {email} email 
  * @param {password} pass 
- * @returns {Promise<Boolean>}
+ * @returns {Promise<MAGPIE_PLAYER>}
  */
 MAGPIE_DATABASE.loginPlayer = async function loginPlayer(email, pass)
 {
-	if(!MAGPIE_DATABASE.isValidEmail(email) || !MAGPIE_DATABASE.isValidPass(pass)) return
-	const player = await MAGPIE_DATABASE.call("loadServerRow", ["MAGPIE_PLAYER", {email: email}]);
-	if(!(player instanceof MAGPIE_PLAYER)) return false
-	if(!player.PASS === pass) return false;
-	return player
+	const ePrefix = `[DATABASE].loginPlayer[${email}]: `;
+	try
+	{
+		if(!MAGPIE_DATABASE.isValidEmail(email)) return
+		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email: email});
+		if(player?._firmware !== "MAGPIE_PLAYER")
+			throw new Error(`${Object.entries(player)} is invalid player`)
+		const valid = await MAGPIE_DATABASE.isValidPass(pass, player)
+		if(!valid) 
+			throw new Error(`${pass} is invalid password`)
+		return player
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 /**
  * 
@@ -245,6 +257,36 @@ MAGPIE_DATABASE.isValidEmail = function isValidEmail(email)
 {
 	const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   	return regex.test(email);
+}
+/**
+ * 
+ * @param {password} password
+ * @returns {Boolean} 
+ */
+MAGPIE_DATABASE.isValidPass = async function isValidPass(password, player)
+{
+	return await verifyPassword(password, player.PASS)
+}
+/**
+ * @typedef {import("./player").player_data} player_data
+ * @param {player_data} data 
+ */
+MAGPIE_DATABASE.createPlayer = async function createPlayer(playerData)
+{
+	const ePrefix = "[DATABASE].createPlayer: ";
+	try
+	{
+		const player = new MAGPIE_PLAYER(playerData);
+		const result = await MAGPIE_DATABASE.savePlayer(player);
+		if(!result)
+			throw new Error(`${result} is invalid database result`)
+		return player;
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return e
+	}
 }
 /**
  * 
