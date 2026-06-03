@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.31.0
+ * @version 0.31.1
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,12 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.31.1 2026 06 03
+ * - ADDED: homepage CLI button
+ * - ADDED: CLI socket phase 1
+ * - ADDED: CLI account phase 1
+ * - FIXED: CLI box sizing
  * 
  * @version 0.31.0 2026 06 01
  * - ADDED: ECG phase 1
@@ -441,9 +447,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 31, 0],
+			version: [0, 31, 1],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260601"
+			firmwareDate: "20260603"
 		};
 	}
 }

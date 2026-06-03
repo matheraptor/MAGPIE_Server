@@ -1,4 +1,4 @@
-/* public/cli/cli.css version 0.31.0 */
+/* public/cli/cli.css version 0.31.1 */
 :root {
     --crt-green: #33ff33;
     --crt-bright: #00ff00;
@@ -13,16 +13,15 @@ body {
     margin: 0;
     padding: 0;
     overflow: hidden; /* prevent scrollbars from breaking the CRT illusion */
-    display: flex;
-    justify-content: center;
-    align-items: 100vh;
+    width: 100vw;
+    height: 100vh;
 }
 
 /* CRT screen container */
 #crt-screen {
     position: relative;
-    width: 90vw;
-    height: 80vw;
+    width: 100%;
+    height: 100%;
     background: #000;
     border: 20px solid #222;
     border-radius: 20px;
