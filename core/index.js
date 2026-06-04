@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.32.0
+ * @version 0.33.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,12 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.33.0 2026 06 04
+ * - ADDED: new custom domain via Cloudflare
+ * - ADDED: 2-step registration with email confirmation
+ * - ADDED: password recovery
+ * - FIXED: socket unable to process protocol
  * 
  * @version 0.32.0 2026 06 03
  * - ADDED: player auth phase 1
@@ -450,9 +456,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 32, 0],
+			version: [0, 33, 0],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260603"
+			firmwareDate: "20260604"
 		};
 	}
 }

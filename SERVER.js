@@ -133,7 +133,7 @@ const { instrument } = require("@socket.io/admin-ui");
 // #region > security
 //------------------------------------------------------------------------
 MAGPIE_SERVER.JWT = require("jsonwebtoken");
-MAGPIE_SERVER.MAIL = require("./mailer")
+MAGPIE_SERVER.MAIL = require("./core/mailer")
 // #endregion
 //------------------------------------------------------------------------
 /**
