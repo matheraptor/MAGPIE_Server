@@ -1409,6 +1409,22 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_403 = {
 		+ "access rights, making repeated attempts without modification futile."
 };
 /**
+ * @desc "Conflict"
+ * @desc The standard HTTP status code for attempting to create a resource 
+ * that already exists (causing a unique constraint violation in your 
+ * database) is 409 Conflict. Using 409 tells the client specifically 
+ * that the server understands the request, but it cannot be completed 
+ * due to an asset collision.
+ */
+MAGPIE.KEY.SERVER.HTTP.STATUS_409 = {
+	message: "Conflict",
+	desc: "The standard HTTP status code for attempting to create a resource "
+		+ "that already exists (causing a unique constraint violation in your "
+		+ "database) is 409 Conflict. Using 409 tells the client specifically "
+		+ "that the server understands the request, but it cannot be completed "
+		+ "due to an asset collision."
+}
+/**
  * @desc Internal Server Error
  * @desc An HTTP 500 status code (Internal Server Error) indicates 
  * that the server encountered an unexpected condition that prevented 

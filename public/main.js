@@ -26,7 +26,8 @@ const socket = io(`${window.location.protocol}//${window.location.hostname}`, {
 	query: {
 		entityID: urlEntityID
 		},
-    transports: ["websocket"]
+    transports: ["websocket", "polling"],
+	secure: true
 });
 
 
@@ -38,7 +39,7 @@ const router = {
 	}
 };
 //------------------------------------------------------------------------
-//#region > inspector
+//#region > inspect
 //------------------------------------------------------------------------
 const inspector = {
 	currentID: null,
@@ -203,7 +204,7 @@ socket.on('metastate', (data) => {
 });
 */
 // #endregion
-//========================================================================
+//------------------------------------------------------------------------
 /**
  * 
  * 
@@ -211,20 +212,46 @@ socket.on('metastate', (data) => {
 //------------------------------------------------------------------------
 //#region > login
 //------------------------------------------------------------------------
-async function login(username, password) 
-{
-	const response = await fetch("./login", {
-		method: "POST",
-		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ ID: username, PASS: password })
-	});
-	const data = await response.json();
-	if(response.status === 429) alert(data.error + data.message);
-	if(response.status === 403) alert(data.error);
-	if(response.ok) localStorage.setItem("jwt_token", data.token);
-	if(response.status === 401) alert("Invalid username or password");
-	else alert("Server error; please, try again later.");
-}
+// async function login(username, password) 
+// {
+// 	const response = await fetch("./login", {
+// 		method: "POST",
+// 		headers: { "Content-Type": "application/json" },
+// 		body: JSON.stringify({ ID: username, PASS: password })
+// 	});
+// 	const data = await response.json();
+// 	if(response.status === 429) alert(data.error + data.message);
+// 	if(response.status === 403) alert(data.error);
+// 	if(response.ok) localStorage.setItem("jwt_token", data.token);
+// 	if(response.status === 401) alert("Invalid username or password");
+// 	else alert("Server error; please, try again later.");
+// }
 //#endregion
 //------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - ACCOUNT
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Verify
+//------------------------------------------------------------------------
 
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================

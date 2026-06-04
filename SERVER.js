@@ -133,7 +133,7 @@ const { instrument } = require("@socket.io/admin-ui");
 // #region > security
 //------------------------------------------------------------------------
 MAGPIE_SERVER.JWT = require("jsonwebtoken");
-
+MAGPIE_SERVER.MAIL = require("./mailer")
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1686,6 +1686,62 @@ app.post("/login", MAGPIE_SERVER.public.loginLimiter, async (req, res) => {
 		return res.status(serverError).json({
 			error: ePrefix + "Internal Server Error"
 		})
+	}
+})
+// app.post("/register")
+app.get("/verify-email", async (req, res) => {
+	const ePrefix = "[HTTP VERIFY ERROR]: "
+	const code = MAGPIE.KEY.SERVER.HTTP;
+	const { token } = req.query;
+	const db = MAGPIE_DATABASE;
+	try
+	{
+		if(!token) 
+			return res.status(code.STATUS_401).send("<h1>Missing verification token</h1>");
+		const decoded = jwt.verify(token, MAGPIE_SERVER.config.jwtSecret)
+		if(!decoded.isRegistrationToken)
+			return res.status(code.STATUS_400).send("<h1>Invalid token type</h1>")
+		const existingEmail = await db.getPlayerByEmail(decoded.email)
+		if(existingEmail)
+			return res.status(code.STATUS_409).send("<h1>Error</h1><p>This email has already been registered.</p>")
+		const existingUser = await db.getPlayerByUsername(decoded.username)
+		if(existingUser)
+			return res.status(code.STATUS_409).send("<h1>Error</h1><p>This username has already been taken.</p>")
+		await db.createPlayer({
+			username: decoded.username,
+			PASS: decoded.PASS,
+			email: decoded.email
+		})
+		res.status(code.STATUS_200).send(	`<h1>Registration Complete!</h1>
+					<p>Your M.A.G.P.I.E. profile is active.
+					You can now close this window and login.</p>`)
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+		if (e.name === 'JsonWebTokenError' || e.name === 'TokenExpiredError') 
+			return res.status(code.STATUS_400).send("<h1>Verification Failed</h1><p>The link is invalid, altered, or has expired.</p>");
+		res.status(500).send(`<h1>Internal server error</h1><p>Please, try again later</p>
+			<p>If you see this persist for over 1 hour, please, report it to admin@shelderevolution.org</p>`)
+	}
+})
+app.post("/reset-password", async (req, res) => {
+	const ePrefix = "[HTTP].resetPassword: "
+	const { token, password } = req.body
+	try
+	{
+		if(!token)
+			return res.status(401).send("<h1>Missing recovery token</h1>")
+		await account.processPasswordReset(token, password, MAGPIE_SERVER)
+		res.status(200).send(`
+			<h1>Password updated successfully</h1>
+			<p>Your credentials have been secured. You can now close this window.</p>`)
+	}
+	catch(e)
+	{
+		if(e.name === "JsonWebTokenError" || e.name === "TokenExpiredError")
+			return res.status(400).send("<h1>Reset session failed</h1><p>Please, request a new link.</p>")
+		res.status(500).send("<h1>Internal server error</h1><p>Please, try again later.</h1>")
 	}
 })
 // #endregion

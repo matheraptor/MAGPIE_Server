@@ -54,9 +54,9 @@ function clearTerminal()
 function displayPrompt()
 {
 	const user = MAGPIE_CLI?.activeUser ? MAGPIE_CLI?.activeUser : "unknown-user"
-	const moduleName = (MAGPIE_CLI.activeModule && MAGPIE_CLI.activeModule.name !== 'root') ? MAGPIE_CLI.activeModule.name.toUpperCase() : "USER";
+	const moduleName = (MAGPIE_CLI.activeModule && MAGPIE_CLI.activeModule.name !== 'root') ? MAGPIE_CLI.activeModule.name.toUpperCase() : "ROOT";
 	const mode = (MAGPIE_CLI.activeModule && MAGPIE_CLI.activeModule.mode === 'input') ? "[INPUT]" : "";
-	return `${user}@${mode}:${moduleName}>`;
+	return `${user}@${moduleName}:${mode}>`;
 }
 
 function updatePromptUI()
