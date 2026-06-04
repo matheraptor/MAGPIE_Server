@@ -19,7 +19,7 @@ MAGPIE.public.meta = {
 };
 const params = new URLSearchParams(window.location.search);
 const urlEntityID = params.get('entityID');
-const socket = io(`${window.location.protocol}//${window.location.hostname}:3000`, {
+const socket = io(`${window.location.protocol}//${window.location.hostname}`, {
     auth: {
         token: localStorage.getItem("jwt_token")
     },
