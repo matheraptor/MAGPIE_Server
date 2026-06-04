@@ -1349,6 +1349,8 @@ MAGPIE.KEY.SERVER.LOGIN_MAX_ATTEMPTS = 20;
 MAGPIE.KEY.SERVER.MESSAGE = {};
 MAGPIE.KEY.SERVER.MESSAGE.BOOT = "[BOOT SEQUENCE]";
 MAGPIE.KEY.SERVER.MESSAGE.BOOTED = "SERVER ONLINE listening on: ";
+MAGPIE.KEY.SERVER.MESSAGE.INTERNAL_ERROR = `<h1>Internal server error</h1><p>Please, try again later</p>
+			<p>If you see this persist for over 1 hour, please, report it to admin@shelderevolution.org</p>`
 /**
  * @name 
  * @desc 

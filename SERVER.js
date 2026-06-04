@@ -1661,30 +1661,22 @@ app.post("/login", MAGPIE_SERVER.public.loginLimiter, async (req, res) => {
 	const { email, pass } = req.body;
 	try
 	{
-		const badRequest = MAGPIE.KEY.SERVER.HTTP.STATUS_400;
-		const unauthorized = MAGPIE.KEY.SERVER.HTTP.STATUS_401;
-		const forbidden = MAGPIE.KEY.SERVER.HTTP.STATUS_403;
-		const serverError = MAGPIE.KEY.SERVER.HTTP.STATUS_500;
 		if(!email || !pass)
-			return res.status(badRequest).json({
+			return res.status(MAGPIE.KEY.SERVER.HTTP.STATUS_400).json({
 				error: ePrefix + "Missing credentials"
 			})
-		const player = await MAGPIE_DATABASE.loginPlayer(email, pass);
-		if(!player) return res.status(unauthorized).json({
-			error: ePrefix + "Invalid credentials"
-		})
-		if(player.isFrozen === 1)
-			return res.status(forbidden).json({
-				error: ePrefix + MAGPIE.KEY.SERVER.HTTP.STATUS_403.message
-			})
-		const token = MAGPIE_SERVER.AUTH.signToken(player.ID);
-		return res.status(successful).json( { token });
+		const { token } = await account.verifyCredentials(email, pass, MAGPIE_SERVER)
+		return res.status(MAGPIE.KEY.SERVER.HTTP.STATUS_200).json({ token })
 	}
 	catch(e)
 	{
-		MAGPIE_SERVER.error(ePrefix + e.message, e)
-		return res.status(serverError).json({
-			error: ePrefix + "Internal Server Error"
+		const status = e.message === "Invalid credentials" 
+			? 401 
+			: e.message === "Account is frozen" ? 403 : 500
+		if(status === 500)
+			MAGPIE_SERVER.error(ePrefix + e.message, e)
+		return res.status(status).json({
+			error: ePrefix + e.message
 		})
 	}
 })
@@ -1721,17 +1713,34 @@ app.get("/verify-email", async (req, res) => {
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 		if (e.name === 'JsonWebTokenError' || e.name === 'TokenExpiredError') 
 			return res.status(code.STATUS_400).send("<h1>Verification Failed</h1><p>The link is invalid, altered, or has expired.</p>");
-		res.status(500).send(`<h1>Internal server error</h1><p>Please, try again later</p>
-			<p>If you see this persist for over 1 hour, please, report it to admin@shelderevolution.org</p>`)
+		res.status(500).send(MAGPIE.KEY.SERVER.MESSAGE.INTERNAL_ERROR)
 	}
 })
 app.post("/reset-password", async (req, res) => {
 	const ePrefix = "[HTTP].resetPassword: "
+	const { email } = req.body
+	try
+	{
+		if(!email)
+			return res.status(400).send("<h1>Email required</h1>")
+		await account.requestPassowrdReset(email, MAGPIE_SERVER)
+		res.status(200).send(`
+			<h1>Recovery requested</h>
+			<p>Recovery link has been sent to the provided email.</p>`)
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+		res.status(500).send("<h1>Internal server error</h1><p>Please, try again later.</h1>")
+	}
+})
+app.post("/finalize-password-reset", async (req, res) => {
+	const ePrefix = "[HTTP].finalizePasswordReset: "
 	const { token, password } = req.body
 	try
 	{
-		if(!token)
-			return res.status(401).send("<h1>Missing recovery token</h1>")
+		if(!token || !password)
+			return res.status(401).send("<h1>Missing recovery token or password</h1>")
 		await account.processPasswordReset(token, password, MAGPIE_SERVER)
 		res.status(200).send(`
 			<h1>Password updated successfully</h1>
@@ -1740,8 +1749,9 @@ app.post("/reset-password", async (req, res) => {
 	catch(e)
 	{
 		if(e.name === "JsonWebTokenError" || e.name === "TokenExpiredError")
-			return res.status(400).send("<h1>Reset session failed</h1><p>Please, request a new link.</p>")
-		res.status(500).send("<h1>Internal server error</h1><p>Please, try again later.</h1>")
+			return res.status(400).send("<h1>Reset session failed</h1>Please, request a new link.</p>")
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+		res.status(500).send(MAGPIE.KEY.SERVER.MESSAGE.INTERNAL_ERROR)
 	}
 })
 // #endregion

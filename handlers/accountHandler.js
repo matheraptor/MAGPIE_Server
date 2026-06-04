@@ -60,29 +60,31 @@ account.register = async function(data, socket, server)
 		socket.emit("REGISTER_ERROR", { message: e.message || "Registration failed." })
 	}
 }
+account.verifyCredentials = async function(email, password, server)
+{
+	const db = server.DATABASE
+	const player = await db.loginPlayer(email, password)
+	if(!player) 
+		throw new Error("Invalid credentials")
+	if(player.isFrozen === 1) 
+		throw new Error("Account is frozen")
+	const token = jwt.sign({
+		id: player.ID,
+		username: player.username
+	}, server.config.jwtSecret, { expiresIn: '1h' })
+	return { player, token }
+}
 account.login = async function (data, socket, server)
 {
 	const ePrefix = "[ACCOUNT HANDLER].login: "
 	try
 	{
-		if (!data)
-			throw new Error("Invalid socket login data");
-		const { email, password } = data;
-		const db = server.DATABASE;
-		const player = await db.loginPlayer(email, password);
-		if(!player)
-			throw new Error(`Invalid credentials`);
-		const token = jwt.sign({ 
-			id: player.id, 
-			username: player.username 
-		}, 
-		server.config.jwtSecret, { expiresIn: '1h' });
-		socket.emit("LOGIN_SUCCESS", { username: player.username, token });
+		const { player, token } = await account.verifyCredentials(data.email, data.password, server)
+		socket.emit("LOGIN_SUCCESS", { username: player.username, token })
 	}
 	catch(e)
 	{
-		console.error(ePrefix + e.message, e)
-		socket.emit(`LOGIN_ERROR`, { message: "Login failed." })
+		socket.emit(`LOGIN_ERROR`, { message: e.message })
 	}
 }
 account.logout = async function (data, socket, server)
@@ -98,6 +100,39 @@ account.logout = async function (data, socket, server)
 		console.error(ePrefix + e.message, e)
 		socket.emit("LOGOUT_ERROR", { message: "Logout failed." })
 	}
+}
+account.requestPasswordReset = async function(email, server)
+{
+	const ePrefix = "[ACCOUNT HANDLER].requestPasswordReset: "
+	try
+	{
+		if(!email)
+			throw new Error("Email is required for recovery request")
+		const db = server.DATABASE
+		const player = await db.getPlayerByEmail(email)
+		if(!player)
+			return { success: true, sent: false}
+		const recoveryToken = jwt.sign({
+			id: player.ID,
+			isRecoveryToken: true
+		}, server.config.jwtSecret, { expiresIn: '1h' })
+		try
+		{
+			await mailer.sendRecovery(email, recoveryToken)
+		}
+		catch(e)
+		{
+			console.error(ePrefix + "Mail delivery failed: " + e.message, e)
+			throw new Error("Could not deliver recovery email")
+		}
+		return { success: true, sent: true }
+	}
+	catch(e)
+	{
+		console.error(ePrefix + e.message, e)
+		throw e
+	}
+	
 }
 account.processPasswordReset = async function(token, newPassword, server)
 {
