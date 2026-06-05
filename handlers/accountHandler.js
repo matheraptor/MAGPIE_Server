@@ -1,6 +1,6 @@
 const jwt = require("jsonwebtoken");
 const { hashPassword, verifyPassword } = require("../core/auth_util");
-const mailer = require("nodemailer")
+const mailer = require("./email_api")
 /**
  * @namespace accountHandler
  * @author Matheraptor
@@ -101,17 +101,23 @@ account.logout = async function (data, socket, server)
 		socket.emit("LOGOUT_ERROR", { message: "Logout failed." })
 	}
 }
-account.requestPasswordReset = async function(email, server)
+account.requestPasswordReset = async function(data, socket, server)
 {
 	const ePrefix = "[ACCOUNT HANDLER].requestPasswordReset: "
 	try
 	{
+		const email = data?.email
 		if(!email)
-			throw new Error("Email is required for recovery request")
+			throw new Error(`${email} is invalid email`)
+		// 1. Enforce the interface contract: Verify an object payload arrived
+		console.log(`${ePrefix}Processing recovery request for: "${email}"`);
 		const db = server.DATABASE
 		const player = await db.getPlayerByEmail(email)
 		if(!player)
-			return { success: true, sent: false}
+		{
+			socket.emit("RESET_PASSWORD_SUCCESS", { email })
+			return { success: true }
+		}
 		const recoveryToken = jwt.sign({
 			id: player.ID,
 			isRecoveryToken: true
@@ -125,12 +131,14 @@ account.requestPasswordReset = async function(email, server)
 			console.error(ePrefix + "Mail delivery failed: " + e.message, e)
 			throw new Error("Could not deliver recovery email")
 		}
+		socket.emit("RESET_PASSWORD_SUCCESS", { email })
 		return { success: true, sent: true }
 	}
 	catch(e)
 	{
 		console.error(ePrefix + e.message, e)
-		throw e
+		socket.emit("RESET_PASSWORD_ERROR", { message: e.message || "Recovery failed." })
+		// throw e
 	}
 	
 }
@@ -166,4 +174,7 @@ module.exports = function(io, socket, server)
 	socket.on("REGISTER", (data) => account.register(data, socket, server))
 	socket.on("LOGIN", (data) => account.login(data, socket, server))
 	socket.on("LOGOUT", (data) => account.logout(data, socket, server))
+	socket.on("RESET_PASSWORD_REQUEST", async (data) => {
+		await account.requestPasswordReset(data, socket, server)
+	})
 }

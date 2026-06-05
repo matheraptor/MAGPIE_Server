@@ -14,12 +14,13 @@ module.exports = function(io, socket, server)
 	socket.on("RESET_PASSWORD_REQUEST", async (data) => {
 		try
 		{
-			const result = await accountHandler.processPasswordRecoveryRequest(data.email, server);
 			socket.emit("RESET_PASSWORD_SUCCESS", { email: data.email })
+			console.log("[CLI HANDLER] resetpassword: success")
 		}
 		catch(e)
 		{
 			socket.emit("RESET_PASSWORD_ERROR", { message: e.message })
+			throw e
 		}
 	})
 }

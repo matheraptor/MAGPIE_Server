@@ -8,5 +8,6 @@ module.exports = {
     instance_ip: process.env.instance_ip,
     instance_zone: process.env.instance_zone,
     devMode: process.env.devMode,
-    NODE_ENV: process.env.isProduction ? true : false
+    NODE_ENV: process.env.isProduction ? true : false,
+    sendGrid_API: process.env.sendGrid_API
 }

@@ -26,6 +26,7 @@ class MAGPIE_SERVER
 //------------------------------------------------------------------------
 // #region > internal
 //------------------------------------------------------------------------
+MAGPIE_SERVER.config = require("./core/config");
 const { MAGPIE } = require("./core/index");
 MAGPIE_SERVER.meta = MAGPIE.meta;
 MAGPIE_SERVER.meta.name += " server";
@@ -89,7 +90,6 @@ MAGPIE_SERVER.meta = {}
 MAGPIE_SERVER.perf = {};
 MAGPIE_SERVER.perf.start = performance.now();
 MAGPIE_SERVER.perf.end = NaN;
-MAGPIE_SERVER.config = require("./core/config");
 const STATE = require("./data/states");
 const COMPONENTS = require("./data/components")
 // #endregion

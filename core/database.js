@@ -188,8 +188,8 @@ MAGPIE_DATABASE.getPlayerByEmail = async function (email)
 	const ePrefix = "[DATABASE].getPlayerByEmail: "
 	try
 	{
-		const player = await MAGPIE_DATABASE.call("loadServerRow", ["MAGPIE_PLAYER", {email: email}])
-		if(!(player instanceof MAGPIE_PLAYER))
+		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email: email})
+		if(!player)
 			throw new Error(`[USER-${email}] not found`)
 		return player
 	}

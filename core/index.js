@@ -20,6 +20,12 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
+ * @version 0.34.0 2026 06 05
+ * - ADDED: ShelderEvo client scaffolding
+ * - ADDED: client socket handling
+ * - ADDED: mailer service
+ * - FIXED: accountHandler incomplete logic
+ * 
  * @version 0.33.0 2026 06 04
  * - ADDED: new custom domain via Cloudflare
  * - ADDED: 2-step registration with email confirmation
@@ -456,9 +462,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 33, 0],
+			version: [0, 34, 0],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260604"
+			firmwareDate: "20260605"
 		};
 	}
 }
