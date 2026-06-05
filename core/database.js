@@ -250,9 +250,9 @@ MAGPIE_DATABASE.loginPlayer = async function loginPlayer(email, pass)
 	try
 	{
 		if(!MAGPIE_DATABASE.isValidEmail(email)) return
-		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email: email});
-		if(player?._firmware !== "MAGPIE_PLAYER")
-			throw new Error(`${Object.entries(player)} is invalid player`)
+		const player = await MAGPIE_DATABASE.call("loadServerRow", ["MAGPIE_PLAYER", {email: email}]);
+		if(!player)
+			throw new Error(`No record matches the provided identity`)
 		const valid = await MAGPIE_DATABASE.isValidPass(pass, player)
 		if(!valid) 
 			throw new Error(`${pass} is invalid password`)
