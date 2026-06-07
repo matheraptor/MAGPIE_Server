@@ -9,6 +9,17 @@
     border: 1px solid #333;
 }
 
+.monitor-grid {
+    display: grid;
+    grid-template: repeat(8, 160px);
+    gap: 8px 15px;
+    width: 100%;
+    padding: 15px;
+    box-sizing: border-box;
+    background: #111;
+    color: #0f0
+}
+
 /* 2. The Telemetry Grid */
 #physics-stream {
     display: grid;

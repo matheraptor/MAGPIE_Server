@@ -3626,6 +3626,8 @@ MAGPIE_ENTITY.prototype._target_fetch_queue = async function()
 		.map(targetID => MAGPIE_ENTITY.__hiveSync("_get_entity", [targetID]))
 }
 /**
+ * @todo fix order of properties 
+ * (wp dist/eta should be TO, not FROM, or, include current target)
  * @typedef {{
  * leg: Number,
  * ID: entityID,

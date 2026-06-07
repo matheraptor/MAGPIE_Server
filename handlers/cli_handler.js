@@ -1,21 +1,26 @@
 const { MAGPIE } = require("../core/index")
+/**
+ * @version 0.36.0
+ * 
+ */
 const accountHandler = require("./accountHandler")
+const ePrefix = "[CLI HANDLER] "
 module.exports = function(io, socket, server)
 {
 	try
 	{
 		socket.emit("boot", MAGPIE.KEY);
-		console.log(`[CLI HANDLER] Transmitted core keys to socket: ${socket.id}`)
+		server.log(`${ePrefix} Transmitted core keys to socket: ${socket.id}`, "console", true)
 	}
 	catch(e)
 	{
-		console.error(`[CLI HANDLER] Failed to send boot payload: ${e.message}`, e)
+		server.error(`${ePrefix} Failed to send boot payload: ${e.message}`, e)
 	}
 	socket.on("RESET_PASSWORD_REQUEST", async (data) => {
 		try
 		{
 			socket.emit("RESET_PASSWORD_SUCCESS", { email: data.email })
-			console.log("[CLI HANDLER] resetpassword: success")
+			server.log(`${ePrefix} resetpassword: success`, "console", true)
 		}
 		catch(e)
 		{

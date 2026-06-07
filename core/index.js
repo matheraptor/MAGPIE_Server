@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.33.0
+ * @version 0.36.1
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,10 +20,20 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.34.0 2026 06 05
+ * @version 0.36.1 2026 06 07
+ * - ADDED: ShelderEvo socket session resume
+ * - ADDED: ShelderEvo app localStorage
+ * - ADDED: ShelderEvo app handoff
+ * - TWEAKED: accountHandler
+ * - TWEAKED: cli_handler
+ * - FIXED: improper registration flow
+ * - FIXED: login not routing to boot
+ * 
+ * @version 0.35.0 2026 06 05
  * - ADDED: ShelderEvo client scaffolding
  * - ADDED: client socket handling
  * - ADDED: mailer service
+ * - ADDED: ASCII splash and logo
  * - FIXED: accountHandler incomplete logic
  * 
  * @version 0.33.0 2026 06 04
@@ -462,9 +472,9 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 34, 0],
+			version: [0, 36, 1],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260605"
+			firmwareDate: "20260607"
 		};
 	}
 }
@@ -1373,6 +1383,7 @@ MAGPIE.KEY.SERVER.HTTP = {};
  * 400s and 500s mean a request has failed.
  */
 MAGPIE.KEY.SERVER.HTTP.STATUS_200 = {
+	code: 200,
 	message: "Successful",
 	desc: `In simple terms, the HTTP status 200 response code means 
 	that a server has successfully processed a request. Likewise, 
@@ -1387,6 +1398,7 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_200 = {
  * unsuccessful request.
  */
 MAGPIE.KEY.SERVER.HTTP.STATUS_400 = {
+	code: 400,
 	message: "Bad Request",
 	desc: `The 400 (Bad Request) status code indicates that the server 
 	cannot or will not process the request due to something that is 
@@ -1401,6 +1413,7 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_400 = {
  * valid authentication credentials for the requested resource.
  */
 MAGPIE.KEY.SERVER.HTTP.STATUS_401 = {
+	code: 401,
 	message: "Unauthorized",
 	desc: `The  HTTP 401 Unauthorized client error response status code 
 	indicates that a request was not successful because it lacks valid 
@@ -1415,6 +1428,7 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_401 = {
  * making repeated attempts without modification futile.
  */
 MAGPIE.KEY.SERVER.HTTP.STATUS_403 = {
+	code: 403,
 	message: "Forbidden", 
 	desc: "A 403 'Forbidden' error is an HTTP status code indicating "
 		+ "that the server understood the request but refuses to authorize "
@@ -1431,6 +1445,7 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_403 = {
  * due to an asset collision.
  */
 MAGPIE.KEY.SERVER.HTTP.STATUS_409 = {
+	code: 409,
 	message: "Conflict",
 	desc: "The standard HTTP status code for attempting to create a resource "
 		+ "that already exists (causing a unique constraint violation in your "
@@ -1445,6 +1460,7 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_409 = {
  * it from fulfilling the request.
  */
 MAGPIE.KEY.SERVER.HTTP.STATUS_500 = {
+	code: 500,
 	message: "Internal Server Error",
 	desc: `An HTTP 500 status code (Internal Server Error) indicates 
 	that the server encountered an unexpected condition that prevented 
@@ -1460,6 +1476,7 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_500 = {
  * checking API limits.
  */
 MAGPIE.KEY.SERVER.HTTP.STATUS_429 = {
+	code: 429,
 	message: "Too many requests!",
 	desc: "The HTTP 429 'Too Many Requests' status code indicates the user "
 		+ "has sent too many requests to a server within a given timeframe, "

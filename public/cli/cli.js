@@ -191,6 +191,7 @@ function initSocket()
  * mode: String,
  * step: String,
  * tempData: Object,
+ * renderUI: () => {}
  * onEnter: () => {},
  * commands: {},
  * stepHandlers: {},

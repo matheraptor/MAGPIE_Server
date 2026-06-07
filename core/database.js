@@ -190,7 +190,26 @@ MAGPIE_DATABASE.getPlayerByEmail = async function (email)
 	{
 		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email: email})
 		if(!player)
-			throw new Error(`[USER-${email}] not found`)
+			return null
+		// 	throw new Error(`[USER-${email}] not found`)
+		Object.setPrototypeOf(player, MAGPIE_PLAYER.prototype)
+		return player
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+MAGPIE_DATABASE.getPlayerByUsername = async function (username)
+{
+	const ePrefix = "[DATABASE].getPlayerByUsername: "
+	try
+	{
+		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {username: username})
+		if(!player)
+			return null
+			// 	throw new Error(`[USER-${email}] not found`)
+		Object.setPrototypeOf(player, MAGPIE_PLAYER.prototype)
 		return player
 	}
 	catch(e)
@@ -208,9 +227,10 @@ MAGPIE_DATABASE.loadPlayer = async function loadPlayer(playerID)
 	const ePrefix = "[DATABASE].loadPlayer: ";
 	try
 	{
-		const player = await MAGPIE_DATABASE.call("loadServerRow", ["MAGPIE_PLAYER", {ID: playerID}]);
-		if(!(player instanceof MAGPIE_PLAYER))
+		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {ID: playerID});
+		if(!player)
 			throw new Error(`[PLAYER-${playerID}] not found`);
+		Object.setPrototypeOf(player, MAGPIE_PLAYER.prototype);
 		return player
 	}
 	catch(e)
@@ -250,12 +270,12 @@ MAGPIE_DATABASE.loginPlayer = async function loginPlayer(email, pass)
 	try
 	{
 		if(!MAGPIE_DATABASE.isValidEmail(email)) return
-		const player = await MAGPIE_DATABASE.call("loadServerRow", ["MAGPIE_PLAYER", {email: email}]);
+		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email: email});
 		if(!player)
 			throw new Error(`No record matches the provided identity`)
 		const valid = await MAGPIE_DATABASE.isValidPass(pass, player)
 		if(!valid) 
-			throw new Error(`${pass} is invalid password`)
+			throw new Error(`invalid password`)
 		return player
 	}
 	catch(e)
@@ -372,7 +392,7 @@ MAGPIE_DATABASE.preparePlayer = function preparePlayer(player)
 	const ePrefix = "[DATABASE].preparePlayer: ";
 	try
 	{
-		if(!(player instanceof MAGPIE_PLAYER))
+		if(player?.constructor?.name !== "MAGPIE_PLAYER")
 			throw new Error(`${player} is invalid MAGPIE_PLAYER`);
 		const now = MAGPIE_DATABASE.timestamp();
 		player.saved = now;

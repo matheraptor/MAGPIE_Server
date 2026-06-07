@@ -248,20 +248,25 @@ MAGPIE_SYSTEM._logging_debug = function server_debug(message)
 //------------------------------------------------------------------------
 // #region > Handlers
 //------------------------------------------------------------------------
+MAGPIE_SERVER.handlers = {};
 MAGPIE_SERVER.SYS._handlersPath = path.join(__dirname, "handlers");
-MAGPIE_SERVER.HANDLER = fs.readdirSync(MAGPIE_SERVER.SYS._handlersPath)
-	.map(file => require(path.join(MAGPIE_SERVER.SYS._handlersPath, file)))
+fs.readdirSync(MAGPIE_SERVER.SYS._handlersPath)
+	.forEach(file => {
+		const handler = require(path.join(MAGPIE_SERVER.SYS._handlersPath, file))
+		const handlerName = path.parse(file).name
+		MAGPIE_SERVER.handlers[handlerName] = handler;
+	})
 
 // Register handlers
 MAGPIE_SERVER.registerHandlers = (io) =>
 {
-    MAGPIE_SERVER.HANDLER.forEach(handler => 
-    {
-        io.on("connection", (socket) => 
-        {
-            handler(io, socket, MAGPIE_SERVER);
-        });
-    });
+	Object.keys(MAGPIE_SERVER.handlers).forEach(name => {
+		const handler = MAGPIE_SERVER.handlers[name]
+		io.on("connection", (socket) => 
+		{
+			handler(io, socket, MAGPIE_SERVER);
+		});
+	})
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -1612,6 +1617,10 @@ instrument(io, {
 	auth: false,
 	mode: "development"
 })
+app.use((req, res, next) => {
+	console.log(`[HTTP REQUEST] ${req.method} ${req.url}`)
+	next()
+})
 app.use(express.static("./public"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -1645,115 +1654,6 @@ MAGPIE_SERVER.public.loginLimiter = ratelimit.rateLimit({
 // #region > Auth
 //------------------------------------------------------------------------
 MAGPIE_SERVER.AUTH = require("./core/auth")
-// #endregion
-//------------------------------------------------------------------------
-/**
- * @name Post
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
-// #region > Post
-//------------------------------------------------------------------------
-MAGPIE_SERVER.POST = {};
-app.post("/login", MAGPIE_SERVER.public.loginLimiter, async (req, res) => {
-	const ePrefix = "[APP POST].login: ";
-	const { email, pass } = req.body;
-	try
-	{
-		if(!email || !pass)
-			return res.status(MAGPIE.KEY.SERVER.HTTP.STATUS_400).json({
-				error: ePrefix + "Missing credentials"
-			})
-		const { token } = await account.verifyCredentials(email, pass, MAGPIE_SERVER)
-		return res.status(MAGPIE.KEY.SERVER.HTTP.STATUS_200).json({ token })
-	}
-	catch(e)
-	{
-		const status = e.message === "Invalid credentials" 
-			? 401 
-			: e.message === "Account is frozen" ? 403 : 500
-		if(status === 500)
-			MAGPIE_SERVER.error(ePrefix + e.message, e)
-		return res.status(status).json({
-			error: ePrefix + e.message
-		})
-	}
-})
-// app.post("/register")
-app.get("/verify-email", async (req, res) => {
-	const ePrefix = "[HTTP VERIFY ERROR]: "
-	const code = MAGPIE.KEY.SERVER.HTTP;
-	const { token } = req.query;
-	const db = MAGPIE_DATABASE;
-	try
-	{
-		if(!token) 
-			return res.status(code.STATUS_401).send("<h1>Missing verification token</h1>");
-		const decoded = jwt.verify(token, MAGPIE_SERVER.config.jwtSecret)
-		if(!decoded.isRegistrationToken)
-			return res.status(code.STATUS_400).send("<h1>Invalid token type</h1>")
-		const existingEmail = await db.getPlayerByEmail(decoded.email)
-		if(existingEmail)
-			return res.status(code.STATUS_409).send("<h1>Error</h1><p>This email has already been registered.</p>")
-		const existingUser = await db.getPlayerByUsername(decoded.username)
-		if(existingUser)
-			return res.status(code.STATUS_409).send("<h1>Error</h1><p>This username has already been taken.</p>")
-		await db.createPlayer({
-			username: decoded.username,
-			PASS: decoded.PASS,
-			email: decoded.email
-		})
-		res.status(code.STATUS_200).send(	`<h1>Registration Complete!</h1>
-					<p>Your M.A.G.P.I.E. profile is active.
-					You can now close this window and login.</p>`)
-	}
-	catch(e)
-	{
-		MAGPIE_SERVER.error(ePrefix + e.message, e)
-		if (e.name === 'JsonWebTokenError' || e.name === 'TokenExpiredError') 
-			return res.status(code.STATUS_400).send("<h1>Verification Failed</h1><p>The link is invalid, altered, or has expired.</p>");
-		res.status(500).send(MAGPIE.KEY.SERVER.MESSAGE.INTERNAL_ERROR)
-	}
-})
-app.post("/reset-password", async (req, res) => {
-	const ePrefix = "[HTTP].resetPassword: "
-	const { email } = req.body
-	try
-	{
-		if(!email)
-			return res.status(400).send("<h1>Email required</h1>")
-		await account.requestPassowrdReset(email, MAGPIE_SERVER)
-		res.status(200).send(`
-			<h1>Recovery requested</h>
-			<p>Recovery link has been sent to the provided email.</p>`)
-	}
-	catch(e)
-	{
-		MAGPIE_SERVER.error(ePrefix + e.message, e)
-		res.status(500).send("<h1>Internal server error</h1><p>Please, try again later.</h1>")
-	}
-})
-app.post("/finalize-password-reset", async (req, res) => {
-	const ePrefix = "[HTTP].finalizePasswordReset: "
-	const { token, password } = req.body
-	try
-	{
-		if(!token || !password)
-			return res.status(401).send("<h1>Missing recovery token or password</h1>")
-		await account.processPasswordReset(token, password, MAGPIE_SERVER)
-		res.status(200).send(`
-			<h1>Password updated successfully</h1>
-			<p>Your credentials have been secured. You can now close this window.</p>`)
-	}
-	catch(e)
-	{
-		if(e.name === "JsonWebTokenError" || e.name === "TokenExpiredError")
-			return res.status(400).send("<h1>Reset session failed</h1>Please, request a new link.</p>")
-		MAGPIE_SERVER.error(ePrefix + e.message, e)
-		res.status(500).send(MAGPIE.KEY.SERVER.MESSAGE.INTERNAL_ERROR)
-	}
-})
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1814,7 +1714,7 @@ io.on("connection", (socket) => {
 		}
 		next()
 	})
-	MAGPIE_SERVER.HANDLER.forEach(handler => {
+	Object.values(MAGPIE_SERVER.handlers).forEach(handler => {
 		if(typeof handler === "function")
 			handler(io, socket, MAGPIE_SERVER);
 	})
@@ -2113,6 +2013,216 @@ MAGPIE_DATABASE.setup = function setup()
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 	}
 }
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - ROUTES
+//========================================================================
+MAGPIE_SERVER.ROUTE = {};
+/**
+ * @name Post
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Post
+//------------------------------------------------------------------------
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > main get
+//------------------------------------------------------------------------
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > main post
+//------------------------------------------------------------------------
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Account
+//------------------------------------------------------------------------
+app.post("/login", MAGPIE_SERVER.public.loginLimiter, async (req, res) => {
+	const ePrefix = "[APP POST].login: ";
+	const { email, pass } = req.body;
+	try
+	{
+		if(!email || !pass)
+			return res.status(MAGPIE.KEY.SERVER.HTTP.STATUS_400).json({
+				error: ePrefix + "Missing credentials"
+			})
+		const { token } = await account.verifyCredentials(email, pass, MAGPIE_SERVER)
+		return res.status(MAGPIE.KEY.SERVER.HTTP.STATUS_200).json({ token })
+	}
+	catch(e)
+	{
+		const status = e.message === "Invalid credentials" 
+			? MAGPIE.KEY.SERVER.HTTP.STATUS_401.code 
+			: e.message === "Account is frozen" 
+				? MAGPIE.KEY.SERVER.HTTP.STATUS_403.code 
+				: MAGPIE.KEY.SERVER.HTTP.STATUS_500.code
+		if(status === 500)
+			MAGPIE_SERVER.error(ePrefix + e.message, e)
+		return res.status(status).json({
+			error: ePrefix + e.message
+		})
+	}
+})
+app.get("/verify-email", async (req, res) => {
+	const ePrefix = "[HTTP]/verify-email: "
+	const code = MAGPIE.KEY.SERVER.HTTP;
+	const { token } = req.query;
+	const db = MAGPIE_DATABASE;
+	try
+	{
+		const printPlayer = function(ID, email, username)
+		{
+			const handle = email ? email : username
+			return `[PLAYER-${ID} | ${handle}]`
+		}
+		if(!token) 
+			return res.status(code.STATUS_401.code).send("<h1>Missing verification token</h1>");
+		const decoded = MAGPIE_SERVER.JWT.verify(token, MAGPIE_SERVER.config.jwtSecret)
+		// console.error(new Error(Object.entries(decoded)))
+		const email = decoded?.email
+		const username = decoded?.username
+		if(!decoded.isRegistrationToken)
+			return res.status(code.STATUS_400.code).send("<h1>Invalid token type</h1>")
+		const existingEmail = await db.getPlayerByEmail(decoded.email)
+		const existingUser = await db.getPlayerByUsername(decoded.username)
+		const player = printPlayer(existingEmail?.ID || existingUser?.ID, decoded.email)
+		if(!existingEmail && !existingUser)
+		{
+			res.status(code.STATUS_200.code).send(`<h1>Registration Complete!</h1>
+					<p>Your M.A.G.P.I.E. profile is active.
+					You can now close this window and login.</p>`)
+			MAGPIE_SERVER.log(ePrefix + `Registration completed for ${player}.`)
+			return await db.createPlayer({
+				username: decoded.username,
+				PASS: decoded.PASS,
+				email: decoded.email
+			})
+		}
+		if(existingEmail?.email !== email)
+			return res.status(code.STATUS_409.code).send("<h1>Error</h1><p>This email has already been registered.</p>")
+		if(existingUser?.username !== username)
+			return res.status(code.STATUS_409.code).send("<h1>Error</h1><p>This username has already been taken.</p>")
+		const isAlreadyConfirmed = `<h1>${player} created.</h1>
+		<p>You already successfully used this link to confirm registration.</p>
+		<p>Login with your credentials at ${MAGPIE_SERVER.config.domain}/login or within the ShelderEvolution app.</p>
+		<p>You may now close this window.</p>`
+		return res.status(code.STATUS_200.code).send(isAlreadyConfirmed)
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+		if (e.name === 'JsonWebTokenError' || e.name === 'TokenExpiredError') 
+			return res.status(code.STATUS_400.code).send("<h1>Verification Failed</h1><p>The link is invalid, altered, or has expired.</p>");
+		res.status(500).send(MAGPIE.KEY.SERVER.MESSAGE.INTERNAL_ERROR)
+	}
+})
+app.get("/reset-password", (req, res) => {
+	res.sendFile(path.join(__dirname, 'public', 'routes', 'reset-password.html'));
+})
+app.post("/reset-password", async (req, res) => {
+	const ePrefix = "[HTTP].resetPassword: "
+	const { email } = req.body
+	try
+	{
+		if(!email)
+			return res.status(400).send("<h1>Email required</h1>")
+		await account.requestPassowrdReset(email, MAGPIE_SERVER)
+		res.status(200).send(`
+			<h1>Recovery requested</h>
+			<p>Recovery link has been sent to the provided email.</p>`)
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+		res.status(500).send("<h1>Internal server error</h1><p>Please, try again later.</h1>")
+	}
+})
+app.post("/finalize-account", async (req, res) => {
+	const ePrefix = "[HTTP] "
+	try
+	{
+		const { token, email } = req.body
+		await MAGPIE_SERVER.handlers.accountHandler.account.process
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+})
+app.post("/finalize-password-reset", async (req, res) => {
+	try
+	{
+		const ePrefix = "[HTTP].finalizePasswordReset: "
+		const { token, password } = req.body
+		await MAGPIE_SERVER.handlers.accountHandler.account
+			.processPasswordReset(token, password, MAGPIE_SERVER)
+		res.status(200).redirect("/reset-password?success=true&token=" + token + "&email=" + req.body.email)
+	}
+	catch(e)
+	{
+		res.status(400).send("<h1>Reset failed</h1><p>Please, request a new link.</p>")
+	}
+})
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Adoption
+//------------------------------------------------------------------------
+app.get("/adoption", async (req, res) => {
+	const ePrefix = "[HTTP]/embryos: "
+	const code = MAGPIE.KEY.SERVER.HTTP
+	const { token } = req.query
+	const db = MAGPIE_DATABASE
+	try
+	{
+		
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+})
 // #endregion
 //------------------------------------------------------------------------
 /**

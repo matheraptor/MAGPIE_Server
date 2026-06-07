@@ -125,6 +125,20 @@ MAGPIE_PLAYER.prototype.setSync = function setSync()
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Adoption
+//------------------------------------------------------------------------
+MAGPIE_PLAYER.prototype.adopt = async function adopt(creatureID)
+{
+	//@todo adoption
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *

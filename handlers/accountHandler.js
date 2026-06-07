@@ -1,10 +1,11 @@
 const jwt = require("jsonwebtoken");
 const { hashPassword, verifyPassword } = require("../core/auth_util");
 const mailer = require("./email_api")
+const ePrefix = "[ACCOUNT HANDLER] "
 /**
  * @namespace accountHandler
  * @author Matheraptor
- * @version 0.32.0
+ * @version 0.36.0
  */
 const account = {}
 /**
@@ -15,16 +16,16 @@ const account = {}
  */
 account.register = async function(data, socket, server)
 {
-	const ePrefix = "[ACCOUNT HANDLER].register: "
 	try
 	{
 		if(!data)
 			throw new Error("Invalid socket registration data")
-		const { username, passwordHash, email } = data;
-		const storedHash = await hashPassword(passwordHash);
+		const { username, password, email } = data;
+		// const storedHash = await hashPassword(passwordHash);
+		const securedPassword = await hashPassword(password);
 		const pendingRegistrationToken = jwt.sign({
 			username,
-			PASS: storedHash,
+			PASS: securedPassword,
 			email,
 			isRegistrationToken: true
 		},
@@ -32,31 +33,19 @@ account.register = async function(data, socket, server)
 		{ expiresIn: '24h' })
 		try
 		{
+			server.log(`[USER-${data.email} | ${data.username}] requested a register link`)
 			await mailer.sendConfirmation(email, pendingRegistrationToken)
 		}
 		catch(e)
 		{
-			console.error(ePrefix + "Mail delivery failed: " + e.message, e)
+			server.error(ePrefix + "Mail delivery failed: " + e.message, e)
 			throw new Error("Could not deliver verification email.")
 		}
 		socket.emit("REGISTER_AWAITING_VERIFICATION", { email })
-		// const db = server.DATABASE
-		// const emailVerificationToken = Math.random().toString(36).substring(2,15)
-		// const player = await db.createPlayer({
-		// 	username,
-		// 	PASS: storedHash,
-		// 	email,
-		// 	emailVerificationToken,
-		// 	is
-		// })
-
-		// const token = jwt.sign({ id: player.id, username: player.username }, server.config.jwtSecret, { expiresIn: '1h' });
-
-		// socket.emit("REGISTER_SUCCESS", { username, token })
 	}
 	catch(e)
 	{
-		console.error(ePrefix + e.message, e)
+		server.error(ePrefix + e.message, e)
 		socket.emit("REGISTER_ERROR", { message: e.message || "Registration failed." })
 	}
 }
@@ -74,43 +63,75 @@ account.verifyCredentials = async function(email, password, server)
 	}, server.config.jwtSecret, { expiresIn: '1h' })
 	return { player, token }
 }
-account.login = async function (data, socket, server)
+account.resumeSession = async function (data, socket, server)
 {
-	const ePrefix = "[ACCOUNT HANDLER].login: "
 	try
 	{
 		const { player, token } = await account.verifyCredentials(data.email, data.password, server)
+		server.log(`${ePrefix} [PLAYER-${player.ID} | ${player.username}] resumed session`)
+		socket.emit("RESUME_SESSION_SUCCESS", { username: player.username, token })
+	}
+	catch(e)
+	{
+		socket.emit("RESUME_SESSION_FAIL", { message: e.message })
+		server.error(ePrefix + e.message, e)
+	}
+}
+account.login = async function (data, socket, server)
+{
+	try
+	{
+		const { player, token } = await account.verifyCredentials(data.email, data.password, server)
+		server.log(`${ePrefix}[PLAYER-${player.ID} | ${player.username}] logged in.`)
 		socket.emit("LOGIN_SUCCESS", { username: player.username, token })
 	}
 	catch(e)
 	{
 		socket.emit(`LOGIN_ERROR`, { message: e.message })
+		server.error(ePrefix + e.message, e)
 	}
 }
 account.logout = async function (data, socket, server)
 {
-	const ePrefix = "[ACCOUNT HANDLER].logout: "
 	try
 	{
 		//@todo logout logic here
-		console.log(`logout called for user: ${data?.username}`)
+		server.log(`${ePrefix}logout called for user: ${data?.username}`)
 	}
 	catch(e)
 	{
-		console.error(ePrefix + e.message, e)
+		server.error(ePrefix + e.message, e)
 		socket.emit("LOGOUT_ERROR", { message: "Logout failed." })
 	}
 }
+// account.processEmailConfirmation = async function(token, server)
+// {
+// 	const ePrefix = "[ACCOUNT HANDLER] "
+// 	try
+// 	{
+// 		const decoded = jwt.verify(token, server.config.jwtSecret)
+// 		if(!decoded.isRecoveryToken)
+// 			throw new Error("Invalid token type")
+// 		const newPlayer = {
+// 			username: decoded.username,
+// 			PASS: decoded.PASS,
+// 			email: decoded.email
+// 		}
+// 	}
+// 	catch(e)
+// 	{
+// 		server.error(ePrefix + e.message, e)
+// 	}
+// }
 account.requestPasswordReset = async function(data, socket, server)
 {
-	const ePrefix = "[ACCOUNT HANDLER].requestPasswordReset: "
 	try
 	{
 		const email = data?.email
 		if(!email)
 			throw new Error(`${email} is invalid email`)
 		// 1. Enforce the interface contract: Verify an object payload arrived
-		console.log(`${ePrefix}Processing recovery request for: "${email}"`);
+		server.log(`${ePrefix}Processing recovery request for: "${email}"`);
 		const db = server.DATABASE
 		const player = await db.getPlayerByEmail(email)
 		if(!player)
@@ -128,7 +149,7 @@ account.requestPasswordReset = async function(data, socket, server)
 		}
 		catch(e)
 		{
-			console.error(ePrefix + "Mail delivery failed: " + e.message, e)
+			server.error(ePrefix + "Mail delivery failed: " + e.message, e)
 			throw new Error("Could not deliver recovery email")
 		}
 		socket.emit("RESET_PASSWORD_SUCCESS", { email })
@@ -136,7 +157,7 @@ account.requestPasswordReset = async function(data, socket, server)
 	}
 	catch(e)
 	{
-		console.error(ePrefix + e.message, e)
+		server.error(ePrefix + e.message, e)
 		socket.emit("RESET_PASSWORD_ERROR", { message: e.message || "Recovery failed." })
 		// throw e
 	}
@@ -144,7 +165,6 @@ account.requestPasswordReset = async function(data, socket, server)
 }
 account.processPasswordReset = async function(token, newPassword, server)
 {
-	const ePrefix = "[ACCOUNT HANDLER].processPasswordReset: "
 	try
 	{
 		if(!token || !newPassword)
@@ -161,20 +181,28 @@ account.processPasswordReset = async function(token, newPassword, server)
 		const updatedPlayer = await db.savePlayer(oldPlayer)
 		if(!updatedPlayer)
 			throw new Error("Unable to update account!")
-		return { success: true}
+		server.log(`${ePrefix}[PLAYER-${decoded.id}].password updated.`)
+		return { success: true }
 	}
 	catch(e)
 	{
-		console.error(ePrefix + e.message, e)
-		throw e
+		server.error(ePrefix + e.message, e)
+		return { success: false }
 	}
 }
 module.exports = function(io, socket, server)
 {
-	socket.on("REGISTER", (data) => account.register(data, socket, server))
-	socket.on("LOGIN", (data) => account.login(data, socket, server))
-	socket.on("LOGOUT", (data) => account.logout(data, socket, server))
+	socket.on("REGISTER", async (data) => {
+		await account.register(data, socket, server)
+	})
+	socket.on("LOGIN", async (data) => {
+		await account.login(data, socket, server)
+	})
+	socket.on("LOGOUT", async (data) => {
+		await account.logout(data, socket, server)
+	})
 	socket.on("RESET_PASSWORD_REQUEST", async (data) => {
 		await account.requestPasswordReset(data, socket, server)
 	})
 }
+module.exports.account = account;
