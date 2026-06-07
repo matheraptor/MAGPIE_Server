@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.36.1
+ * @version 0.36.2
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,12 +20,14 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.36.1 2026 06 07
+ * @version 0.37.0 2026 06 07
  * - ADDED: ShelderEvo socket session resume
  * - ADDED: ShelderEvo app localStorage
  * - ADDED: ShelderEvo app handoff
+ * - ADDED: /Adoption route
  * - TWEAKED: accountHandler
  * - TWEAKED: cli_handler
+ * - TWEAKED: css
  * - FIXED: improper registration flow
  * - FIXED: login not routing to boot
  * 
@@ -472,7 +474,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 36, 1],
+			version: [0, 37, 0],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260607"
 		};
