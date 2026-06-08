@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.38.0
+ * @version 0.38.1
  * 
  * @depdendencies 
  * - Node.js 
@@ -20,7 +20,7 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.38.0 2026 06 08
+ * @version 0.38.1 2026 06 08
  * - ADDED: css regions
  * - FIXED: legacy ShelderEvo won't load at all
  * - FIXED: css legacy entanglement
@@ -479,7 +479,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 38, 0],
+			version: [0, 38, 1],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260608"
 		};

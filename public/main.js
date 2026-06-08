@@ -33,7 +33,8 @@ const socket = io(window.location.origin, {
 	secure: true
 });
 const router = {}
-router.go = function(view, id = null) {
+router.go = function(view, id = null) 
+{
     // 1. Hide all sections
     document.querySelectorAll('section').forEach(s => s.style.display = 'none');
     
@@ -64,6 +65,27 @@ router.addTableRow = function addTableRow(data)
 }
 if(urlPlayerID)
 	router.go("player", playerID)
+/**
+ * 
+ */
+router.login = async function()
+{
+	const email = document.getElementById('login-email').value
+	const pass = document.getElementById('login-password').value
+	const response = await fetch("/login", {
+		method: "POST",
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ email, pass })
+	})
+	const data = await response.json()
+	if(response.ok) 
+	{
+		console.log("Login successful. Token: ", data.token)
+		localStorage.setItem("token", data.token)
+	}
+	else
+		alert("Login failed: " + data.error)
+}
 //------------------------------------------------------------------------
 //#region > inspect
 //------------------------------------------------------------------------

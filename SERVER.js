@@ -2089,6 +2089,9 @@ app.post("/login", MAGPIE_SERVER.public.loginLimiter, async (req, res) => {
 		})
 	}
 })
+app.get("/api/player-data", account.authenticateToken, async (req, res) => {
+	res.json({ message: "Welcome, " + req.user.username })
+})
 app.get("/verify-email", async (req, res) => {
 	const ePrefix = "[HTTP]/verify-email: "
 	const code = MAGPIE.KEY.SERVER.HTTP;

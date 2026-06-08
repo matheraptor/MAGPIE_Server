@@ -4,23 +4,80 @@
 	<head>
 		<meta charset="UTF-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="stylesheet" href="home.css">
 		<link rel="icon" href="icon.png" type="image/png">
 		<title>M.A.G.P.I.E. Shelder Evolution</title>
+		<link rel="preconnect" href="https://fonts.googleapis.com">
+		<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+		<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+		<link rel="stylesheet" href="home.css">
 	</head>
 	<body style="background-color: black">
 		<nav class="nav-breadcrumbs">
+			<button onClick="router.go('home')" class="nav-button">HOME</button>
+			<button onClick="router.go('test')" class="nav-button">TEST CSS Themes</button>
 			<button onClick="router.go('inspector')" class="nav-button">OPEN INSPECTOR</button>
-			<button onClick="router.go('login')" class="nav-button">LOGIN</button>
 			<button onclick="router.go('adoption')" class="nav-button">ADOPTION STORE</button>
+			<button onClick="router.go('login')" class="nav-button">PLAYER LOGIN</button>
+			<button onClick="router.go('player')" class="nav-button" style="display: none;">PLAYER HUB</button>
 		</nav>
-		<section id="view-cli" class="terminal-view">
-			<section id="view-home" style="display: none;">
+		<nav id="view-cli" class="crt-scrollable" style="display: block;">
+			<section id="view-home" style="display: block;">
 				<img src="SEtitle.png" alt="ShelderEvolution">
 			</section>
-			<section id="view-player" style="display: block;">
+			<section id="view-test" class="card-sandbox" style="display: none;">
+				<div class="container">
+					<!-- Card -->
+					<div class="card">
+						<!-- Animated Background -->
+						<div class="card-bg"></div>
+						
+						<div class="card-content">
+						<!-- Logo -->
+						<div class="logo">
+							<span class="logo-text">CSS</span>
+						</div>
+						
+						<!-- Title -->
+						<h1 class="title">Pure CSS Magic</h1>
+						<p class="subtitle">Try editing the styles below!</p>
+						
+						<!-- Animated Bars -->
+						<div class="bars">
+							<div class="bar bar-1"></div>
+							<div class="bar bar-2"></div>
+							<div class="bar bar-3"></div>
+							<div class="bar bar-4"></div>
+							<div class="bar bar-5"></div>
+						</div>
+						
+						<!-- Button -->
+						<button class="btn">
+							<span class="btn-text">Hover Me</span>
+							<span class="btn-icon">→</span>
+						</button>
+						
+						<!-- Stats -->
+						<div class="stats">
+							<div class="stat">
+							<span class="stat-value">100%</span>
+							<span class="stat-label">CSS</span>
+							</div>
+							<div class="stat">
+							<span class="stat-value">0</span>
+							<span class="stat-label">JavaScript</span>
+							</div>
+							<div class="stat">
+							<span class="stat-value">∞</span>
+							<span class="stat-label">Possibilities</span>
+							</div>
+						</div>
+						</div>
+					</div>
+				</div>
+			</section>
+			<section id="view-player" style="display: none;">
 				<h1 class="view-heading">PLAYER Hub</h1>
-				<section id="view-player-slots">
+				<div id="view-player-slots">
 					<div id="player-slots-container" class="table">
 						<div id="slot-creatureID-header" class="table-header" style="grid-column: span 3;">CREATURE</div>
 						<div id="slot-speciesID-header" class="table-header" style="grid-column: span 3;">SPECIES</div>
@@ -29,7 +86,7 @@
 						<!-- placehold -->
 						<button onClick="" id="slot-placeholder" class="table-button" style="grid-column: span 10;">No slots</button>
 					</div>
-				</section>
+				</div>
 			</section>
 			<!--  -->
 			<section id="view-adoption" style="display: none;">
@@ -63,18 +120,29 @@
 					<div class="table-value" style="grid-column: span 8; color: darkgreen;">no embryos</div>
 				</div>
 			</section>
+			<section id="view-login" style="display: none;">
+				<h1 class="view-heading">PLAYER login</h1>
+				<form onsubmit="router.login()" id="login">
+					<input type="email" id="login-email" placeholder="Enter your email address" class="input-box">
+					<input type="password" id="login-password" placeholder="Enter your password" class="input-box">
+					<button onclick="router.login()" id="login-submit" class="nav-button">SUBMIT</button>
+				</form>
+			</section>
 			<!--  -->
-			<section id="view-inspector" style="display:none;">
-				<h3>Entity Data Monitor</h3>
-				<div class="controls">
-					<input type="text" id="targetID" placeholder="Enter Entity ID (e.g. 101)">
-					<button onClick="inspector.subscribe()">Subscribe</button>
-					<button onClick="inspector.unsubscribe()">Disconnect</button>
-					<button onclick="inspector.copyToClipboard(this)">Copy Telemetry</button>
+			<section id="view-inspector" class="monitor-box" style="display:none;">
+				<h1 class="view-heading">ENTITY Data Monitor</h1>
+				<div>
+					<form onsubmit="event.preventDefault(); window.location.href='?entityID=' + document.getElementById('targetID').value;">
+						<input type="text" id="targetID" placeholder="Enter entityID (e.g. 101)" 
+							title="Enter the exact ID of the desired entity to monitor" class="input-box" style="display: inline-block;">
+							<button onClick="inspector.subscribe()" class="nav-button">Subscribe</button>
+							<button onClick="inspector.unsubscribe()" class="nav-button">Disconnect</button>
+							<button onclick="inspector.copyToClipboard(this)" class="nav-button">Copy Telemetry</button>
+					</form>
 				</div>
 				<div class="monitor-box">
-					<h3>Live Stream:</h3>
-					<div id="physics-stream" class="console-box telemetry-grid">
+					<h2 class="view-heading">Live Feed:</h2>
+					<div id="physics-stream" class="monitor-grid">
 						<!-- Row 1: Primary ID and Full Name -->
 						<div class="grid-item">ID: <span id="val-id">---</span></div>
 						<div class="grid-item full-width">Name: <span id="val-name">---</span></div>
@@ -121,7 +189,7 @@
 					</div>
 				</div>
 			</section>
-		</section>
+		</nav>
 		<nav class="nav-status" style="display: block;">
 			<div id="metadate" style="color: white; font-family: monospace;">Waiting for server...</div>
 		</nav>

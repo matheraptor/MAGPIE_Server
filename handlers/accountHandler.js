@@ -63,6 +63,18 @@ account.verifyCredentials = async function(email, password, server)
 	}, server.config.jwtSecret, { expiresIn: '1h' })
 	return { player, token }
 }
+account.authenticateToken = (req, res, server, next) => {
+	const authHeader = req.headers["authorization"]
+	const token = authHeader && authHeader.split(" ")[1]
+	if(!token) 
+		return res.sendStatus(401)	
+	jwt.verify(token, server.config.jwtSecret, (err, user) => {
+		if(err) 
+			return res.sendStatus(403)
+		req.user = user
+		next()
+	})
+}
 account.resumeSession = async function (data, socket, server)
 {
 	try
