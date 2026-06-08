@@ -7,6 +7,8 @@
 //========================================================================
 // #region - INDEX
 //========================================================================
+const { MAGPIE } = require("./index")
+const { MAGPIE_SYSTEM } = require("./system")
 /**
  * @name 
  * @desc 
@@ -63,6 +65,7 @@ function MAGPIE_PLAYER(data)
  * @name 
  * @desc 
  * @typedef {import("./database_worker").database_result} database_result
+ * @typedef {import("./entity").MAGPIE_ENTITY} MAGPIE_ENTITY
  */
 //------------------------------------------------------------------------
 // #region > Proto
@@ -83,8 +86,35 @@ MAGPIE_PLAYER.prototype.initialize = function initialize(data)
     this.isFrozen = Boolean(data?.isFrozen);
     this.EVP = Number(data?.EVP);
     this.CLOUT = Number(data?.CLOUT);
+	this.creatureID = this.ID
     this.slots = data?.slots || [];
 	this.updated = Number(data?.updated) || now;
+	this.status = false
+	this.setup()
+}
+/**
+ * 
+ * @returns {Promise<Boolean>}
+ */
+MAGPIE_PLAYER.prototype.setup = async function setup()
+{
+	const ePrefix = `[PLAYER-${this.ID}].setup: `
+	try
+	{
+		const creature = MAGPIE_PLAYER.__hiveSync("_get_entity", [this.ID]) 
+			|| MAGPIE_PLAYER.__hiveSync("_new_entity")
+		/** @type {MAGPIE_ENTITY} */
+		creature.ID = this.ID
+		creature.type = MAGPIE.KEY.SYMBOL.TYPE.PLAYER
+		creature.name = this.username
+		await creature.set()
+		await this.set()
+		return true
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 /**
  * 
@@ -130,6 +160,50 @@ MAGPIE_PLAYER.prototype.setSync = function setSync()
  * 
  */
 //------------------------------------------------------------------------
+// #region > Status
+//------------------------------------------------------------------------
+/**
+ * 
+ * @param {Boolean} status 
+ */
+MAGPIE_PLAYER.prototype.setOnline = function setOnline(status = true)
+{
+	this.status = status
+}
+/**
+ * 
+ * @returns {Boolean}
+ */
+MAGPIE_PLAYER.prototype.getOnline = function getOnline()
+{
+	return this.status
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Self
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {MAGPIE_ENTITY}
+ */
+MAGPIE_PLAYER.prototype._self_creature = function()
+{
+	return MAGPIE_PLAYER.__hiveSync("_get_entity", [this.creatureID])
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
 // #region > Adoption
 //------------------------------------------------------------------------
 MAGPIE_PLAYER.prototype.adopt = async function adopt(creatureID)
@@ -138,6 +212,30 @@ MAGPIE_PLAYER.prototype.adopt = async function adopt(creatureID)
 }
 // #endregion
 //------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - ACTION
+//========================================================================
+/**
+ * @typedef {Object} action_payload
+ * @param {action_payload} action_payload 
+ */
+MAGPIE_PLAYER.prototype.processAction = function(action_payload)
+{
+	// @todo player.processAction
+}
 /**
  * 
  * @desc back to {@link }

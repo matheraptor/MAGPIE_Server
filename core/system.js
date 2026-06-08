@@ -1760,6 +1760,7 @@ MAGPIE_HIVE.meta.desc = "";
  * @typedef {Number} buffer_size
  * @typedef {Float64Array<entityID>} hive_layer
  * @typedef {import("./entity").entityID} entityID
+ * @typedef {import("./player").playerID} playerID
  * @typedef {import("./component").MAGPIE_EXP} MAGPIE_EXP
  * @typedef {import("./component").MAGPIE_KEY} MAGPIE_KEY
  * @typedef {import("./component").MAGPIE_SYMBOL} MAGPIE_SYMBOL
@@ -2260,7 +2261,7 @@ MAGPIE_HIVE.getSlot = function getSlot(slot, layerID)
 	{
 		const layerName = MAGPIE.KEY.RUNTIME.LAYER.get(layerID)?.name;
 		if(!layerName)
-			throw new Error(`${layerName} is invalid layer name`)
+			return 
 		const b = MAGPIE.KEY.HIVE.BUFFER_SIZE;
 		const record = MAGPIE_HIVE[layerName][slot];
 		const entityID = layerID < b ? record?.ID : record;
@@ -2753,6 +2754,15 @@ MAGPIE_HIVE._get_entity_contexts = function getEntityContexts(entityID)
 {
 	return MAGPIE_HIVE._get_entity_contextIDs(entityID)
 		.map(contextID => MAGPIE_HIVE._get_context(contextID))
+}
+/**
+ * @typedef {import("./player").MAGPIE_PLAYER} MAGPIE_PLAYER
+ * @param {playerID} playerID 
+ * @returns {MAGPIE_PLAYER}
+ */
+MAGPIE_HIVE._get_player = function _get_player(playerID)
+{
+	return MAGPIE_HIVE._get_databaseSync("loadPlayerSync", [playerID])
 }
 // #endregion
 //------------------------------------------------------------------------

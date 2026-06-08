@@ -19,25 +19,51 @@ MAGPIE.public.meta = {
 };
 const params = new URLSearchParams(window.location.search);
 const urlEntityID = params.get('entityID');
+const urlPlayerID = params.get("playerID")
+const pathParts = window.location.pathname.split("/")
 const socket = io(window.location.origin, {
     auth: {
         token: localStorage.getItem("jwt_token")
     },
 	query: {
-		entityID: urlEntityID
+		entityID: urlEntityID,
+		playerID: urlPlayerID
 		},
     transports: ["websocket", "polling"],
 	secure: true
 });
-
-
-
-const router = {
-	go(view) {
-		document.querySelectorAll('section').forEach(s => s.style.display = 'none');
-		document.getElementById(`view-${view}`).style.display = 'block';
-	}
-};
+const router = {}
+router.go = function(view, id = null) {
+    // 1. Hide all sections
+    document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+    
+    // 2. Select the specific element
+    const viewEl = document.getElementById(`view-${view}`);
+    
+    // 3. Debugging: Check if it's found
+    if(viewEl) 
+	{
+        viewEl.style.display = "block"; // Make the section visible
+        console.log(`[ROUTER] Displaying: view-${view}`);
+    } 
+	else console.error(`[ROUTER] Could not find: view-${view}`);
+}
+router.addTableRow = function addTableRow(data) 
+{
+	const list = document.getElementById(data.tableID)
+	const row = document.createElement("div")
+	row.className = "table-row"
+	row.innerHTML = `
+		<div class="table-value">${data?.id}</div>
+		<div class="table-value">${data?.species}</div>
+		<div class="table-value">${data?.cost}</div>
+		<div class="table-value">${data?.status}</div>
+		<button class="table-button">${data?.button}</button>
+	`
+	list.appendChild(row)
+}
+if(urlPlayerID)
+	router.go("player", playerID)
 //------------------------------------------------------------------------
 //#region > inspect
 //------------------------------------------------------------------------
@@ -172,6 +198,28 @@ socket.on('metastate', (data) => {
 	const timestring = `Y: ${year} M: ${month} D: ${day} ${weekDay} - ${hour}:${minute}:${second}Z`
 	document.getElementById('metadate').textContent = `server metadate: ${timestring}`;
 });
+socket.on("sync_player_data", (data) => {
+	const container = document.getElementById("player-slots-container")
+	container.innerHTML = ""
+	data.slots.forEach(slot => {
+		addTableRow(slot)
+	})
+})
+socket.on("player_connected", (player_data) => {
+	MAGPIE.public.player = {
+		ID: player_data.ID,
+		username: player_data.username,
+		email: player_data.email,
+		isFrozen: player_data.isFrozen,
+		EVP: player_data.EVP,
+		CLOUT: player_data.CLOUT,
+		creatureID: player_data.creatureID,
+		slots: player_data.slots,
+		updated: player_data.updated,
+		status: player_data.status
+	}
+	router.go("view-player")
+})
 //#endregion
 //------------------------------------------------------------------------
 /**
@@ -182,51 +230,8 @@ socket.on('metastate', (data) => {
 //------------------------------------------------------------------------
 // #region > events
 //------------------------------------------------------------------------
-// Add this at the very bottom of main.js
-// main.js
 
-// Add this at the very top of your main.js
-/*window.addEventListener('load', () => {
-    const params = new URLSearchParams(window.location.search);
-    const entityID = params.get('entityID');
-
-    if (entityID) {
-        // You mentioned targeting an input and subscribing
-        const target = document.getElementById('targetID');
-        if (target) {
-            target.value = entityID;
-            if (typeof inspector !== 'undefined') {
-                router.go("inspector");
-				inspector.subscribe();
-            }
-        }
-    }
-});
-*/
 // #endregion
-//------------------------------------------------------------------------
-/**
- * 
- * 
- */
-//------------------------------------------------------------------------
-//#region > login
-//------------------------------------------------------------------------
-// async function login(username, password) 
-// {
-// 	const response = await fetch("./login", {
-// 		method: "POST",
-// 		headers: { "Content-Type": "application/json" },
-// 		body: JSON.stringify({ ID: username, PASS: password })
-// 	});
-// 	const data = await response.json();
-// 	if(response.status === 429) alert(data.error + data.message);
-// 	if(response.status === 403) alert(data.error);
-// 	if(response.ok) localStorage.setItem("jwt_token", data.token);
-// 	if(response.status === 401) alert("Invalid username or password");
-// 	else alert("Server error; please, try again later.");
-// }
-//#endregion
 //------------------------------------------------------------------------
 /**
  * @name 
@@ -247,6 +252,36 @@ socket.on('metastate', (data) => {
 
 // #endregion
 //------------------------------------------------------------------------
+/**
+ * 
+ * 
+ */
+//------------------------------------------------------------------------
+//#region > login
+//------------------------------------------------------------------------
+router.token = localStorage.getItem("jwt_token")
+//#endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - ADOPTION
+//========================================================================
+router.onAdoption = function() {
+    console.log("[ROUTER] Switching to Adoption store view...")
+    router.go('adoption'); // No window.location.href!
+}
 /**
  * 
  * @desc back to {@link }

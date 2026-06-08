@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.36.2
+ * @version 0.38.0
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,11 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.38.0 2026 06 08
+ * - ADDED: css regions
+ * - FIXED: legacy ShelderEvo won't load at all
+ * - FIXED: css legacy entanglement
  * 
  * @version 0.37.0 2026 06 07
  * - ADDED: ShelderEvo socket session resume
@@ -474,13 +479,12 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 37, 0],
+			version: [0, 38, 0],
 			firmwareName: "MAGPIE",
-			firmwareDate: "20260607"
+			firmwareDate: "20260608"
 		};
 	}
 }
-
 /**
  * 
  * back to {@link MAGPIE}
@@ -496,6 +500,7 @@ class MAGPIE {
 // #region - KEY
 //========================================================================
 MAGPIE.KEY = {};
+MAGPIE.KEY.STATE = {};
 /**
  * @name 
  * @desc 
@@ -553,8 +558,8 @@ MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.SEMANTIC, "SEMANTIC");
 MAGPIE.KEY.TYPE.CONTEXT = 4;
 MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.CONTEXT, "CONTEXT");
 /** @type {key_type} */
-MAGPIE.KEY.TYPE.WAYPOINT = 5;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.VACANT_1, "VACANT_1");
+MAGPIE.KEY.TYPE.TRAIT = 5;
+MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TRAIT, "TRAIT");
 /** @type {key_type} */
 MAGPIE.KEY.TYPE.EXP = 6;
 MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.EXP, "EXP");
@@ -1240,6 +1245,57 @@ MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_SECRET, {
 	value: 4,
 	desc: "Information about this is private"
 })
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.POPULATION = 11001
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.HEALTH = 11002
+/** @type {Map<String, key_index>} */
+MAGPIE.KEY.INDEX.STATS = new Map()
+MAGPIE.KEY.INDEX.STATS.set("FIT", 11101)
+MAGPIE.KEY.INDEX.STATS.set("END", 11102)
+MAGPIE.KEY.INDEX.STATS.set("PWR", 11103)
+MAGPIE.KEY.INDEX.STATS.set("MASS", 11104)
+MAGPIE.KEY.INDEX.STATS.set("SEN", 11105)
+MAGPIE.KEY.INDEX.STATS.set("DEX", 11106)
+MAGPIE.KEY.INDEX.STATS.set("RT", 11107)
+MAGPIE.KEY.INDEX.STATS.set("EVO", 11108)
+MAGPIE.KEY.INDEX.STATS.set("G_LVL", 11109)
+MAGPIE.KEY.INDEX.STATS.set("G_R", 11110)
+MAGPIE.KEY.INDEX.STATS.set("G_I", 11111)
+MAGPIE.KEY.INDEX.STATS.set("INERT_X", 11112)
+MAGPIE.KEY.INDEX.STATS.set("INERT_Y", 11113)
+MAGPIE.KEY.INDEX.STATS.set("INERT_Z", 11114)
+MAGPIE.KEY.INDEX.STATS.set("TMAX_X", 11115)
+MAGPIE.KEY.INDEX.STATS.set("TMAX_Y", 11116)
+MAGPIE.KEY.INDEX.STATS.set("TMAX_Z", 11117)
+MAGPIE.KEY.INDEX.STATS.set("FB", 11118)
+MAGPIE.KEY.INDEX.STATS.set("CM", 11119)
+MAGPIE.KEY.INDEX.STATS.set("MASSKG", 11120)
+MAGPIE.KEY.INDEX.STATS.set("DENSITY", 11121)
+MAGPIE.KEY.INDEX.STATS.set("LENGTH", 11122)
+MAGPIE.KEY.INDEX.STATS.set("HEIGHT", 11123)
+MAGPIE.KEY.INDEX.STATS.set("WIDTH", 11124)
+MAGPIE.KEY.INDEX.STATS.set("VOLUME", 11125)
+MAGPIE.KEY.INDEX.STATS.set("FT", 11126)
+MAGPIE.KEY.INDEX.STATS.set("VMAX", 11127)
+MAGPIE.KEY.INDEX.STATS.set("AMAX", 11128)
+MAGPIE.KEY.INDEX.STATS.set("BMAX", 11129)
+MAGPIE.KEY.INDEX.STATS.set("GMAX", 11130)
+MAGPIE.KEY.INDEX.STATS.set("CF", 11131)
+MAGPIE.KEY.INDEX.STATS.set("CL", 11132)
+MAGPIE.KEY.INDEX.STATS.set("CD", 11133)
+MAGPIE.KEY.INDEX.STATS.set("COM_X", 11134)
+MAGPIE.KEY.INDEX.STATS.set("COM_Y", 11135)
+MAGPIE.KEY.INDEX.STATS.set("COM_Z", 11136)
+MAGPIE.KEY.INDEX.STATS.set("COL_X", 11137)
+MAGPIE.KEY.INDEX.STATS.set("COM_Y", 11138)
+MAGPIE.KEY.INDEX.STATS.set("COM_Z", 11139)
+MAGPIE.KEY.INDEX.STATS.set("MOTHER", 11140)
+MAGPIE.KEY.INDEX.STATS.set("FATHER", 11141)
+MAGPIE.KEY.INDEX.STATS.set("COMPOUND", 11142)
+MAGPIE.KEY.INDEX.STATS.set("HOST", 11143)
+/** @type {key_index} evolution points */
+MAGPIE.KEY.INDEX.EVP = 12001
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1517,6 +1573,39 @@ MAGPIE.KEY.ENTITY.CONTAINER.meta = {
  * @desc offset = i * values 
  * */
 MAGPIE.KEY.ENTITY.CONTAINER.SERIES = 4;
+/**
+ * 
+ * 
+ */
+/** @type {state_index} */
+MAGPIE.KEY.STATE.EMBRYO = 101
+/** @type {state_index} */
+MAGPIE.KEY.STATE.INFANT = 102
+/** @type {state_index} */
+MAGPIE.KEY.STATE.JUVENILE = 103
+/** @type {state_index} */
+MAGPIE.KEY.STATE.ADOLESCENT = 104
+/** @type {state_index} */
+MAGPIE.KEY.STATE.ADULT = 105
+/** @type {state_index} */
+MAGPIE.KEY.STATE.ELDER = 106
+/** @desc Creature growth stats */
+MAGPIE.KEY.GROWTH = {}
+/**
+ * @typedef {[stateID, growth_level, growth_level]} growth_stage
+ */
+/** @type {growth_stage} */
+MAGPIE.KEY.GROWTH.EMBRYO = [MAGPIE.KEY.STATE.EMBRYO, -1, 0]
+/** @type {growth_stage} */
+MAGPIE.KEY.GROWTH.INFANT = [MAGPIE.KEY.STATE.INFANT, 0, 0.2]
+/** @type {growth_stage} */
+MAGPIE.KEY.GROWTH.JUVENILE = [MAGPIE.KEY.STATE.JUVENILE, 0.2, 0.5]
+/** @type {creature_level} */
+MAGPIE.KEY.GROWTH.ADOLESCENT = [MAGPIE.KEY.STATE.ADOLESCENT, 0.5, 0.8]
+/** @type {creature_level} */
+MAGPIE.KEY.GROWTH.ADULT = [MAGPIE.KEY.STATE.ADULT, 0.8, 1]
+/** @type {creature_level} */
+MAGPIE.KEY.GROWTH.ELDER = [MAGPIE.KEY.STATE.ELDER, 1, Infinity]
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1980,7 +2069,10 @@ MAGPIE.KEY.STATS = {};
  * }} key_stats
  */
 MAGPIE.KEY.STATS.meta = {};
-/** @type {index} Fitness aka totalDeckSize */
+/** @type {index} 
+ * @desc formerly: Fitness aka totalDeckSize 
+ * @desc repurposed to: [OWNER-playerID]
+ * */
 MAGPIE.KEY.STATS.FIT = MAGPIE.KEY.POVART.E_ID + 1; //@audit-ok can be repurposed becaused FIT can be derived by this.fitness[1]
 /** @type {index} Endurance aka LVL_STA */
 MAGPIE.KEY.STATS.END = MAGPIE.KEY.STATS.FIT + 1;
@@ -2251,6 +2343,8 @@ MAGPIE.KEY.SYMBOL.TYPE.CONCEPT = 9;
 MAGPIE.KEY.SYMBOL.TYPE.TERRITORY = 10
 /** @type {symbol_type} */
 MAGPIE.KEY.SYMBOL.TYPE.SPECIES = 11;
+/** @type {symbol_type} */
+MAGPIE.KEY.SYMBOL.TYPE.PLAYER = 12;
 MAGPIE.KEY.SYMBOL.INDEX = {};
 // #endregion
 //------------------------------------------------------------------------
@@ -2404,7 +2498,7 @@ MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.LOCAL, {
 //------------------------------------------------------------------------
 //#region > State
 //------------------------------------------------------------------------
-MAGPIE.KEY.STATE = {};
+
 MAGPIE.KEY.STATE.meta = {};
 /** {@link MAGPIE_STATE.setup} */
 MAGPIE.KEY.STATE.meta.schema = [

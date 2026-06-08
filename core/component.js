@@ -743,6 +743,91 @@ MAGPIE_SYMBOL.prototype._apply_processor = function applyProcessor(container, dt
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Species
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_SYMBOL.prototype.getPopulation = function()
+{
+	const ePrefix = `[SYMBOL-${this.ID}] `
+	try
+	{
+		const index = this.STATS.indexOf(MAGPIE.KEY.INDEX.POPULATION)
+		return this.STATS[index + 1]
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_SYMBOL.prototype.getHealth = function()
+{
+	return this.STATS[this.STATS.indexOf(MAGPIE.KEY.INDEX.HEALTH) + 1]
+}
+/**
+ * @typedef {import("./index").key_stats} key_stats
+ */
+MAGPIE_SYMBOL.prototype._get_entity_stats = function()
+{
+	const ePrefix = `[SYMBOL-${this.ID}] `
+	try
+	{
+		/** @type {key_stats} */
+		const stats = Object.keys(MAGPIE.KEY.STATS)
+			.filter(key => key !== "meta" && key !== "ARRAY" 
+				&& key !== "TOLERANCE_BASE" && key !== "AGILITY_MOD_MIN" 
+				&& key !== "AGILITY_MOD_MAX" && key !== "STRETCH")
+		const fitness = []
+		stats.forEach((key, index) => {
+			fitness[index] = Number(this.STATS[key])
+		})
+		return fitness
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @returns {symbolID[]}
+ */
+MAGPIE_SYMBOL.prototype._get_entity_fitness = function()
+{
+	const ePrefix = `[SYMBOL-${this.ID}].getEntityFitness: `
+	try
+	{
+		return Object.entries(this.mapStats()).filter(e => e[0] === MAGPIE.KEY.TYPE.TRAIT)
+			.map(e => e[1])
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * @typedef {Number} EVP evolution points
+ * @returns {EVP}
+ */
+MAGPIE_SYMBOL.prototype._species_EVP_cost = function()
+{
+	const index = this.STATS.indexOf(MAGPIE.KEY.INDEX.EVP)
+	return this.STATS[index + 1]
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *
@@ -750,6 +835,7 @@ MAGPIE_SYMBOL.prototype._apply_processor = function applyProcessor(container, dt
 //========================================================================
 // #endregion - 
 //========================================================================
+
 /**
  * @name 
  * @desc 

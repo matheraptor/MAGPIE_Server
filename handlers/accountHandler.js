@@ -83,7 +83,19 @@ account.login = async function (data, socket, server)
 	{
 		const { player, token } = await account.verifyCredentials(data.email, data.password, server)
 		server.log(`${ePrefix}[PLAYER-${player.ID} | ${player.username}] logged in.`)
-		socket.emit("LOGIN_SUCCESS", { username: player.username, token })
+		player.status = true
+		socket.emit("LOGIN_SUCCESS", { 
+			token,
+			ID: player.ID,
+			username: player.username, 
+			email: player.email,
+			creatureID: player.creatureID,
+			EVP: player.EVP,
+			CLOUT: player.CLOUT,
+			slots: player.slots,
+			status: player.status,
+			server: server.status
+		 })
 	}
 	catch(e)
 	{
@@ -102,6 +114,34 @@ account.logout = async function (data, socket, server)
 	{
 		server.error(ePrefix + e.message, e)
 		socket.emit("LOGOUT_ERROR", { message: "Logout failed." })
+	}
+}
+account.relog = async function(data, socket, server)
+{
+	try
+	{
+		const { player, token } = await server.DATABASE.loadPlayer(data?.playerID)
+		if(!player) 
+			return socket.emit("LOGIN_ERROR", { message: "Unable to sync player data." })
+		server.log(`${ePrefix}[PLAYER-${player.ID} | ${player.username}] logged in.`)
+		player.status = true
+		socket.emit("LOGIN_SUCCESS", { 
+			token,
+			ID: player.ID,
+			username: player.username, 
+			email: player.email,
+			creatureID: player.creatureID,
+			EVP: player.EVP,
+			CLOUT: player.CLOUT,
+			slots: player.slots,
+			status: player.status,
+			server: server.status
+		 })
+	}
+	catch(e)
+	{
+		socket.emit(`LOGIN_ERROR`, { message: e.message })
+		server.error(ePrefix + e.message, e)
 	}
 }
 // account.processEmailConfirmation = async function(token, server)
@@ -200,6 +240,9 @@ module.exports = function(io, socket, server)
 	})
 	socket.on("LOGOUT", async (data) => {
 		await account.logout(data, socket, server)
+	})
+	socket.on("RELOG", async (data) => {
+		await account.relog(data, socket, server)
 	})
 	socket.on("RESET_PASSWORD_REQUEST", async (data) => {
 		await account.requestPasswordReset(data, socket, server)

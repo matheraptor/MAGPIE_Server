@@ -2492,6 +2492,68 @@ MAGPIE_ENTITY.prototype._fitness_draw = function drawFitness()
 /**
  * @name 
  * @desc 
+ * 
+ */
+//========================================================================
+// #region - GROWTH
+//========================================================================
+MAGPIE_ENTITY.GROWTH = {}
+/**
+ * @name 
+ * @desc 
+ * @typedef {Number} creature_level
+ */
+//------------------------------------------------------------------------
+// #region > Get
+//------------------------------------------------------------------------
+/**
+ * 
+ * @returns {stateID}
+ */
+MAGPIE_ENTITY.prototype.growthStage = function growthStage()
+{
+	const ePrefix = `[ENTITY-${this.ID}].growthStage: `
+	try
+	{
+		const G_LVL = this._get_growthLevel()
+		if(G_LVL >= MAGPIE.KEY.GROWTH.ELDER[1])
+			return MAGPIE.KEY.GROWTH.ELDER[0]
+		if(G_LVL < MAGPIE.KEY.GROWTH.INFANT[1])
+			return MAGPIE.KEY.GROWTH.EMBRYO[0]
+		if(G_LVL < MAGPIE.KEY.GROWTH.JUVENILE[1])
+			return MAGPIE.KEY.GROWTH.JUVENILE[0]
+		if(G_LVL < MAGPIE.KEY.GROWTH.ADOLESCENT[1])
+			return MAGPIE.KEY.GROWTH.ADOLESCENT[0]
+		if(G_LVL < MAGPIE.KEY.GROWTH.ADULT[1])
+			return MAGPIE.KEY.GROWTH.ADULT[0]
+		throw new Error(`unable to assign growthStage from [GROWTH-${G_LVL}]`)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @returns {STAT}
+ */
+MAGPIE_ENTITY.prototype.growth = function()
+{
+	return this.STATS[MAGPIE.KEY.STATS.G_LVL]
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
  * @typedef {{
  * dR: bivector,
  * dR_mag: magnitude,
@@ -3460,7 +3522,7 @@ MAGPIE_ENTITY.prototype._get_exp_target = function _get_exp_target(expID)
  */
 MAGPIE_ENTITY.prototype._get_target = function _get_target()
 {
-	if(this.exps.length < 1) return []
+	if(this.exps.length < 1) return null
 	return MAGPIE_ENTITY.__hiveSync("_get_entity", [this._get_exps()[0]?.targetID])
 }
 // #endregion

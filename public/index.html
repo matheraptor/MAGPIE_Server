@@ -9,71 +9,123 @@
 		<title>M.A.G.P.I.E. Shelder Evolution</title>
 	</head>
 	<body style="background-color: black">
-		<nav style="margin-bottom: 20px;">
-			<button onClick="router.go('inspector')" class="nav-button" style="cursor: pointer;">Open Inspector</button>
-			<button onClick="window.location.href='/login.html'" style="cursor: pointer;">Login</button>
-			<button onclick="window.location.href='./routes/adoption.html'" style="cursor: pointer;">Adoption store</button>
+		<nav class="nav-breadcrumbs">
+			<button onClick="router.go('inspector')" class="nav-button">OPEN INSPECTOR</button>
+			<button onClick="router.go('login')" class="nav-button">LOGIN</button>
+			<button onclick="router.go('adoption')" class="nav-button">ADOPTION STORE</button>
 		</nav>
-		<img src="SEtitle.png" alt="ShelderEvolution">
-		<div id="metadate" style="color: white; font-family: monospace;">Waiting for server...</div>
+		<section id="view-cli" class="terminal-view">
+			<section id="view-home" style="display: none;">
+				<img src="SEtitle.png" alt="ShelderEvolution">
+			</section>
+			<section id="view-player" style="display: block;">
+				<h1 class="view-heading">PLAYER Hub</h1>
+				<section id="view-player-slots">
+					<div id="player-slots-container" class="table">
+						<div id="slot-creatureID-header" class="table-header" style="grid-column: span 3;">CREATURE</div>
+						<div id="slot-speciesID-header" class="table-header" style="grid-column: span 3;">SPECIES</div>
+						<div id="slot-status-header" class="table-header" style="grid-column: span 2;">STATUS</div>
+						<div id="slot-action-header" class="table-header" style="grid-column: span 2;">ACTION</div>
+						<!-- placehold -->
+						<button onClick="" id="slot-placeholder" class="table-button" style="grid-column: span 10;">No slots</button>
+					</div>
+				</section>
+			</section>
+			<!--  -->
+			<section id="view-adoption" style="display: none;">
+				<div class="table" id="species-list" style="display: block;">
+					<!-- headers -->
+					<div class="table-header" style="grid-column: span 8;">SPECIES</div>
+					<div class="table-header">Total:</div>
+					<div class="table-header" style="text-align: right;">2</div>
+					<!-- values -->
+					<button onclick="router.onSpeciesSelect(1780857778991)" 
+						class="row-button" 
+						style="grid-column: span 10; justify-self: start;">[SPECIES-1780857778991 | Aralodon minoris]</button>
+					<button onclick="router.onSpeciesSelect(1780857944079)" 
+						class="row-button" 
+						style="grid-column: span 10; justify-self: start;">[SPECIES-1780857944079 | Reodon fragilis]</button>
+				</div>
+				<div class="table" id="embryos-list" style="display: grid;">
+					<!-- headers -->
+					<div class="table-header" style="grid-column: span 3;">EMBRYO-ID</div>
+					<div class="table-header" style="grid-column: span 3;">SPECIES</div>
+					<div class="table-header" style="grid-column: span 2;">GROWTH</div>
+					<div class="table-header">EVP COST</div>
+					<div class="table-header">:</div>
+					<!-- values -->
+					<!-- examples -->
+					<div class="table-value" style="grid-column: span 3;">[EMBRYO-1773811141134]</div>
+					<div class="table-value" style="grid-column: span 3;">bla</div>
+					<div class="table-value" style="grid-column: span 2;">AVAILABLE</div>
+					<div class="table-value">❤️0</div>
+					<button class="table-button">ADOPT</button>
+					<div class="table-value" style="grid-column: span 8; color: darkgreen;">no embryos</div>
+				</div>
+			</section>
+			<!--  -->
+			<section id="view-inspector" style="display:none;">
+				<h3>Entity Data Monitor</h3>
+				<div class="controls">
+					<input type="text" id="targetID" placeholder="Enter Entity ID (e.g. 101)">
+					<button onClick="inspector.subscribe()">Subscribe</button>
+					<button onClick="inspector.unsubscribe()">Disconnect</button>
+					<button onclick="inspector.copyToClipboard(this)">Copy Telemetry</button>
+				</div>
+				<div class="monitor-box">
+					<h3>Live Stream:</h3>
+					<div id="physics-stream" class="console-box telemetry-grid">
+						<!-- Row 1: Primary ID and Full Name -->
+						<div class="grid-item">ID: <span id="val-id">---</span></div>
+						<div class="grid-item full-width">Name: <span id="val-name">---</span></div>
+						
+						<!-- Row 2: Location Data -->
+						<div class="grid-item full-width">Coords: </div>
+						<div class="grid-item full-width"><span id="val-C0">---</span></div>
+						
+						<!-- Row 3: Flight/Motion Telemetry -->
+						<div class="grid-item">Body: <span id="val-body">---</span></div>
+						<div class="grid-item">Meta: <span id="val-meta">---</span></div>
+						<div class="grid-item">ASL: <span id="val-asl">---</span>m</div>
+						<div class="grid-item full-width">States: [<span id="val-states">---</span>]</div>
+						<div class="grid-item">velocity: <span id="val-Vmag">---</span> m/s - </div>
+						<div class="grid-item"><span id="val-knots">---</span> kts</div>
+						<div class="grid-item">Accel: <span id="val-Amag">---</span> m/s²</div>
+						<div class="grid-item full-width"></div>
+						<div class="grid-item">Omega: <span id="val-Rmag">---</span> rad/s</div>
+						<div class="grid-item">Alpha: <span id="val-Tmag">---</span> rad/s²</div>
+						<div class="grid-item">dR_mag: <span id="val-dR_mag">---</span> rad</div>
+						<div class="grid-item">Heading: <span id="val-heading">---</span>°</div>
+						<div class="grid-item">Pitch: <span id="val-pitch">---</span>°</div>
+						<div class="grid-item">Roll: <span id="val-roll">---</span>°</div>
+	
+						<!-- Row 4: Physics Metadata -->
+						<div class="grid-item full-width"></div>
+						<div class="grid-item-vector">R1: <span id="val-R1">---</span> rad/s</div> 
+						<div class="grid-item-vector">T1: <span id="val-T1">---</span> rad/s²</div> 
+						<div class="grid-item-vector">dR: <span id="val-dR">---</span> rad</div> 
+						<div class="grid-item-vector">Bdist: <span id="val-Bdist">---</span> rad/s</div>
+						<!-- Row 5: Navigation Targets -->
+						<div class="grid-item full-width"></div>
+						<div class="grid-item">[TARGET-
+							<span id="val-targetID">n/a</span>]: 
+							"<span id="val-targetName">n/a</span>"
+						</div>
+						<div class="grid-item full-width"></div>
+						<div class="grid-item">Target coords: [
+							<span id="val-Ct">---</span>]
+							Dist: <span id="val-dist">---</span> m
+							ETA: <span id="val-eta">---</span>
+						</div>
+						<div class="grid-item"></div>
+					</div>
+				</div>
+			</section>
+		</section>
+		<nav class="nav-status" style="display: block;">
+			<div id="metadate" style="color: white; font-family: monospace;">Waiting for server...</div>
+		</nav>
 		<script src="/socket.io/socket.io.js"></script>
 		<script type="text/javascript" SRC="main.js"></script>
-		<section id="view-inspector" style="display:none;">
-			<h3>Entity Data Monitor</h3>
-			<div class="controls">
-				<input type="text" id="targetID" placeholder="Enter Entity ID (e.g. 101)">
-				<button onClick="inspector.subscribe()">Subscribe</button>
-				<button onClick="inspector.unsubscribe()">Disconnect</button>
-				<button onclick="inspector.copyToClipboard(this)">Copy Telemetry</button>
-			</div>
-			<div class="monitor-box">
-				<h3>Live Stream:</h3>
-				<div id="physics-stream" class="console-box telemetry-grid">
-					<!-- Row 1: Primary ID and Full Name -->
-					<div class="grid-item">ID: <span id="val-id">---</span></div>
-					<div class="grid-item full-width">Name: <span id="val-name">---</span></div>
-					
-					<!-- Row 2: Location Data -->
-					<div class="grid-item full-width">Coords: </div>
-					<div class="grid-item full-width"><span id="val-C0">---</span></div>
-					
-					<!-- Row 3: Flight/Motion Telemetry -->
-					<div class="grid-item">Body: <span id="val-body">---</span></div>
-					<div class="grid-item">Meta: <span id="val-meta">---</span></div>
-					<div class="grid-item">ASL: <span id="val-asl">---</span>m</div>
-					<div class="grid-item full-width">States: [<span id="val-states">---</span>]</div>
-					<div class="grid-item">velocity: <span id="val-Vmag">---</span> m/s - </div>
-					<div class="grid-item"><span id="val-knots">---</span> kts</div>
-					<div class="grid-item">Accel: <span id="val-Amag">---</span> m/s²</div>
-					<div class="grid-item full-width"></div>
-					<div class="grid-item">Omega: <span id="val-Rmag">---</span> rad/s</div>
-					<div class="grid-item">Alpha: <span id="val-Tmag">---</span> rad/s²</div>
-					<div class="grid-item">dR_mag: <span id="val-dR_mag">---</span> rad</div>
-					<div class="grid-item">Heading: <span id="val-heading">---</span>°</div>
-					<div class="grid-item">Pitch: <span id="val-pitch">---</span>°</div>
-					<div class="grid-item">Roll: <span id="val-roll">---</span>°</div>
-
-					<!-- Row 4: Physics Metadata -->
-					<div class="grid-item full-width"></div>
-					<div class="grid-item-vector">R1: <span id="val-R1">---</span> rad/s</div> 
-					<div class="grid-item-vector">T1: <span id="val-T1">---</span> rad/s²</div> 
-					<div class="grid-item-vector">dR: <span id="val-dR">---</span> rad</div> 
-					<div class="grid-item-vector">Bdist: <span id="val-Bdist">---</span> rad/s</div>
-					<!-- Row 5: Navigation Targets -->
-					<div class="grid-item full-width"></div>
-					<div class="grid-item">[TARGET-
-						<span id="val-targetID">n/a</span>]: 
-						"<span id="val-targetName">n/a</span>"
-					</div>
-					<div class="grid-item full-width"></div>
-					<div class="grid-item">Target coords: [
-						<span id="val-Ct">---</span>]
-						Dist: <span id="val-dist">---</span> m
-						ETA: <span id="val-eta">---</span>
-					</div>
-					<div class="grid-item"></div>
-				</div>
-			</div>
-		</section>
 	</body>
 </html>

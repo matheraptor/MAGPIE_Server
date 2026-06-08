@@ -196,7 +196,101 @@ INDEX.BIO_ALIVE = BIO_ALIVE.ID;
 //------------------------------------------------------------------------
 // #region > 
 //------------------------------------------------------------------------
-
+/** @type {state_data} */
+const EMBRYO = {
+	ID: MAGPIE.KEY.STATE.EMBRYO,
+	type: TYPE.G_LVL,
+	name: "EMBRYO",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(EMBRYO)
+/** @type {state_index}  */
+INDEX.EMBRYO = EMBRYO
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const INFANT = {
+	ID: MAGPIE.KEY.STATE.INFANT,
+	type: TYPE.G_LVL,
+	name: "INFANT",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(INFANT)
+/** @type {state_index}  */
+INDEX.INFANT = INFANT
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const JUVENILE = {
+	ID: MAGPIE.KEY.STATE.JUVENILE,
+	type: TYPE.G_LVL,
+	name: "JUVENILE",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(JUVENILE)
+/** @type {state_index}  */
+INDEX.JUVENILE = JUVENILE
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const ADOLESCENT = {
+	ID: MAGPIE.KEY.STATE.ADOLESCENT,
+	type: TYPE.G_LVL,
+	name: "ADOLESCENT",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(ADOLESCENT)
+/** @type {state_index}  */
+INDEX.ADOLESCENT = ADOLESCENT
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const ADULT = {
+	ID: MAGPIE.KEY.STATE.ADULT,
+	type: TYPE.G_LVL,
+	name: "ADULT",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(ADULT)
+/** @type {state_index}  */
+INDEX.ADULT = ADULT
+//------------------------------------------------------------------------
+/** @type {state_data} */
+const ELDER = {
+	ID: MAGPIE.KEY.STATE.ELDER,
+	type: TYPE.G_LVL,
+	name: "ELDER",
+	description: "",
+	stack: 1,
+	onApply: () => {},
+	onUpdate: () => {},
+	onRemove: () => {},
+	onExpire: () => {}
+}
+states.push(ELDER)
+/** @type {state_index}  */
+INDEX.ELDER = ELDER
 // #endregion
 //------------------------------------------------------------------------
 /**

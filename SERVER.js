@@ -1651,17 +1651,6 @@ MAGPIE_SERVER.public.loginLimiter = ratelimit.rateLimit({
  * 
  */
 //------------------------------------------------------------------------
-// #region > Auth
-//------------------------------------------------------------------------
-MAGPIE_SERVER.AUTH = require("./core/auth")
-// #endregion
-//------------------------------------------------------------------------
-/**
- * @name 
- * @desc 
- * 
- */
-//------------------------------------------------------------------------
 // #region > Socket
 //------------------------------------------------------------------------
 MAGPIE_SERVER.SOCKET = {};
@@ -1727,6 +1716,7 @@ io.on("connection", (socket) => {
 		socket.emit("error_message", err.message);
 	})
 })
+MAGPIE_SERVER.status = {}
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -2207,20 +2197,81 @@ app.post("/finalize-password-reset", async (req, res) => {
  * 
  */
 //------------------------------------------------------------------------
-// #region > Adoption
+// #region > ECOSYSTEM
 //------------------------------------------------------------------------
-app.get("/adoption", async (req, res) => {
-	const ePrefix = "[HTTP]/embryos: "
-	const code = MAGPIE.KEY.SERVER.HTTP
-	const { token } = req.query
-	const db = MAGPIE_DATABASE
+// Add this in SERVER.js where you define your other routes
+// app.get("/adoption", async (req, res) => {
+// 	const ePrefix = "[HTTP]/embryos: "
+// 	const code = MAGPIE.KEY.SERVER.HTTP
+// 	const { token } = req.query
+// 	const db = MAGPIE_DATABASE
+// 	try
+// 	{
+// 		res.sendFile(path.join(__dirname, 'public', 'routes', 'adoption.html'));
+// 	}
+// 	catch(e)
+// 	{
+// 		MAGPIE_SERVER.error(ePrefix + e.message, e)
+// 	}
+// })
+io.on("species_embryos", async(socket, speciesID) => {
+	const ePrefix = "[SOCKET] "
 	try
 	{
-		
+		/** @type {MAGPIE_ENTITY[]} */
+		const embryos = await MAGPIE_DATABASE.call("loadWorldRow", "MAGPIE_ENTITY", {type: speciesID})
+		if(!Array.isArray(embryos))
+		{
+			MAGPIE_SERVER.error(`${embryos} is invalid embryos list`)
+			io.emit("species_embryos_error", speciesID)
+		}
+		if(embryos.length < 1)
+			io.emit("species_embryos_empty", speciesID)
+		const species = MAGPIE_DATABASE.loadSymbolSync(speciesID)
+		const embryo_data = embryos.map(entity => {
+			const data = {
+				ID: entity.ID, 
+				species: species.name,
+				growth: entity.growth(),
+				EVP: species._species_EVP_cost()
+			}
+			return data
+		})
+		io.emit("species_embryos_success", {speciesID, embryo_data})
+		MAGPIE_SERVER.log(`${ePrefix}${embryo_data.length}x embryos data sent to [SOCKET-${socket?.id}]`)
+	}
+	catch(e)
+	{
+		MAGPIER_SERVER.error(ePrefix + e.message, e)
+	}
+})
+io.on("adopt_creature_request", async(socket, creatureID, playerID) => {
+	const ePrefix = `[SOCKET-${socket?.id}] `
+	try
+	{
+		/** @type {MAGPIE_ENTITY} */
+		const creature = MAGPIE_SERVER.ECOSYSTEM.list.get(creatureID)
+		if(!creature)
+			throw new Error(`unable to reconcile requested [CREATURE-${creatureID}]`)
+		const player = MAGPIE_DATABASE.loadPlayerSync(playerID)
+		if(!player)
+			throw new Error(`unable to reconcile [PLAYER-${playerID}]`)
+		player.slots.push(creature.ID)
+		creature.STATS[MAGPIE.KEY.STATS.FIT] = playerID
+		await creature.set()
+		await player.set()
+		const successMessage = ePrefix + `[PLAYER-${playerID}] adopted [CREATURE-${creatureID}]`
+		io.emit("adopt_creature_success", {
+			message: successMessage,
+			creatureData: creature,
+			playerData: player
+		})
+		MAGPIE_SERVER.log(successMessage)
 	}
 	catch(e)
 	{
 		MAGPIE_SERVER.error(ePrefix + e.message, e)
+		io.emit("adopt_creature_error", { message: e.message, creatureID, playerID })
 	}
 })
 // #endregion
@@ -2307,6 +2358,138 @@ MAGPIE_SERVER.scratchpad.log = function log(input)
 	fs.appendFileSync(filePath, `\n\n${input}\n`);
 	console.log(prefix + `[PUNCH-OUT: ${filePath}] logged`);
 }
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - ECOSYSTEM
+//========================================================================
+MAGPIE_SERVER.ECOSYSTEM = {}
+/**
+ * @name 
+ * @desc 
+ * @typedef {import("./core/component").symbolID} symbolID
+ */
+//------------------------------------------------------------------------
+// #region > Get
+//------------------------------------------------------------------------
+MAGPIE_SERVER.ECOSYSTEM.populateList = async function ()
+{
+	const ePrefix = "[ECOSYSTEM].populateList: "
+	try
+	{
+		/** @todo ecosystem list */
+		MAGPIE_SERVER.ECOSYSTEM.list = {}
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {symbolID} speciesID
+ * @returns {Promise<MAGPIE_ENTITY>} 
+ */
+MAGPIE_SERVER.ECOSYSTEM.generateSpecies = async function(speciesID)
+{
+	const ePrefix = "[ECOSYSTEM].generateSpecies: "
+	try
+	{
+		const species = MAGPIE_DATABASE.loadSymbolSync(speciesID)
+		if(!(species instanceof MAGPIE_SYMBOL))
+			throw new Error(`${species} is invalid species`)
+		const pop = species.getPopulation()
+		const health = species.getHealth()
+		const fertility = Number(pop * health) || 0
+		const generation_threshold = (fertility * 0.75)
+		const generate = (Math.random() * fertility) > generation_threshold
+		if(!generate)
+			return
+		const stats = new Array(29).concat(species._get_entity_stats())
+		const traits = species._get_entity_fitness()
+		const creature = new MAGPIE_ENTITY({
+			type: speciesID, 
+			STATS: stats,
+			fitness: traits
+		})
+		if(!(creature instanceof MAGPIE_ENTITY))
+			throw new Error(`${creature} is invalid creature`)
+		await creature.set()
+		return creature
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {symbolID} speciesID 
+ * @returns {Promise<MAGPIE_ENTITY[]>}
+ */
+MAGPIE_SERVER.ECOSYSTEM.populateSpecies = async function(speciesID)
+{
+	const specimens = await MAGPIE_SERVER.ECOSYSTEM.getSpecies(speciesID)
+	const existing = MAGPIE_SERVER.ECOSYSTEM.filterEmbryos(specimens)
+	const generation = await MAGPIE_SERVER.ECOSYSTEM.generateSpecies(speciesID)
+	return existing.concat(generation)
+}
+/**
+ * 
+ * @param {symbolID} speciesID 
+ * @returns 
+ */
+MAGPIE_SERVER.ECOSYSTEM.getSpecies = async function(speciesID)
+{
+	const ePrefix = "[ECOSYSTEM] "
+	try
+	{
+		if(!Number(speciesID))
+			throw new Error(`${speciesID} is invalid speciesID`)
+		const specimens = await MAGPIE_DATABASE.call("loadWorldRow", "MAGPIE_ENTITY", {type: speciesID})
+		if(!specimens)
+			throw new Error(`unable to find any specimen of [SPECIES-${speciesID}]`)
+		return specimens
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+/**
+ * 
+ * @param {MAGPIE_ENTITY[]} creatureList 
+ */
+MAGPIE_SERVER.ECOSYSTEM.filterEmbryos = function(creatureList)
+{
+	const ePrefix = "[ECOSYSTEM] "
+	try
+	{
+		if(!creatureList)
+			throw new Error(`${creatureList} is invalid creatureList`)
+		if(creatureList.length < 1)
+			MAGPIE_SERVER.log(`${creatureList} is empty`, "console", false)
+		const embryo = MAGPIE.KEY.GROWTH.EMBRYO[0]
+		return creatureList.filter(creature => creature.growthStage() === embryo)
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
 /**
  * 
  * @desc back to {@link }
