@@ -1826,7 +1826,7 @@ MAGPIE_SERVER.BOOT.logBootTime = function logBootTime()
 /**
  * 
  */
-MAGPIE_DATABASE.setup = function setup()
+MAGPIE_DATABASE.setup = function setupDatabase()
 {
 	const ePrefix = "[DATABASE].setup: ";
 	const integer = "INTEGER NOT NULL";

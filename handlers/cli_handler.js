@@ -1,6 +1,6 @@
 const { MAGPIE } = require("../core/index")
 /**
- * @version 0.36.0
+ * @version 0.38.2
  * 
  */
 const accountHandler = require("./accountHandler")
@@ -9,12 +9,21 @@ module.exports = function(io, socket, server)
 {
 	try
 	{
-		socket.emit("boot", MAGPIE.KEY);
-		server.log(`${ePrefix} Transmitted core keys to socket: ${socket.id}`, "console", true)
+		if(!io)
+			throw new Error(`${io} is invalid io`)
+		if(!socket)
+			throw new Error(`${socket} is invalid socket`)
+		if(!server)
+			throw new Error(`${server} is invalid server`)
+		const data = {
+			KEY: MAGPIE.KEY
+		}
+		socket.emit("boot", data);
+		server.log(`${ePrefix} [SOCKET-${socket.id}] initialized.`, "console", true)
 	}
 	catch(e)
 	{
-		server.error(`${ePrefix} Failed to send boot payload: ${e.message}`, e)
+		console.error(`${ePrefix} Failed to initialize [SOCKET-${socket.id}]: ${e.message}`, e)
 	}
 	socket.on("RESET_PASSWORD_REQUEST", async (data) => {
 		try

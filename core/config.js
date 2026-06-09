@@ -2,6 +2,7 @@ require("dotenv").config();
 module.exports = {
     port: process.env.PORT,
     jwtSecret: process.env.jwtSecret,
+    jwtExpire: "15m",
     domain: process.env.domain,
     project_id: process.env.project_id,
     instance_name: process.env.instance_name,

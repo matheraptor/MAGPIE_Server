@@ -4,6 +4,7 @@ _.env
 ssh-key.*
 ./start.sh
 ./run_server.ps1
+*.sql
 
 # admin 
 .admin/
@@ -212,3 +213,4 @@ dist
 # Vite logs files
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
+.dump

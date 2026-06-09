@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { hashPassword, verifyPassword } = require("../core/auth_util");
 const mailer = require("./email_api")
+// const { MAGPIE } = require("../core/index")
 const ePrefix = "[ACCOUNT HANDLER] "
 /**
  * @namespace accountHandler
@@ -30,7 +31,7 @@ account.register = async function(data, socket, server)
 			isRegistrationToken: true
 		},
 		server.config.jwtSecret,
-		{ expiresIn: '24h' })
+		{ expiresIn: server.config.jwtExpire })
 		try
 		{
 			server.log(`[USER-${data.email} | ${data.username}] requested a register link`)
@@ -57,10 +58,14 @@ account.verifyCredentials = async function(email, password, server)
 		throw new Error("Invalid credentials")
 	if(player.isFrozen === 1) 
 		throw new Error("Account is frozen")
-	const token = jwt.sign({
-		id: player.ID,
-		username: player.username
-	}, server.config.jwtSecret, { expiresIn: '1h' })
+	const token = jwt.sign(
+		{
+			id: player.ID,
+			username: player.username
+		}, 
+		server.config.jwtSecret, 
+		{ expiresIn: server.config.jwtExpire }
+	)
 	return { player, token }
 }
 account.authenticateToken = (req, res, server, next) => {
@@ -191,10 +196,14 @@ account.requestPasswordReset = async function(data, socket, server)
 			socket.emit("RESET_PASSWORD_SUCCESS", { email })
 			return { success: true }
 		}
-		const recoveryToken = jwt.sign({
-			id: player.ID,
-			isRecoveryToken: true
-		}, server.config.jwtSecret, { expiresIn: '1h' })
+		const recoveryToken = jwt.sign(
+			{
+				id: player.ID,
+				isRecoveryToken: true
+			}, 
+			server.config.jwtSecret, 
+			{ expiresIn: server.config.jwtExpire }
+		)
 		try
 		{
 			await mailer.sendRecovery(email, recoveryToken)
