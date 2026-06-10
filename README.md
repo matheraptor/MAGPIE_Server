@@ -1,9 +1,3 @@
----
-type: readme
-version: 0.20.1 2026-04-25
-tags: [MAGPIE, server, readme]
----
-
 # MAGPIE Server for Shelder Evolution {#top}
 
 - [MAGPIE Server for Shelder Evolution {#top}](#magpie-server-for-shelder-evolution-top)
