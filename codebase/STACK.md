@@ -1,26 +1,81 @@
-# Tech Stack - MAGPIE_Server
+# Technology Stack
 
-## Core Runtime
-- **Node.js**: Primary execution environment (CommonJS).
-- **Worker Threads**: Utilized for offloading intensive tasks (Database, File I/O).
+**Analysis Date:** 2026-06-10
 
-## Web & API
-- **Express (v5.2.1)**: Web framework for HTTP routes (account management, verification).
-- **Socket.io (v4.2.0)**: Real-time bidirectional event-based communication for game state.
-- **jsonwebtoken (v9.0.3)**: Security tokens for session management and verification.
-- **express-rate-limit**: Middleware to limit repeated requests to public endpoints (e.g., login).
+## Languages
 
-## Data Persistence
-- **SQLite (via better-sqlite3 v12.9.0)**: High-performance, synchronous SQLite library.
-- **WAL Mode**: Write-Ahead Logging enabled for concurrent read/write performance.
+**Primary:**
 
-## Physics & Math
-- **ganja.js (v1.0.204)**: Geometric Algebra library (3,0,1 PGA) for 3D physics and rotations.
-- **Float64Array**: Heavy use for high-precision numerical data (POVART, STATS).
+- JavaScript Node.js (CommonJS) - Used throughout the server implementation.
 
-## Utilities & Tooling
-- **dotenv**: Environment variable management.
-- **nodemailer (v8.0.10)**: Email delivery service.
-- **cli-progress**: Multi-bar progress tracking for boot/shutdown sequences.
-- **cli-spinner**: Terminal spinners for CLI feedback.
-- **Node REPL**: Interactive administrative console embedded in the server.
+**Secondary:**
+
+- Not detected
+
+## Runtime
+
+**Environment:**
+
+- Node.js (version not explicitly pinned in package.json, but using modern features like `--watch`)
+
+**Package Manager:**
+
+- npm
+- Lockfile: present (implied by package.json)
+
+## Frameworks
+
+**Core:**
+
+- Express ^5.2.1 - Web server and API routing.
+- Socket.io ^4.2.0 - Real-time bidirectional communication.
+
+**Testing:**
+
+- Not detected (package.json `test` script is a placeholder).
+
+**Build/Dev:**
+
+- node --watch - Used for development auto-restarts.
+
+## Key Dependencies
+
+**Critical:**
+
+- better-sqlite3 ^12.9.0 - High-performance local database.
+- jsonwebtoken ^9.0.3 - Authentication and session tokens.
+- socket.io-client ^4.8.3 - Client-side socket communication.
+- express-rate-limit ^8.5.1 - API rate limiting and security.
+
+**Infrastructure:**
+
+- nodemailer ^8.0.10 - Email delivery.
+- dotenv ^17.3.1 - Environment variable management.
+- cli-progress / cli-spinner - Terminal UI for server status.
+- @socket.io/admin-ui - Socket.io monitoring and administration.
+
+## Configuration
+
+**Environment:**
+
+- Configured via `dotenv` and a dedicated config module in `core/config.js`.
+- Key configs likely include DB paths, JWT secrets, and Mailer credentials.
+
+**Build:**
+
+- No complex build step; runs directly via `node`.
+
+## Platform Requirements
+
+**Development:**
+
+- Node.js environment.
+- SQLite3 binaries (handled by better-sqlite3).
+
+**Production:**
+
+- Linux/Windows server with Node.js runtime.
+
+---
+
+*Stack analysis: 2026-06-10.*

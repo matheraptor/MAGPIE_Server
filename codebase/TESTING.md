@@ -1,17 +1,97 @@
-# Testing Strategy - MAGPIE_Server
+# Testing Patterns
 
-## Frameworks
-- **None**: No automated test suite (Jest, Mocha, etc.) is currently configured in `package.json`.
+**Analysis Date:** 2026-06-10
 
-## Manual Testing
-- **Embedded REPL**: The primary method for testing internal state. The server starts an interactive console allowing live inspection of `SERVER`, `HIVE`, `RUNTIME`, etc.
-- **Scratchpad (`plugins/scratchpad.js`)**: A live-reloading execution environment. Saving this file triggers `SERVER.js` to eval its contents in a sandbox context.
-- **Socket.io Admin UI**: Used for real-time monitoring of network events and room membership.
+## Test Framework
 
-## Internal Validation
-- **Validation Methods**: Core classes include extensive validation logic (e.g., `MAGPIE_PHYSICS.isValidPOVART`, `MAGPIE_ENTITY.isValidFitness`, `MAGPIE_STATE.validate`).
-- **Type Checking**: runtime checks using `instanceof` and `constructor.name` before processing objects.
+**Runner:**
 
-## Diagnostic Tools
-- **Diego Coupling Reports**: Found in `admin/docs/`, these provide historical diagnostic data and fixing guides for specific architectural bottlenecks.
-- **Memory Reporting**: `MAGPIE_RUNTIME.prototype._memoryUsage()` provides periodic heap reports.
+- Not detected. `package.json` contains a placeholder: `"test": "echo \"Error: no test specified\" && exit 1"`.
+
+**Assertion Library:**
+
+- Not detected.
+
+**Run Commands:**
+
+```bash
+npm test              # Currently returns error
+```
+
+## Test File Organization
+
+**Location:**
+
+- Not detected. No `tests/` or `spec/` directories found.
+
+**Naming:**
+
+- Not applicable.
+
+**Structure:**
+
+- Not applicable.
+
+## Test Structure
+
+**Suite Organization:**
+
+- Not applicable.
+
+**Patterns:**
+
+- No formal test suites observed.
+
+## Mocking
+
+**Framework:** Not detected.
+
+**Patterns:**
+
+- No formal mocking patterns observed.
+
+## Fixtures and Factories
+
+**Test Data:**
+
+- Not detected.
+
+**Location:**
+
+- Not applicable.
+
+## Coverage
+
+**Requirements:** None enforced.
+
+**View Coverage:**
+
+- Not applicable.
+
+## Test Types
+
+**Unit Tests:**
+
+- Not detected.
+
+**Integration Tests:**
+
+- Not detected.
+
+**E2E Tests:**
+
+- Not detected.
+
+## Common Patterns
+
+**Async Testing:**
+
+- Not applicable.
+
+**Error Testing:**
+
+- Not applicable.
+
+---
+
+*Testing analysis: 2026-06-10.*

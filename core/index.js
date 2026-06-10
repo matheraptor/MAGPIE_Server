@@ -20,8 +20,9 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.38.3 2026 06 10
+ * @version 0.38.5 2026 06 10
  * - FIXED: exposed public/*_backup.*
+ * - TWEAKED: .logs/ => logs/
  * 
  * @version 0.38.2 2026 06 08
  * - ADDED: css regions
@@ -483,7 +484,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 38, 3],
+			version: [0, 38, 5],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260610"
 		};
