@@ -1,18 +1,119 @@
-# Technical Concerns & Risks - MAGPIE_Server
+# Codebase Concerns
 
-## Security Risks
-- **JWT `@todo`**: `SERVER.js` contains a comment `@todo JWT login security`, and currently `io.use` middleware has hardcoded bypass logic (`playerID = isDev ? "999" : "0"`).
-- **Hardcoded Secrets**: Potential for secrets to be exposed if `.env` is mismanaged, though `core/config.js` correctly uses `process.env`.
+**Analysis Date:** 2026-06-10
 
-## Technical Debt
-- **Documentation Rot**: The `README.md` is significantly outdated (v0.20.1) compared to the actual implementation (v0.38.2 in `core/index.js`).
-- **Excessive `@todo`**: Many critical functions (e.g., `_apply_processor`, `MAGPIE_ENGINE.update`, `_geod_checkCollisions`) are stubs or contain significant `@todo` markers.
-- **Diego Coupling**: Historical evidence of tight coupling issues (referenced in `admin/docs/`) suggest potential fragility in system interactions.
+## Tech Debt
+
+**Server Orchestrator (`SERVER.js`):**
+
+- Issue: Massive "God Object" file (2000+ lines) handling routing, setup, and logic.
+- Files: `SERVER.js`
+- Impact: High cognitive load, difficult to maintain, and prone to merge conflicts.
+- Fix approach: Decompose into a `routes/` directory and separate the server configuration from the event routing.
+
+**Core Component Logic:**
+
+- Issue: Large, monolithic functions that need decomposition.
+- Files: `core/component.js`
+- Impact: Hard to test and modify specific component behaviors.
+- Fix approach: Break down large methods into smaller, single-responsibility functions.
+
+**Database Implementation:**
+
+- Issue: Hardcoded queries that need templating.
+- Files: `core/database.js`
+- Impact: Reduced flexibility and potential for SQL injection if not handled carefully.
+- Fix approach: Implement a proper query builder or template system.
+
+## Known Bugs
+
+**JWT Security:**
+
+- Symptoms: Potential vulnerabilities in the login flow.
+- Files: `SERVER.js`
+- Trigger: Login process.
+- Workaround: None identified.
+
+**Ecosystem Listing:**
+
+- Symptoms: Missing or incomplete ecosystem list.
+- Files: `SERVER.js`
+- Trigger: Requesting ecosystem data.
+
+## Security Considerations
+
+**Authentication:**
+
+- Risk: JWT implementation may have security gaps (marked as `@todo` in `SERVER.js`).
+- Files: `SERVER.js`, `core/auth_util.js`
+- Current mitigation: Basic JWT token usage.
+- Recommendations: Audit the JWT signing and verification process; implement token rotation.
+
+**API Rate Limiting:**
+
+- Risk: Potential for DoS attacks on expensive endpoints.
+- Files: `SERVER.js`
+- Current mitigation: `express-rate-limit` is installed and used.
 
 ## Performance Bottlenecks
-- **REPL Overhead**: Keeping a REPL active in production might have performance and security implications.
-- **Better-sqlite3 Synchronicity**: While high-performance, `better-sqlite3` is synchronous. If the database worker thread becomes blocked, all DB operations will stall.
-- **JSON Serialization**: Extensive use of `JSON.stringify` and `JSON.parse` with custom revivers/replacers for every database operation may become a bottleneck as the number of entities grows.
 
-## Scaling
-- **MMORPG Ambitions**: The current architecture is single-process (with a few workers). Transitioning to a distributed "Eve Online" scale MMORPG as envisioned in the README will require a complete overhaul of the persistence and state synchronization layers.
+**Physics Calculations:**
+
+- Problem: Complex 3D kinematics and geometric algebra may become a bottleneck as entity count increases.
+- Files: `core/physics.js`
+- Cause: High frequency of calculations per tick.
+- Improvement path: Optimize math operations or move physics to a separate worker thread.
+
+**Database I/O:**
+
+- Problem: Synchronous SQLite calls can block the event loop.
+- Files: `core/database.js`
+- Cause: SQLite is fundamentally synchronous.
+- Improvement path: The current `database_worker.js` approach is the correct mitigation; ensure all heavy queries use the worker.
+
+## Fragile Areas
+
+**Entity Physics Integration:**
+
+- Files: `core/entity.js`, `core/physics.js`
+- Why fragile: Tight coupling between entity state and physics calculations; many `@todo` markers regarding collision and inertia.
+- Safe modification: Implement a more robust physics interface and use unit tests to verify movement logic.
+- Test coverage: None.
+
+## Scaling Limits
+
+**In-Memory State:**
+
+- Current capacity: Limited by Node.js heap size.
+- Limit: When `data/states.js` grows too large, the server will crash or slow down.
+- Scaling path: Move volatile state to Redis or a similar distributed cache.
+
+## Dependencies at Risk
+
+**Not detected.**
+
+## Missing Critical Features
+
+**Automated Testing:**
+
+- Problem: Complete lack of unit or integration tests.
+- Blocks: Safe refactoring of the "God Object" `SERVER.js` and core physics logic.
+
+**Collision System:**
+
+- Problem: Proper collision detection is marked as `@todo`.
+- Files: `core/physics.js`
+- Blocks: Realistic physical interactions in the game world.
+
+## Test Coverage Gaps
+
+**Core Engine:**
+
+- What's not tested: Physics, Entity lifecycle, Database workers.
+- Files: `core/*.js`
+- Risk: High. Regression in physics or DB logic could corrupt game state.
+- Priority: High.
+
+---
+
+*Concerns audit: 2026-06-10.*

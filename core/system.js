@@ -349,7 +349,7 @@ MAGPIE_SYSTEM.log = function log(message, prefix = "console", logToConsole = tru
 	
 	if(typeof prefix === 'string')
 	{
-		const filename = `.logs/${prefix}${date}.txt`;
+		const filename = `logs/${prefix}${date}.txt`;
 		const timestamp = logTime;
 		const level = prefix.toUpperCase();
 		MAGPIE_IO.append(filename, timestamp, level, log);

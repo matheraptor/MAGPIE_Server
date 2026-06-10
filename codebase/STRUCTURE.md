@@ -1,24 +1,113 @@
-# Folder Structure - MAGPIE_Server
+# Codebase Structure
 
-- **`admin/`**: Documentation, conclusion reports, and diagnostic fixing guides (specifically related to "Diego Coupling").
-- **`core/`**: The engine's core implementation.
-    - `workers/`: Background threads for FSIO and Database operations.
-    - `physics.js`: 3D PGA-based physics engine.
-    - `system.js`: Base class and runtime orchestration.
-    - `database.js`: Database interface and worker management.
-    - `entity.js`: Entity logic and refresh loops.
-    - `component.js`: Modular components (EXP, KEY, SYMBOL, etc.).
-- **`data/`**: Static definitions and registries.
-    - `entity_types.js`: Enumeration of entity categories.
-    - `states.js`: Logic for permanent and temporary entity states.
-    - `traits.js`: CCG trait definitions.
-    - `emotes.js`: Interactive action logic.
-- **`handlers/`**: Network event logic.
-    - `accountHandler.js`: Socket events for registration and login.
-    - `entityHandler.js`: Room-based entity subscriptions.
-    - `email_api.js`: Express routes for email verification.
-- **`plugins/`**: External extensions.
-    - `scratchpad.js`: A watch-file based execution tool for live testing.
-- **`public/`**: Web assets for the server's frontend landing page.
-- **`SERVER.js`**: The main entry point that bootstraps the systems, registers handlers, and starts the REPL.
-- **`db/`**: (Generated) SQLite database files (`world.db`, `server.db`).
+**Analysis Date:** 2026-06-10
+
+## Directory Layout
+
+```markdown
+MAGPIE_Server/
+├── .admin/          # Administrative tools/scripts
+├── .logs/           # Server runtime logs
+├── .planning/       # GSD planning and codebase maps
+├── .tmp/            # Temporary runtime files
+├── admin/           # Admin-facing logic/tools
+├── config/          # Configuration files (e.g., config.json)
+├── core/            # Core engine logic (Physics, Entity, System)
+├── data/            # In-memory state and component definitions
+├── db/              # Database schemas and migrations
+├── handlers/        # Network event handlers (API/Socket)
+├── plugins/         # Extensible server plugins
+├── public/          # Static assets for the web server
+└── SERVER.js        # Main entry point and orchestrator
+```
+
+## Directory Purposes
+
+**core/:**
+
+- Purpose: The "brain" of the server.
+- Contains: Physics engine, entity management, system utilities, and DB workers.
+- Key files: `physics.js`, `entity.js`, `system.js`, `database_worker.js`.
+
+**handlers/:**
+
+- Purpose: Bridge between network events and core logic.
+- Contains: Logic for accounts, players, and entities.
+- Key files: `playerHandler.js`, `accountHandler.js`, `entityHandler.js`.
+
+**data/:**
+
+- Purpose: Definition of game data and volatile state.
+- Contains: Component definitions and active session states.
+- Key files: `states.js`, `components.js`.
+
+**plugins/:**
+
+- Purpose: Modular extensions to the server functionality.
+- Contains: Plugin implementations.
+
+## Key File Locations
+
+**Entry Points:**
+
+- `SERVER.js`: Main server bootstrapper and network listener.
+
+**Configuration:**
+
+- `core/config.js`: Logic for loading and managing settings.
+- `config/config.json`: Static configuration values.
+
+**Core Logic:**
+
+- `core/physics.js`: 3D kinematics and geometric algebra.
+- `core/entity.js`: Entity state and behavior.
+
+**Testing:**
+
+- Not detected (no dedicated test directory).
+
+## Naming Conventions
+
+**Files:**
+
+- Core modules: camelCase (e.g., `auth_util.js`, `database_worker.js`).
+- Handlers: camelCase with "Handler" suffix (e.g., `playerHandler.js`).
+- Main entry: UPPERCASE (`SERVER.js`).
+
+**Directories:**
+
+- Lowercase (e.g., `core`, `handlers`, `data`).
+
+## Where to Add New Code
+
+**New Feature (Game Logic):**
+
+- Primary code: `core/` (for engine changes) or `handlers/` (for new network events).
+- Data definitions: `data/`.
+
+**New Network Event:**
+
+- Implementation: `handlers/` (create a new handler or add to existing).
+- Routing: `SERVER.js`.
+
+**Utilities:**
+
+- Shared helpers: `core/system.js` or `core/auth_util.js`.
+
+## Special Directories
+
+**.logs/:**
+
+- Purpose: Stores runtime error and console logs.
+- Generated: Yes.
+- Committed: No.
+
+**.planning/:**
+
+- Purpose: Stores GSD architectural maps and plans.
+- Generated: Yes.
+- Committed: Yes.
+
+---
+
+*Structure analysis: 2026-06-10.*
