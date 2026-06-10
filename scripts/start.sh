@@ -3,9 +3,15 @@
 
 export NODE_ENV=production
 
-# 1. Start Governor loop with nohup to fully isolate it from this script's process space
+# 1. Zombie Cleanup: Ensure no orphaned node or cpulimit processes are lingering
+echo -e "\e[33m--- Cleaning up zombie processes... ---\e[0m"
+pkill -f "node.*SERVER.js" 2>/dev/null
+pkill -f "cpulimit" 2>/dev/null
+sleep 1
+
+# 2. Start Governor loop with nohup to fully isolate it from this script's process space
 if ! pgrep -f "throttle_node.sh" > /dev/null; then
-    nohup /home/hamedahastral/MAGPIE_Server/throttle_node.sh >> /home/hamedahastral/MAGPIE_Server/logs/governor_boot.log 2>&1 &
+    nohup /home/hamedahastral/MAGPIE_Server/scripts/throttle_node.sh >> /home/hamedahastral/MAGPIE_Server/logs/governor_boot.log 2>&1 &
 fi
 
 /usr/bin/find /tmp -type f -mtime +3 -delete 2>/dev/null

@@ -1,16 +1,18 @@
 #!/bin/bash
-while true; do
-    node SERVER.js
-    EXIT_CODE=$?
-    
-    if [ $EXIT_CODE -eq 2 ]; then
-        echo -e "\e[36m--- Restart signal received CODE[2]: rebooting MAGPIE... ---\e[0m"
-        sleep 1
-    elif [ $EXIT_CODE -eq 0 ]; then
-        echo -e "\e[32m--- Server shut down normally CODE[0]. Exiting loop. ---\e[0m"
-        break
-    else
-        echo -e "\e[31m--- Server crashed or stopped CODE[$EXIT_CODE]. ---\e[0m"
-        break
-    fi
-done
+# run_server.sh - Master Booter for MAGPIE Server
+# Orchestrates the server and monitor in detached screen sessions
+
+echo -e "\e[34m--- Initializing MAGPIE Boot Sequence... ---\e[0m"
+
+# 1. Boot the Server Engine
+echo "Launching Server Session..."
+screen -S magpie -d bash -c "cd /home/hamedahastral/MAGPIE_Server && ./scripts/start.sh"
+
+# 2. Boot the Resource Monitor
+echo "Launching Monitor Session..."
+screen -S monitor -d bash -c "cd /home/hamedahastral/MAGPIE_Server && ./scripts/monitor.sh"
+
+echo -e "\e[32m--- Boot Sequence Complete ---\e[0m"
+echo "Sessions created: 'magpie' (Server) and 'monitor' (Resources)"
+echo "Use 'screen -r magpie' or 'screen -r monitor' to attach."
+

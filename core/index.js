@@ -20,9 +20,12 @@
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
- * @version 0.38.5 2026 06 10
- * - FIXED: exposed public/*_backup.*
+ * @version 0.38.6 2026 06 10
  * - TWEAKED: .logs/ => logs/
+ * - TWEAKED: boot scripts location and flow
+ * - FIXED: exposed public/*_backup.*
+ * - FIXED: missing cleanup login in start.sh
+ * - FIXED: run_server.sh obsolete and not updated to new flow
  * 
  * @version 0.38.2 2026 06 08
  * - ADDED: css regions
@@ -484,7 +487,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 38, 5],
+			version: [0, 38, 6],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260610"
 		};
