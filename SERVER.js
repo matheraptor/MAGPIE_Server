@@ -1688,7 +1688,7 @@ io.use((socket, next) => {
 	{
 		socket.data.playerID = "0";
 		MAGPIE_SERVER.SOCKET.auth_failed(socket.id, e.message);
-		next();
+		next(new Error(String(MAGPIE.KEY.SERVER.HTTP.STATUS_403.code)));
 	}
 })
 io.on("connection", (socket) => {
