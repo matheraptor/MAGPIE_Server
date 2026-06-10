@@ -3,6 +3,10 @@
 - [MAGPIE Server for Shelder Evolution {#top}](#magpie-server-for-shelder-evolution-top)
   - [Meta](#meta)
     - [What is MAGPIE Server?](#what-is-magpie-server)
+      - [Q1 — What is the core gameplay loop?](#q1--what-is-the-core-gameplay-loop)
+      - [Q2 — What happens between card matches?](#q2--what-happens-between-card-matches)
+      - [Q3 — What is the role of the client?](#q3--what-is-the-role-of-the-client)
+      - [Q4 — What is the 'tick' frequency?](#q4--what-is-the-tick-frequency)
     - [What is Shelder Evolution?](#what-is-shelder-evolution)
     - [Why a MMORPG?](#why-a-mmorpg)
     - [How does 'roguelike deckbuilding' fit in?](#how-does-roguelike-deckbuilding-fit-in)
@@ -39,9 +43,27 @@
 
 ### What is MAGPIE Server?
 
-M.A.G.P.I.E.[^MAGPIE]
+'MAGPIE_Server' is the 'server-side logic'/'backend' for *M.A.G.P.I.E.[^MAGPIE] [Shelder Evolution](https://shelderevolution.org) MMOTCG[^MMOTCG]*.
 
-The MAGPIE Server is the core architecture that drives the Shelder Evolution experience. The game's architecture is based on the following components:
+#### Q1 — What is the core gameplay loop?
+
+The core gameplay loop is: *[tactical card-play from a hand](https://en.wikipedia.org/wiki/Collectible_card_game)*.
+
+#### Q2 — What happens between card matches?
+
+The 'meta' gameplay loop is *pet lifecycle[^lifecycle] via [roguelike-deckbuilding](https://en.wikipedia.org/wiki/Roguelike_deck-building_game) strategy*.
+
+The PLAYER[^player] adopts and guides a CREATURE[^creature]
+
+#### Q3 — What is the role of the client?
+
+The 'client' app strictly acts as a *dumb terminal*: the server streams concise, pure-data instruction packets called TICKET[^ticket], and the client simply projects the data points carried by it and loads it with user inputs to send back to the server for processing.
+
+#### Q4 — What is the 'tick' frequency?
+
+---
+
+The game's architecture is based on the following components:
 
 - **Central Server**
   - Unique and hierarchical coordination starting from 'REYA' — the admin, and descending through levels:
@@ -283,5 +305,17 @@ Thus, a rivalry forms between the majority of the digital minds (the pro-tech/an
 ---
 
 [^MAGPIE]: (M)odular (A)rchitecture (G)eneral-(P)urpose (I)ntelligence (E)ngine
+
+[^MMOTCG]: (M)assively (M)ulti-player (O)nline (T)rading (C)ard (G)ame
+
+[^lifecycle]: *Lifecycle*: guide an adopted creature through its lifecycle on a persistent, mathematically-driven 3D universe
+
+[^player]: every user in *Shelder Evolution* is called a **PLAYER**, which is meant both in the real, immediate meaning of the user playing this game, and the 'meta' narrative that sees this user interpreting an entity living in the universe of this game that is also playing a game called *Shelder Evolution*, which is essentially the same game, but happening in that universe.
+
+[^creature]: every living entity within the game universe is called a **CREATURE**. Every CREATURE must obey the simulated biological rules of the game to survive — failing to survive translates to [*permadeath*](https://en.wikipedia.org/wiki/Permadeath).
+
+[^ticket]: a TICKET is a packet of data specialized for server-client communication that is sent back and forth through sockets[^websocket] containing a payload of metadata (e.g. the playerID, the request timestamp, etc.) and most often also a EXP[^exp].
+
+[^exp]: a EXP is another packet of data that is specialized for gameworld entities (it stands for 'experience packet').
 
 ---
