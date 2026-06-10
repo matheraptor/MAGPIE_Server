@@ -83,6 +83,8 @@ diego = HIVE._get_entity(1773811141134)
 diego._set_O1(PHYSICS._rotor_fromEulerAbs(86,50,170, diego._get_P0()))
 diego._set_R1([0,0,0])
 diego._set_P1(PHYSICS.addVectors(diego._get_P0(), PHYSICS.scaleVector(diego._get_V0(), 60 * 60)))
+V1 = PHYSICS.targetVelocity(diego._get_P0(), PHYSICS.geodeticToCartesian([40.552886, 141.501683,0], 0.5))
+PHYSICS._get_V0_heading(diego._get_P0(), V1)
 METASTATE.date.megaTICK();
 r.context.diego._get_target()._set_C1([12.420031, 43.544629,0])
 r.context.diego.exps.push(r.context.METASTATE.contents.exp)

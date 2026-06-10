@@ -6,7 +6,7 @@
  * @author Matheraptor
  * @licence GPL-3.0
  * 
- * @version 0.38.2
+ * @version 0.38.3
  * 
  * @depdendencies 
  * - Node.js 
@@ -19,6 +19,9 @@
  * - cli-spinner
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
+ * 
+ * @version 0.38.3 2026 06 10
+ * - FIXED: exposed public/*_backup.*
  * 
  * @version 0.38.2 2026 06 08
  * - ADDED: css regions
@@ -480,7 +483,7 @@ class MAGPIE {
 		this.meta = {
 			name: "M.A.G.P.I.E",
 			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 38, 2],
+			version: [0, 38, 3],
 			firmwareName: "MAGPIE",
 			firmwareDate: "20260610"
 		};
