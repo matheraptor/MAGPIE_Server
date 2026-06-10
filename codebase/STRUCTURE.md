@@ -1,0 +1,24 @@
+# Folder Structure - MAGPIE_Server
+
+- **`admin/`**: Documentation, conclusion reports, and diagnostic fixing guides (specifically related to "Diego Coupling").
+- **`core/`**: The engine's core implementation.
+    - `workers/`: Background threads for FSIO and Database operations.
+    - `physics.js`: 3D PGA-based physics engine.
+    - `system.js`: Base class and runtime orchestration.
+    - `database.js`: Database interface and worker management.
+    - `entity.js`: Entity logic and refresh loops.
+    - `component.js`: Modular components (EXP, KEY, SYMBOL, etc.).
+- **`data/`**: Static definitions and registries.
+    - `entity_types.js`: Enumeration of entity categories.
+    - `states.js`: Logic for permanent and temporary entity states.
+    - `traits.js`: CCG trait definitions.
+    - `emotes.js`: Interactive action logic.
+- **`handlers/`**: Network event logic.
+    - `accountHandler.js`: Socket events for registration and login.
+    - `entityHandler.js`: Room-based entity subscriptions.
+    - `email_api.js`: Express routes for email verification.
+- **`plugins/`**: External extensions.
+    - `scratchpad.js`: A watch-file based execution tool for live testing.
+- **`public/`**: Web assets for the server's frontend landing page.
+- **`SERVER.js`**: The main entry point that bootstraps the systems, registers handlers, and starts the REPL.
+- **`db/`**: (Generated) SQLite database files (`world.db`, `server.db`).
