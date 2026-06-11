@@ -7,6 +7,16 @@
       - [Q2 — What happens between card matches?](#q2--what-happens-between-card-matches)
       - [Q3 — What is the role of the client?](#q3--what-is-the-role-of-the-client)
       - [Q4 — What is the 'tick' frequency?](#q4--what-is-the-tick-frequency)
+        - [L0 — the 'Base' layer](#l0--the-base-layer)
+        - [L1 — the 'Game' layer](#l1--the-game-layer)
+        - [L2 — the 'Standard' or 'TICK' layer](#l2--the-standard-or-tick-layer)
+        - [L3 — the 'superTICK' layer](#l3--the-supertick-layer)
+        - [L4 — the 'megaTICK' layer](#l4--the-megatick-layer)
+        - [L5 — the 'ultraTICK' layer](#l5--the-ultratick-layer)
+      - [Q5 — What happens when an entity gets 'kicked'?](#q5--what-happens-when-an-entity-gets-kicked)
+      - [Q6 — How often is data saved to the database?](#q6--how-often-is-data-saved-to-the-database)
+      - [Q7 — What security measures are used to protect client connections?](#q7--what-security-measures-are-used-to-protect-client-connections)
+  - [Game Architecture](#game-architecture)
     - [What is Shelder Evolution?](#what-is-shelder-evolution)
     - [Why a MMORPG?](#why-a-mmorpg)
     - [How does 'roguelike deckbuilding' fit in?](#how-does-roguelike-deckbuilding-fit-in)
@@ -45,9 +55,13 @@
 
 'MAGPIE_Server' is the 'server-side logic'/'backend' for *M.A.G.P.I.E.[^MAGPIE] [Shelder Evolution](https://shelderevolution.org) MMOTCG[^MMOTCG]*.
 
+---
+
 #### Q1 — What is the core gameplay loop?
 
 The core gameplay loop is: *[tactical card-play from a hand](https://en.wikipedia.org/wiki/Collectible_card_game)*.
+
+---
 
 #### Q2 — What happens between card matches?
 
@@ -55,13 +69,80 @@ The 'meta' gameplay loop is *pet lifecycle[^lifecycle] via [roguelike-deckbuildi
 
 The PLAYER[^player] adopts and guides a CREATURE[^creature]
 
+---
+
 #### Q3 — What is the role of the client?
 
 The 'client' app strictly acts as a *dumb terminal*: the server streams concise, pure-data instruction packets called TICKET[^ticket], and the client simply projects the data points carried by it and loads it with user inputs to send back to the server for processing.
 
+---
+
 #### Q4 — What is the 'tick' frequency?
 
+There are multiple layers of tick frequency, each designed for a specific purpose, each looped through asynchronously with a *"if you fail your .refresh() you get kicked"* policy:
+
+##### L0 — the 'Base' layer
+
+At maximum tick rate (avg. `1ms`), reserved for server processing and admin-approved edge cases like time-accelerating an entity.
+
+##### L1 — the 'Game' layer
+
+At `60Hz`, with limited slots, so, reserved to the entities that have refresh priority.
+
+##### L2 — the 'Standard' or 'TICK' layer
+
+At `1Hz`, with a much more generous slot limit, but reserved for entities that have a 'active' status, meaning, their 'exp queue'[^exp] is not 0 and there is at least one exp triggering activity.
+
+##### L3 — the 'superTICK' layer
+
+At `0.033Hz` (or 1/minute), where we start not caring about slot limit anymore. Most inactive or slowly-updating entities reside here. The standard layer for celestial-body entities and active structure/immobile entities.
+
+##### L4 — the 'megaTICK' layer
+
+At 1/hour.
+
+##### L5 — the 'ultraTICK' layer
+
+At 1/day. Every entity in the database is updated at least once a day, but the purpose of having this layer is that the entities registered here have priority of update over the other entities in the database.
+
 ---
+
+#### Q5 — What happens when an entity gets 'kicked'?
+
+WHen an entity gets kicked from a refresh layer, they won't get refreshed anymore until the next '1/day' global refresh, and, in the case of an 'adoptee', the owner PLAYER will only receive the 1/day update from their creature. This is a programming fallback to avoid entity errors cascading into server errors, and is handled automatically by the HIVE[^hive], which will 'awake' an inactive entity not currently hosted, and host it to the appropriate refresh layer upon receiving and accepting a valid TICKET[^ticket]. 99% of the times, a PLAYER won't have to worry about this.
+
+---
+
+#### Q6 — How often is data saved to the database?
+
+**L0** to **L2** are *buffer* layers (`array` of `MAGPIE_ENTITY`) which means the **HIVE**[^hive] becomes the source of truth for these entities while they're hosted.
+**L3** to **L5** are *remote* layers (`Float64Array` of `entityID`) which means the database remains the source of truth and the HIVE dynamically accesses the entity by `sql query`. **L3**+ usually update on *1/min+* frequency, so, `1/min` is the maximum frequency to be expected for their database write, which is also the frequency for a *metasave*[^metastate] (metastate save + save buffer entity).
+
+So, *TLDR*: every minute, unless manual override.
+
+---
+
+#### Q7 — What security measures are used to protect client connections?
+
+- our server runs on a HTTPS Cloudflare domain, which takes care of protecting you from external tampering.
+- we use JWT tokens to validate socket identity with 1-hour expiry
+- client and server refresh the socket token every minute
+- *security-by-design* policy:
+  - HIVE[^hive] only accepts valid payload
+  - for payload to be valid, it must have a legitimate action
+  - legitimate actions are the cards in the creature's hand — the options available to the creature and that the creature is already likely to choose from
+  - 'no code injection' — payload is dumb data and enforced at the type level (e.g. Number(data), String(data), not 'eval(code)'), so, anything improperly formatted automatically becomes an 'undefined' value, which the HIVE immediately refuses and triggers a `kick(entity)` response
+  - native rate-limiting and activity throttling — the creature can only do so much as its simulated physiology can allow
+  - native anti-cheat — the payload can only ever queue suggestions to the creature to choose a specific option in the pool of already legitimate option (e.g. client sends `play(hand_index)`)
+  - native anti-spam — payloads get filtered by the creature's own agency and willingness to trust[^affinity] a player's input
+- additional technical security measures:
+  - rate-limiting (to mitigate spamming and Ddos attacks)
+
+[Back to top ⤴️](#top)
+
+---
+
+## Game Architecture
 
 The game's architecture is based on the following components:
 
@@ -314,8 +395,14 @@ Thus, a rivalry forms between the majority of the digital minds (the pro-tech/an
 
 [^creature]: every living entity within the game universe is called a **CREATURE**. Every CREATURE must obey the simulated biological rules of the game to survive — failing to survive translates to [*permadeath*](https://en.wikipedia.org/wiki/Permadeath).
 
-[^ticket]: a TICKET is a packet of data specialized for server-client communication that is sent back and forth through sockets[^websocket] containing a payload of metadata (e.g. the playerID, the request timestamp, etc.) and most often also a EXP[^exp].
+[^ticket]: a TICKET is a packet of data specialized for server-client communication that is sent back and forth through sockets[^websocket] containing a payload of metadata (e.g. the playerID, the request timestamp, etc.) and most often also a EXP.
 
-[^exp]: a EXP is another packet of data that is specialized for gameworld entities (it stands for 'experience packet').
+[^exp]: a EXP is another packet of data that is specialized for gameworld entities (it stands for 'experience packet'). EXP is the entity's data packet that contains entity "memory" and is also used for instructing activity. Entities have a `.exps` array that acts as their repository of exps, and that they cycle through with each `.refresh()` tick.
+
+[^hive]: HIVE is a server system that acts as host for all entities in the gameworld. It hoists them from the database to a refresh layer, triggers their `.refresh()` method, shuffles them around where needed, and kicks them from the layer at will (e.g. admin command), or if they fail their `.refresh()`.
+
+[^metastate]: METASTATE is a server component that handles the current server session data, like the gamedate, the state of server events, and the register of active entities a.k.a. `hive._registry`.
+
+[^affinity]: AFFINITY //@todo affinity
 
 ---
