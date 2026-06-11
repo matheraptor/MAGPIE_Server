@@ -1621,7 +1621,7 @@ app.use((req, res, next) => {
 	MAGPIE_SERVER.log(`[HTTP REQUEST] ${req.method} ${req.url}`)
 	next()
 })
-app.use(express.static("./public"));
+app.use(express.static(path.join(process.cwd(), "public")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 MAGPIE_SERVER.public = {};
