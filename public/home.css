@@ -381,6 +381,15 @@ body {
 
 /* #endregion */
 
+/* #region pixel-perfect */
+.retro-counter {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  font-smooth: never;
+  -webkit-font-smoothing: none;
+}
+/* #endregion */
+
 /* #region views */
 
 
