@@ -1,6 +1,6 @@
 /**
  *
- * @version 0.32.0
+ * @version 0.38.6
  * 
  * @changelog 
  * @version 0.18.9 2026 03 31
@@ -13,8 +13,8 @@ const MAGPIE = {};
 MAGPIE.public = {};
 MAGPIE.public.meta = {
 	firmwareName: "main",
-	firmwareDate: "20260319",
-	version: [0,18,8],
+	firmwareDate: "20260611",
+	version: [0,38,6],
 	name: "M.A.G.P.I.E. server public access frame"
 };
 const params = new URLSearchParams(window.location.search);
