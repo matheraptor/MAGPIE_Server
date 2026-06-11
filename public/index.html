@@ -1,0 +1,35 @@
+<!-- version 0.39.0 -->
+ <!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>M.A.G.P.I.E. Shelder Evolution</title>
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+        <link rel="stylesheet" href="home.css">
+    </head>
+    <body style="background-color: black;">
+        <nav id="nav-breadcrumbs">
+            <button onclick="router.go('home')" class="nav-button">HOME</button>
+            <button onclick="router.go('test')" class="nav-button">TEST</button>
+            <button onclick="router.go('adoption')" class="nav-button">ADOPTION STORE</button>
+            <button onclick="router.go('login')" class="nav-button">LOGIN</button>
+        </nav>
+        <nav id="view-crt" class="crt-scrollable" style="display: block;">
+            <!-- "crt-style" body -->
+             <section id="view-home" style="display: block;">
+                <img src="SEtitle.png" alt="ShelderEvolution">
+             </section>
+        </nav>
+        <nav id="nav-status">
+            <span id="metadate" class="cli-status">Waiting for server...</span>
+            <span id="visitor-counter" class="retro-counter">
+                test
+            </span>
+        </nav>
+        <script src="/socket.io/socket.io.js"></script>
+        <script type="text/javascript" src="/main.js"></script>
+    </body>
+</html>
