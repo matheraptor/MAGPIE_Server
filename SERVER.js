@@ -951,13 +951,12 @@ const main = async function main()
 	MAGPIE_SERVER.CLI._stop()
 	spinner.setSpinnerTitle("Serving NODE_HTTP...")
 	MAGPIE_SERVER.BOOT.connect()
-	await MAGPIE_SYSTEM.Utility.wait(5000)
-	MAGPIE_SERVER.CLI._stopSpinner()
-	await MAGPIE_SYSTEM.Utility.wait(3000)
+	await MAGPIE_SYSTEM.Utility.wait(1000)
 	setTimeout(() => {
 		MAGPIE_SERVER.BOOT.logBootTime()
 		r.displayPrompt()
 	}, 100)
+	MAGPIE_SERVER.CLI._stopSpinner()
 }
 main()
 fs.watchFile(MAGPIE_SERVER.PAD.file, { interval: 1000 }, (curr, prev) => {
