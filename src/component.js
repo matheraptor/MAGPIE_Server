@@ -1380,6 +1380,7 @@ MAGPIE_EMOTE.INDEX = new Map();
 MAGPIE_EMOTE.setup = async function()
 {
 	const data = require("../data/emotes");
+	if(data?.length < 1) return
 	for(const emote_data of data)
 	{
 		MAGPIE_EMOTE.INDEX.set(emote_data.ID, new MAGPIE_EMOTE(emote_data));

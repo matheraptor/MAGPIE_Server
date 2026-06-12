@@ -9,7 +9,7 @@
 //========================================================================
 class MAGPIE_SYSTEM
 {
-    //
+	//
 }
 const { MAGPIE } = require("./index")
 const fs = require("fs")
@@ -23,7 +23,69 @@ const { exec } = require("child_process")
  */
 class MAGPIE_IO
 {
-    //
+	//
+}
+/**
+ * @typedef {Enumerator<Number>} layerID
+ */
+class MAGPIE_RUNTIME
+{
+	//
+}
+
+/**
+ * @static
+ * @desc entities host
+ */
+class MAGPIE_HIVE
+{
+	//
+}
+/**
+ * @name MAGPIE_LOG
+ *
+ * @param {log_data} data
+ * @returns {new MAGPIE_LOG}
+ */
+function MAGPIE_LOG(data = {})
+{
+	this.initialize(data)
+}
+/**
+ * @name MAGPIE_METASTATE
+ * 
+ * @param {metastate_data} data
+ * @returns {new MAGPIE_METASTATE} 
+ */
+function MAGPIE_METASTATE(data = {})
+{
+	this.initialize(data)
+}
+/**
+ * 
+ * @param {calendar_data} data 
+ * @returns {new MAGPIE_CALENDAR}
+ */
+function MAGPIE_CALENDAR(data)
+{
+	this.initialize(data)
+}
+/**
+ * 
+ * @param {date_data} data 
+ */
+function MAGPIE_DATE(data)
+{
+	this.initialize(data)
+}
+/**
+ * 
+ * @param {loadbar_data} data
+ * @returns {new MAGPIE_LOADBAR} 
+ */
+function MAGPIE_LOADBAR(data)
+{
+	this.initialize(data)
 }
 /**
  * @static 
@@ -46,9 +108,9 @@ class MAGPIE_IO
 // #region - I/O
 //========================================================================
 MAGPIE_IO.meta = {
-    name: MAGPIE.meta.name + "I.O.",
-    desc: "Input/Output and filesystem",
-    firmwareName: "MAGPIE_IO"
+	name: MAGPIE.meta.name + "I.O.",
+	desc: "Input/Output and filesystem",
+	firmwareName: "MAGPIE_IO"
 }
 MAGPIE_IO.WORKER = new Worker("./src/services/fsio.js")
 /**
@@ -58,14 +120,14 @@ MAGPIE_IO.WORKER = new Worker("./src/services/fsio.js")
  */
 MAGPIE_IO.read = function systemRead(filename)
 {
-    try
-    {
-        return fs.readFileSync(filename, "utf-8")
-    }
-    catch(e)
-    {
-        console.error(e)
-    }
+	try
+	{
+		return fs.readFileSync(filename, "utf-8")
+	}
+	catch(e)
+	{
+		console.error(e)
+	}
 }
 /**
  * 
@@ -74,14 +136,14 @@ MAGPIE_IO.read = function systemRead(filename)
  */
 MAGPIE_IO.write = function systemWrite(filename, content)
 {
-    try
-    {
-        fs.writeFileSync(filename, content)
-    }
-    catch(e)
-    {
-        console.error(e)
-    }
+	try
+	{
+		fs.writeFileSync(filename, content)
+	}
+	catch(e)
+	{
+		console.error(e)
+	}
 }
 /**
  * 
@@ -90,14 +152,14 @@ MAGPIE_IO.write = function systemWrite(filename, content)
  */
 MAGPIE_IO.append = function systemAppend(filename, content)
 {
-    try
-    {
-        fs.appendFileSync(filename, content)
-    }
-    catch(e)
-    {
-        console.error(e)
-    }
+	try
+	{
+		fs.appendFileSync(filename, content)
+	}
+	catch(e)
+	{
+		console.error(e)
+	}
 }
 /**
  * 
@@ -108,27 +170,66 @@ MAGPIE_IO.append = function systemAppend(filename, content)
  */
 MAGPIE_IO.workerAppend = function workerAppend(filename, timestamp, level = "INFO", message = "")
 {
-    try
-    {
-        const requestID = Date.now()
-        const payload = {
-            method: "appendLog",
-            requestID,
-            args: {
-                timestamp: timestamp,
-                level: level,
-                message: message,
-                filename: filename
-            }
-        }
-        MAGPIE_IO.WORKER.postMessage(payload)
-        return true
-    }
-    catch(e)
-    {
-        console.error(e)
-        return e
-    }
+	try
+	{
+		const requestID = Date.now()
+		const payload = {
+			method: "appendLog",
+			requestID,
+			args: {
+				timestamp: timestamp,
+				level: level,
+				message: message,
+				filename: filename
+			}
+		}
+		MAGPIE_IO.WORKER.postMessage(payload)
+		return true
+	}
+	catch(e)
+	{
+		console.error(e)
+		return e
+	}
+}
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name LOG
+ * @desc 
+ * @typedef {import("./index").urgency} urgency
+ * @typedef {import("./index").gravity} gravity
+ * @typedef {{
+ * contents: String,
+ * urgency: urgency,
+ * gravity: gravity
+ * }} log_data
+ */
+//========================================================================
+// #region - LOG
+//========================================================================
+MAGPIE_LOG.meta = {
+	name: MAGPIE.meta.name + " Log",
+	firmwareName: "MAGPIE_LOG"
+}
+MAGPIE_LOG.errors = []
+/**
+ * 
+ * @param {log_data} data
+ * @returns {new MAGPIE_LOG} 
+ */
+MAGPIE_LOG.prototype.initialize = function initializeLog(data)
+{
+	this.ID = Date.now()
+	this.contents = String(data?.contents)
+	this.urgency = Number(data?.urgency)
+	this.gravity = Number(data?.gravity)
 }
 /**
  * 
@@ -147,11 +248,11 @@ MAGPIE_IO.workerAppend = function workerAppend(filename, timestamp, level = "INF
 // #region - SYSTEM
 //========================================================================
 MAGPIE_SYSTEM.meta = {
-    name: MAGPIE.meta.name + " system",
-    desc: "",
-    version: [0,39,0],
-    firmwareName: "MAGPIE_SYSTEM",
-    firmwareDate: MAGPIE.meta.firmwareDate
+	name: MAGPIE.meta.name + " system",
+	desc: "",
+	version: [0,39,0],
+	firmwareName: "MAGPIE_SYSTEM",
+	firmwareDate: MAGPIE.meta.firmwareDate
 }
 /**
  * @name 
@@ -170,7 +271,7 @@ MAGPIE_SYSTEM.logging = {};
  */
 MAGPIE_SYSTEM.logging.logToWorker = function systemLogToWorker(level, message, filename)
 {
-    return MAGPIE_IO.workerAppend(filename, timestamp, level, message)
+	return MAGPIE_IO.workerAppend(filename, timestamp, level, message)
 }
 /**
  * 
@@ -180,27 +281,27 @@ MAGPIE_SYSTEM.logging.logToWorker = function systemLogToWorker(level, message, f
  */
 MAGPIE_SYSTEM.log = function systemLog(message, prefix = "console", logToConsole = true)
 {
-    const date = MAGPIE_SYSTEM.Utility.CTZD()
-    const logTime = MAGPIE_SYSTEM.logging.logTime()
-    const consoleTime = MAGPIE_SYSTEM.logging.consoleTime()
-    const log = (typeof message === "object"
-        ? JSON.stringify(message, null, 2)
-        : message
-    )
-    if(logToConsole)
-    {
-        if(this.CLI?.loadbar?.isActive)
-            this.CLI.loadbar.log("\x1b[1A\x1b[2K\r" + consoleTime + log + "\n")
-        else console.log(consoleTime + log)
-        global.r?.displayPrompt(true)
-    }
-    if(typeof prefix === "string")
-    {
-        const filename = `logs/${prefix}${date}.log`
-        const timestamp = logTime
-        const level = prefix.toUpperCase()
-        MAGPIE_IO.workerAppend(filename, timestamp, level, log)
-    }
+	const date = MAGPIE_SYSTEM.Utility.CTZD()
+	const logTime = MAGPIE_SYSTEM.logging.logTime()
+	const consoleTime = MAGPIE_SYSTEM.logging.consoleTime()
+	const log = (typeof message === "object"
+		? JSON.stringify(message, null, 2)
+		: message
+	)
+	if(logToConsole)
+	{
+		if(global?.SERVER?.CLI?.loadbar?.isActive)
+			global.SERVER.CLI.log(consoleTime + log)
+		else console.log(consoleTime + log)
+		global.r?.displayPrompt(true)
+	}
+	if(typeof prefix === "string")
+	{
+		const filename = `logs/${prefix}${date}.log`
+		const timestamp = logTime
+		const level = prefix.toUpperCase()
+		MAGPIE_IO.workerAppend(filename, timestamp, level, log)
+	}
 }
 /**
  * 
@@ -210,14 +311,14 @@ MAGPIE_SYSTEM.log = function systemLog(message, prefix = "console", logToConsole
 MAGPIE_SYSTEM.error = function error(errorMessage, error)
 {
 	const log = errorMessage;
-	const date = this.Utility.CTZD();
-	const full = `[${this.Utility.CTZF()}]`;
-	MAGPIE_LOG.errors.push(log);
-    const level = "ERROR"
+	const date = MAGPIE_SYSTEM.Utility.CTZD();
+	const full = `[${MAGPIE_SYSTEM.Utility.CTZF()}]`;
+	// MAGPIE_LOG.errors.push(log);
+	const level = "ERROR"
 	console.error(`[${level}] ${log} | `, error);
 	const timestamp = full;
-	const filename = `.logs/error${date}.txt`;
-    const message = log + "\n" + error?.stack + "\n---\n"
+	const filename = `logs/error${date}.log`;
+	const message = log + "\n" + error?.stack + "\n---\n"
 	const logged = MAGPIE_IO.workerAppend(filename, 
 		timestamp, level, message);
 	// r.displayPrompt();
@@ -267,6 +368,10 @@ MAGPIE_SYSTEM.logging.logTime = function logTime()
 // #region > Utility
 //------------------------------------------------------------------------
 MAGPIE_SYSTEM.Utility = {}
+MAGPIE_SYSTEM.Utility.wait = async function(delay)
+{
+	return new Promise(res => setTimeout(res, delay));
+}
 /**
  * @typedef {{millisecond: Boolean, second: Boolean, date: Boolean}} date_options {second: boolean, millisecond: boolean, date: boolean}
  * @typedef {String} CTZ YYYYMMDDHHMM
@@ -465,15 +570,15 @@ MAGPIE_SYSTEM.Utility.printETA = function printETA(seconds)
 	try
 	{
 		const ETA_s = seconds;
-                let ETA = "";
-                const ETA_sec = Math.floor(ETA_s % 60);
-                const ETA_min = Math.floor(ETA_s / 60) % 60;
-                const ETA_hour = Math.floor(ETA_s / 3600 ) % 24;
-                const ETA_days = Math.floor(ETA_s / (3600 * 24));
-                if(ETA_days) ETA += `${ETA_days}d `;
-                if(ETA_hour) ETA += `${ETA_hour}h `;
-                if(ETA_min) ETA += `${ETA_min}m `;
-                ETA += `${ETA_sec}s`;
+				let ETA = "";
+				const ETA_sec = Math.floor(ETA_s % 60);
+				const ETA_min = Math.floor(ETA_s / 60) % 60;
+				const ETA_hour = Math.floor(ETA_s / 3600 ) % 24;
+				const ETA_days = Math.floor(ETA_s / (3600 * 24));
+				if(ETA_days) ETA += `${ETA_days}d `;
+				if(ETA_hour) ETA += `${ETA_hour}h `;
+				if(ETA_min) ETA += `${ETA_min}m `;
+				ETA += `${ETA_sec}s`;
 		return ETA
 	}
 	catch(e)
@@ -528,14 +633,16 @@ MAGPIE_SYSTEM.Utility.isValidID = function isValidID(ID)
 		return e
 	}
 }
-MAGPIE_SYSTEM.prototype.isValidID = MAGPIE_SYSTEM.Utility.isValidID;
+/**
+ * 
+ * @param {[MAJOR: Number, MINOR: Number, PATCH: Number]} version 
+ * @returns {`${MAJOR}.${MINOR}.${PATCH}`}
+ */
 MAGPIE_SYSTEM.Utility.version = function version(version)
 {
 	if(!version || version.length < 2 || version.some(n => isNaN(n)))
 		version = [0,1,0];
-	const MAJOR = version[0];
-	const MINOR = version[1];
-	const PATCH = version[2];
+	const [MAJOR, MINOR, PATCH] = version
 	return `${MAJOR}.${MINOR}.${PATCH}`
 }
 /**
@@ -556,6 +663,383 @@ MAGPIE_SYSTEM.Utility._format_num = function formatNumber(num, toFixed, sign)
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Loadbar
+//------------------------------------------------------------------------
+MAGPIE_LOADBAR.meta = {}
+/**
+ * @typedef {{
+ * name: String,
+ * type: Number,
+ * symbol_unloaded: String,
+ * symbol_loaded: String,
+ * width: Number,
+ * percentage: Boolean,
+ * ETC: Boolean,
+ * rate: Boolean
+ * }} loadbar_data
+ * @param {loadbar_data} data 
+ * @returns {new MAGPIE_LOADBAR}
+ */
+MAGPIE_LOADBAR.prototype.initialize = function initializeLoadbar(data)
+{
+	this.name = String(data?.name)
+	this.type = Number(data?.type) || 0
+	this.arguments = {
+		percentage: Boolean(data?.percentage),
+		ETC: Boolean(data?.ETC),
+		rate: Boolean(data?.rate)
+	}
+	this.progress = 0
+	this.contents = ""
+	this.symbol_unloaded = data?.symbol_unloaded || "▒"
+	this.symbol_loaded = data?.symbol_loaded || "█"
+	this.width = Number(data?.width) || 50
+}
+/**
+ * 
+ * @param {{
+ * ETC: String,
+ * rate: String,
+ * log: String,
+ * style: String
+ * }} options 
+ */
+MAGPIE_LOADBAR.prototype.render = function renderLoadbar(options)
+{
+	const percentage = this.arguments.percentage 
+		? ` | ${this.progress.toString().padStart(3, " ")}%` 
+		: ""
+	const ETC = this.arguments.ETC 
+		? ` | ${options?.ETC}` 
+		: ""
+	const rate = this.arguments.rate 
+		? ` | ${options?.rate}` 
+		: ""
+	const progress = Math.round(this.width * (this.progress / 100))
+	const current = this.symbol_loaded.repeat(progress)
+	const remaining = this.symbol_unloaded.repeat(this.width - progress)
+	const style = options?.style ? options.style : ""
+	const ansi = MAGPIE.KEY.ANSI
+	const reset = ansi.STYLE_RESET
+	const log = options?.log || ""
+	this.contents = `${style}${current}${remaining}${percentage}${rate}${ETC}${reset}`
+	// void process.stdout.write(`${ansi.MOVE_UP}${ansi.CLEAR_LINE}`.repeat(2))
+	void process.stdout.write(`${ansi.MOVE_UP}${ansi.CLEAR_LINE}`.repeat(3) + `${log}\n${this.contents}\n`) 
+}
+/**
+ * @typedef {{
+ * amount: Number,
+ * ETC: String,
+ * rate: String
+ * }} loadbar_options
+ * @param {loadbar_options} options 
+ */
+MAGPIE_LOADBAR.prototype.increment = function incrementLoadbar(options)
+{
+	const amount = Number(options?.amount) || 1
+	const percentage = this.progress + amount
+	this.progress = Math.min(percentage, this.width)
+	const render = {
+		ETC: options?.ETC, 
+		rate: options?.rate,
+		log: options?.log || "",
+		style: options?.style
+	}
+	this.render(render)
+}
+/**
+ * 
+ * @param {loadbar_options} options 
+ */
+MAGPIE_LOADBAR.prototype.update = function updateLoadbar(options)
+{
+	if(Number(options?.amount))
+		this.progress = options.amount
+	const render = {
+		ETC: options?.ETC, 
+		rate: options?.rate,
+		log: options?.log || "",
+		style: options?.style
+	}
+	this.render(render)
+}
+/**
+ * 
+ */
+MAGPIE_LOADBAR.prototype.complete = function completeLoadbar()
+{
+	this.progress = 100
+	const render = {
+		percentage: this.progress, 
+		ETC: options?.ETC, 
+		rate: options?.rate,
+		log: options?.log || "",
+		style: MAGPIE.KEY.ANSI.STYLE_GREEN
+	}
+	this.render(render)
+}
+/**
+ * 
+ */
+MAGPIE_LOADBAR.prototype.clear = function clearLoadbar()
+{
+	const ansi = MAGPIE.KEY.ANSI
+	void process.stdout.write(ansi.moveUpCustom(2) + ansi.CLEAR_LINE)
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - RUNTIME
+//========================================================================
+MAGPIE_RUNTIME.meta = {
+	//@todo RUNTIME
+}
+MAGPIE_RUNTIME.awake = function awakeRuntime()
+{
+	//@todo awakeRuntime
+}
+MAGPIE_RUNTIME.host = function hostOnRuntime()
+{
+	//@todo hostOnRuntime
+}
+MAGPIE_RUNTIME.loadMetastate = function loadMetastateInRuntime()
+{
+	//@todo runtime_loadMetastate
+}
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//========================================================================
+// #region - HIVE
+//========================================================================
+MAGPIE_HIVE.meta = {
+	//@todo HIVE
+}
+/**
+ * 
+ * 
+ */
+MAGPIE_HIVE.setup = function setupHive()
+{
+	//@todo setupHive
+}
+MAGPIE_HIVE.awake = function awakeHive()
+{
+	//@todo awakeRuntime
+}
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * @typedef {{
+ * calendarID: Number,
+ * days: Number,
+ * months: {
+ * monthName: days<Number>
+ * },
+ * leapMonth: Number,
+ * leapYear: Number,
+ * dayLength: hours<Number>
+ * epochYear: Number
+ * }} calendar_data
+ */
+//========================================================================
+// #region - CALENDAR
+//========================================================================
+MAGPIE_CALENDAR.meta = {}
+/**
+ * 
+ * @param {calendar_data} data 
+ * @returns {new MAGPIE_CALENDAR}
+ */
+MAGPIE_CALENDAR.prototype.initialize = function initializeCalendar(data)
+{
+	//@todo MAGPIE_CALENDAR.initialize
+}
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name 
+ * @desc 
+ * @typedef {{
+ * 	calendar: calendarID,
+ * 	year: year,
+ * 	month: month,
+ * 	day: day,
+ *  weekDay: weekDay,
+ * 	hour: hour,
+ * 	minute: minute,
+ * 	second: second,
+ * 	millisecond: millisecond,
+ * 	epoch: epoch_game
+ * }} date_data
+ */
+//========================================================================
+// #region - DATE
+//========================================================================
+MAGPIE_DATE.meta = {
+	name: MAGPIE.meta.name + " Date",
+	desc: "Date/Time system and component template",
+	firmwareName: "MAGPIE_DATE"
+}
+/**
+ * 
+ * @param {date_data} data 
+ */
+MAGPIE_DATE.prototype.initialize = function initializeDate(data)
+{
+	this._firmware = MAGPIE_DATE.meta.firmwareName
+	this.calendar = Number(data?.calendar) || MAGPIE.KEY.CALENDAR.GREGORIAN.ID
+	this.epoch = Number(date?.epoch)
+	this.year = Number(date?.year)
+	this.month = Number(date?.month)
+	this.day = Number(date?.day)
+	this.weekDay = Number(date?.weekDay)
+	this.hour = Number(date?.hour)
+	this.minute = Number(date?.minute)
+	this.second = Number(date?.second)
+	this.millisecond = Number(date?.millisecond)
+	this.setup()
+}
+/**
+ * 
+ */
+MAGPIE_DATE.prototype.setup = async function setupDate()
+{
+	if(!this.epoch) this.getEpoch();
+	if(!this.epoch) this.setReal();
+	this.setupFromEpoch()
+}
+/**
+ * 
+ * @param {epoch_game} epoch
+ */
+MAGPIE_DATE.prototype.setupFromEpoch = function setupDateFromEpoch(epoch)
+{
+	if(!epoch) epoch = this.epoch
+	if(!this.epoch) return
+	this.epoch = epoch;
+	const calendar = MAGPIE_CALENDAR.INDEX.get(this.calendar)
+	if(!calendar) return
+	const msPerDay = calendar.dayLength * 60**2 * 1000;
+	const msPerYear = calendar.days * msPerDay;
+	const yearRaw = epoch / msPerYear;
+	this.year = Math.floor(yearRaw) + calendar.epochYear;
+	const dayRaw = (epoch % msPerYear) / msPerDay;
+	this._yearday = Math.floor(dayRaw) + 1;
+	let accumulatedDays = 0;
+	let monthIndex = 1;
+	for (const [mName, mDays] of Object.entries(calendar.months))
+	{
+		if(dayRaw < accumulatedDays + mDays)
+		{
+			this.month = monthIndex;
+			this.day = Math.floor(dayRaw - accumulatedDays) + 1
+			break
+		}
+		accumulatedDays += mDays;
+		monthIndex++
+	}
+	const dayRemainderMs = (epoch % msPerYear) % msPerDay;
+	this.hour = Math.floor(dayRemainderMs / (60**2 * 1000))
+	this.minute = Math.floor((dayRemainderMs % (60**2 * 1000)) / (60 * 1000))
+	this.second = Math.floor((dayRemainderMs % (60 * 1000)) / 1000)
+	this.millisecond = Math.floor(dayRemainderMs % 1000)
+	const totalDaysPassed = Math.floor(epoch / msPerDay)
+	const totalWeekDays = Object.keys(calendar.weekDays).length || 7;
+	this.weekDay = totalDaysPassed % totalWeekDays
+}
+/**
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion - 
+//========================================================================
+/**
+ * @name MAGPIE_METASTATE
+ * @desc 
+ * @typedef {{
+ * date: date_data
+ * }} metastate_data
+ * 
+ */
+//========================================================================
+// #region - METASTATE
+//========================================================================
+MAGPIE_METASTATE.meta = {
+	name: MAGPIE.meta.name + " Metastate",
+	firmwareName: "MAGPIE_METASTATE"
+}
+/**
+ * 
+ * @param {metastate_data} data 
+ */
+MAGPIE_METASTATE.prototype.initialize = function initializeMetastate(data)
+{
+	this._firmware = MAGPIE_METASTATE.meta.firmwareName
+	const stamp = MAGPIE_SYSTEM.Utility.epoch()
+	this.meta = {
+		isSystem: true,
+		isMetastate: true,
+		name: MAGPIE_METASTATE.meta.name,
+		desc: "Metadata of the 'game-verse' (game universe)",
+		version: MAGPIE.meta.version,
+		firmwareName: MAGPIE_METASTATE.meta.firmwareName,
+		created: stamp,
+		updated: stamp
+	}
+	this.date = new MAGPIE_DATE(data?.date)
+	this.hive = new Map()
+	if(!data?.contents)
+		data.contents = {}
+	/** @type {metastate_contents} */
+	this.contents = data.contents
+	this.setup()
+}
+/**
  * 
  * @desc back to {@link }
  *
@@ -564,7 +1048,15 @@ MAGPIE_SYSTEM.Utility._format_num = function formatNumber(num, toFixed, sign)
 // #endregion - 
 //========================================================================
 module.exports = {
-    MAGPIE_SYSTEM
+	MAGPIE_SYSTEM,
+	MAGPIE_IO,
+	MAGPIE_LOG,
+	MAGPIE_RUNTIME,
+	MAGPIE_HIVE,
+	MAGPIE_METASTATE,
+	MAGPIE_CALENDAR,
+	MAGPIE_DATE,
+	MAGPIE_LOADBAR
 }
 /**
  * 

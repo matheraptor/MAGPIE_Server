@@ -15,5 +15,7 @@ module.exports = {
     devMode: process.env.devMode,
     NODE_ENV: process.env.isProduction ? true : false,
     sendGrid_API: process.env.sendGrid_API,
-    core_path: "./src/"
+    core_path: "./src/",
+    EMAIL_MASTER_KEY: process.env.EMAIL_MASTER_KEY,
+    HASH_SALT: process.env.HASH_SALT
 }

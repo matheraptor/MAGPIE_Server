@@ -1,5 +1,63 @@
+const { MAGPIE } = require("../index")
 const crypto = require('crypto');
-
+const EMAIL_KEY = MAGPIE.KEY.SERVER.EMAIL_MASTER_KEY
+const HASH_SALT = MAGPIE.KEY.SERVER.HASH_SALT
+/**
+ * @typedef {String} email
+ * @typedef {String} encryptedBlob iv:authTag:encryptedData
+ * @typedef {encryptedBlob} email_encrypted 
+ */
+const EmailSecurity = {
+	/**
+	 * @desc Creates a deterministic hash for database lookups.
+     * Use this for: SELECT * FROM users WHERE email_hash = ?
+	 * @param {email} email 
+	 * @returns {crypto.Hmac}
+	 */
+	hashEmail: (email) => {
+		return crypto.createHmac("sha256", HASH_SALT)
+			.update(email.toLowerCase().trim())
+			.digest("hex")
+	},
+	/**
+	 * @desc Encrypts email for storage.
+	 * @param {email} email 
+	 * @returns {email_encrypted}
+	 */
+	encryptEmail: (email) => {
+		const iv = crypto.randomBytes(12)
+		const cipher = crypto.createCipheriv("aes-256-gcm", EMAIL_KEY, iv)
+		let encrypted = cipher.update(email, "utf-8", "hec")
+		encrypted += cipher.final("hex")
+		const authTag = cipher.getAuthTag().toString("hex")
+		return `${iv.toString("hex")}:${authTag}:${encrypted}`
+	},
+	/**
+	 * 
+	 * @param {email_encrypted} encryptedBlob 
+	 * @returns {email}
+	 */
+	decryptEmail: (encryptedBlob) => {
+		const [ivHex, authTagHex, encryptedData] = encryptedBlob.split(":")
+		const iv = Buffer.from(ivHex, "hex")
+		const authTag = Buffer.from(ivHex, "hex")
+		const decipher = crypto.createDecipheriv("aes-256-gcm", EMAIL_KEY, iv)
+		decipher.setAuthTag(authTag)
+		let decrypted = decipher.update(encryptedData, "hex", "utf-8")
+		decrypted += decipher.final("utf-8")
+		return decrypted
+	}
+}
+/**
+ * 
+ * @param {Number} bytes 
+ * @param {String} base ["hex", "base64"] 
+ * @returns {String}
+ */
+function hashKey(bytes = 32, base = "hex")
+{
+	return randomBytes(bytes).toString(base)
+}
 /**
  * Utility to hash passwords using native Node.js scrypt.
  * @param {string} password - The password to hash.
@@ -7,16 +65,16 @@ const crypto = require('crypto');
  */
 async function hashPassword(password)
 {
-    const salt = crypto.randomBytes(16).toString('hex');
-    const hash = await new Promise((resolve, reject) =>
-    {
-        crypto.scrypt(password, salt, 64, (err, derivedKey) =>
-        {
-            if(err) reject(err);
-            resolve(derivedKey.toString('hex'));
-        });
-    });
-    return `${salt}:${hash}`;
+	const salt = crypto.randomBytes(16).toString('hex');
+	const hash = await new Promise((resolve, reject) =>
+	{
+		crypto.scrypt(password, salt, 64, (err, derivedKey) =>
+		{
+			if(err) reject(err);
+			resolve(derivedKey.toString('hex'));
+		});
+	});
+	return `${salt}:${hash}`;
 }
 
 /**
@@ -27,19 +85,20 @@ async function hashPassword(password)
  */
 async function verifyPassword(password, storedHash)
 {
-    const [salt, hash] = storedHash.split(':');
-    const derivedKey = await new Promise((resolve, reject) =>
-    {
-        crypto.scrypt(password, salt, 64, (err, derivedKey) =>
-        {
-            if(err) reject(err);
-            resolve(derivedKey.toString('hex'));
-        });
-    });
-    return derivedKey === hash;
+	const [salt, hash] = storedHash.split(':');
+	const derivedKey = await new Promise((resolve, reject) =>
+	{
+		crypto.scrypt(password, salt, 64, (err, derivedKey) =>
+		{
+			if(err) reject(err);
+			resolve(derivedKey.toString('hex'));
+		});
+	});
+	return derivedKey === hash;
 }
 
 module.exports = {
-    hashPassword,
-    verifyPassword
+	hashPassword,
+	verifyPassword,
+	EmailSecurity
 };
