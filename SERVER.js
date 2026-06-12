@@ -1668,20 +1668,24 @@ MAGPIE_SERVER.SOCKET.auth_dev = function auth_dev(socketID)
 }
 io.use((socket, next) => {
 	const token = socket.handshake.auth?.token;
-	const config = MAGPIE.config;
+	const config = MAGPIE_SERVER.config;
 	const isDev = config.devMode;
 	if(!token) 
 	{
-		socket.data.playerID = isDev ? "999" : "0";
+		if(isDev)
+		{
+			MAGPIE_SERVER.SOCKET.auth_dev(socket.id);
+			socket.data.playerID = "999";
+			return next();
+		}
+		socket.data.playerID = "0";
 		return next();
 	}
 	try
 	{
-		// @todo JWT login security
-		// const secret = config.jwtSecret || "dev_secret";
-		// const payload = MAGPIE_SERVER.JWT.verify(token, secret);
-		// socket.data.playerID = String(payload.playerID || payload.guestID || "0");
-		socket.data.playerID = isDev ? "999" : "0";
+		const secret = config.jwtSecret || "dev_secret";
+		const payload = MAGPIE_SERVER.JWT.verify(token, secret);
+		socket.data.playerID = String(payload.id || payload.playerID || payload.guestID || "0");
 		next();
 	}
 	catch(e)
@@ -2392,7 +2396,16 @@ MAGPIE_SERVER.ECOSYSTEM.populateList = async function ()
 	try
 	{
 		/** @todo ecosystem list */
-		MAGPIE_SERVER.ECOSYSTEM.list = {}
+		MAGPIE_SERVER.ECOSYSTEM.list = new Map();
+		const speciesData = MAGPIE_DATABASE.sync.loadWorldRow("MAGPIE_SYMBOL", {});
+		if(Array.isArray(speciesData))
+		{
+			speciesData.forEach(data => {
+				const s = new MAGPIE_SYMBOL(data);
+				MAGPIE_SERVER.ECOSYSTEM.list.set(s.ID, s);
+			});
+		}
+		MAGPIE_SERVER.log(`${ePrefix}Populated ${MAGPIE_SERVER.ECOSYSTEM.list.size} species.`);
 	}
 	catch(e)
 	{
@@ -2529,6 +2542,8 @@ const main = async function main()
 	MAGPIE_COMPONENT.setup();
 	MAGPIE_SERVER.CLI._incrementLoadBar(5);
 	await MAGPIE_KEY.setup();
+	MAGPIE_SERVER.CLI._incrementLoadBar(5);
+	await MAGPIE_SERVER.ECOSYSTEM.populateList();
 	MAGPIE_SERVER.CLI._incrementLoadBar(5);
 	MAGPIE_SERVER.HIVE = MAGPIE_HIVE;
 	MAGPIE_HIVE.setup();

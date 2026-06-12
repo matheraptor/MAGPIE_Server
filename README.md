@@ -158,6 +158,18 @@ The base goal of the metagame/community is the acquisition of **CLOUT POINTS**, 
 
 ---
 
+## Current Implementation Status (v0.39.3)
+
+| Component | Status | Target |
+| :--- | :--- | :--- |
+| **Physics Engine** | Production | PGA-based Kinematics (Complete) |
+| **Database** | Production | Better-SQLite3 Worker (Complete) |
+| **Entity System** | Beta | Stats & Stats (Complete) / Collision (Pending) |
+| **Gameplay Mechanics**| Design | Action/Rest Card Loop (Incomplete) |
+| **Security** | Alpha | JWT (Working) / Email Privacy Shield (Pending) |
+
+---
+
 ### Roadmap
 
 - **Development on NW.js via HTML/CSS/Javascript**
