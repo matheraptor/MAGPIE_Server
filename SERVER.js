@@ -861,7 +861,7 @@ r.context.r = r
 //------------------------------------------------------------------------
 const main = async function main()
 {
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	MAGPIE_SERVER.CLI._createLoadBar({ percentage: true })
 	/** @type {MAGPIE_LOADBAR} */
 	const bar = MAGPIE_SERVER.CLI.bar1
@@ -869,10 +869,10 @@ const main = async function main()
 	/** @type {Spinner} */
 	const spinner = MAGPIE_SERVER.CLI.spinners.spinner1
 	spinner.setSpinnerTitle("loading data...")
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	const repl_contexts = MAGPIE_SERVER._REPL_boot()
 	spinner.setSpinnerTitle(`${repl_contexts}x REPL contexts loaded`)
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	//
 	spinner.setSpinnerTitle("Loading MAGPIE_RUNTIME...")
 	await MAGPIE_SYSTEM.Utility.wait(100)
@@ -889,18 +889,18 @@ const main = async function main()
 	await MAGPIE_EMOTE.setup()
 	bar.increment()
 	spinner.setSpinnerTitle(`${MAGPIE_EMOTE.INDEX.size}x emotes loaded.`)
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	//
 	spinner.setSpinnerTitle("Loading MAGPIE_STATE...")
 	MAGPIE_STATE.setup()
 	spinner.setSpinnerTitle(`${MAGPIE_STATE.INDEX.size}x states loaded.`)
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	bar.increment()
 	spinner.setSpinnerTitle(`${MAGPIE_STATE.TYPE.size}x state types loaded.`)
 	// 
 	spinner.setSpinnerTitle("Loading MAGPIE_COMPONENT...")
 	MAGPIE_COMPONENT.setup()
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	bar.increment()
 	spinner.setSpinnerTitle("MAGPIE_COMPONENT setup is placeholder.")
 	//
@@ -908,14 +908,14 @@ const main = async function main()
 	await MAGPIE_KEY.setup()
 	bar.increment()
 	spinner.setSpinnerTitle("MAGPIE_KEY setup is placeholder.")
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	// 
 	spinner.setSpinnerTitle("Loading MAGPIE_HIVE...")
 	MAGPIE_SERVER.HIVE = MAGPIE_HIVE
 	MAGPIE_HIVE.setup()
 	bar.increment()
 	spinner.setSpinnerTitle("MAGPIE_KEY setup is placeholder.")
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	//
 	/** @type {new MAGPIE_METASTATE} */
 	MAGPIE_SERVER.METASTATE = null
@@ -930,28 +930,28 @@ const main = async function main()
 	r.context.EMOTE = MAGPIE_EMOTE
 	r.context.LOADBAR = MAGPIE_LOADBAR
 	r.context.io = io
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	bar.increment()
 	spinner.setSpinnerTitle("Loading METASTATE...")
 	MAGPIE_SERVER.RUNTIME.loadMetastate()
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	bar.increment()
 	spinner.setSpinnerTitle("Hosting HIVE...")
 	MAGPIE_SERVER.RUNTIME.host("HIVE", 0)
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	bar.increment()
 	spinner.setSpinnerTitle("Awaking RUNTIME...")
 	MAGPIE_SERVER.RUNTIME.awake()
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	bar.increment()
 	spinner.setSpinnerTitle("Awaking HIVE...")
 	MAGPIE_SERVER.HIVE.awake()
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	bar.update({ amount: 100, log: "MAGPIE_Server ready." })
 	MAGPIE_SERVER.CLI._stop()
 	spinner.setSpinnerTitle("Serving NODE_HTTP...")
 	MAGPIE_SERVER.BOOT.connect()
-	await MAGPIE_SYSTEM.Utility.wait(1000)
+	await MAGPIE_SYSTEM.Utility.wait(100)
 	setTimeout(() => {
 		MAGPIE_SERVER.BOOT.logBootTime()
 		r.displayPrompt()
@@ -982,57 +982,67 @@ fs.watchFile(MAGPIE_SERVER.PAD.file, { interval: 1000 }, (curr, prev) => {
  */
 MAGPIE_SERVER.BOOT.shutdown = async function shutdown(signal = 0)
 {
-	const ePrefix = "[BOOT].shutdown: ";
-	MAGPIE_SERVER.CLI._createLoadBar();
-	MAGPIE_SERVER.CLI._updateLoadBar();
-	MAGPIE_SERVER.log(ePrefix + `[SIGNAL-${signal}] received: initiating shutdown sequence...`, null, true);
+	const ePrefix = "[BOOT | SHUTDOWN] ";
+	MAGPIE_SERVER.CLI._createSpinner({string: MAGPIE_SERVER.CLI.SPINNER.spinners[18]})
+	/** @type {Spinner} */
+	const spinner = MAGPIE_SERVER.CLI.spinners.spinner1
+	spinner.setSpinnerTitle(`[SIGNAL-${signal}] received: initiating shutdown sequence...`)
 	if(io)
 	{
 		const fallbackTimeout = setTimeout(() => {
-			const error = new Error(`Shutdown timeout: forcing shutdown...
+			const error = new Error(`${ePrefix}Shutdown timeout: forcing shutdown...
 				-------------------------------\n\n`);
+			spinner.stop(true);
 			MAGPIE_SERVER.error(error.message, error);
 			process.exit(signal)
 		}, 10000)
 		try
 		{
 			// @todo await MAGPIE_HIVE.save();
-			MAGPIE_SERVER.CLI._incrementLoadBar(10);
-			MAGPIE_SERVER.log(ePrefix + "save complete; terminating database worker...")
-			const workerExitPromise = new Promise((resolve) => {
+			MAGPIE_SERVER.log(ePrefix + "save complete.")
+			spinner.setSpinnerTitle("terminating database worker...")
+			await MAGPIE_SYSTEM.Utility.wait(100)
+			MAGPIE_DATABASE.worker.postMessage({method: "close"})
+			await new Promise((resolve) => {
 				MAGPIE_DATABASE.worker.once('exit', () => {
+					spinner.setSpinnerTitle("")
+					MAGPIE_SERVER.log(ePrefix + "database_worker closed.", null, true)
 					resolve()
 				}) 
 			})
-			MAGPIE_DATABASE.worker.postMessage({method: "close"})
-			await workerExitPromise;
-			MAGPIE_SERVER.CLI._incrementLoadBar(10);
+			spinner.setSpinnerTitle("closing socket.io server...")
 			await new Promise((resolve) => {
 				io.close((err) => {
-					if(err) MAGPIE_SERVER.log(ePrefix + "[io] " + err.message, "console", true);
-					MAGPIE_SERVER.log("Socket.io server closed.", null, true);
+					if(err) MAGPIE_SERVER.error(ePrefix + "[io] " + err.message, err);
+					spinner.setSpinnerTitle("")
+					MAGPIE_SERVER.log(ePrefix + "Socket.io server closed.", null, true)
 					resolve();
 				})
 			})
-			MAGPIE_SERVER.CLI._incrementLoadBar(10);
-			await new Promise((resolve) => {
-				MAGPIE_SERVER.NODE_HTTP.close((err) => {
-					if(err) MAGPIE_SERVER.log(ePrefix + err.message, "console", true);
-					MAGPIE_SERVER.log("HTTP server closed.", null, true);
-					resolve();
-				})
-			})
-			MAGPIE_SERVER.CLI._updateLoadBar(100);
-			MAGPIE_SERVER.log(ePrefix + "sequence complete. Exiting...\n" + 
-					"----------------------------------\n\n", null, true)
-			MAGPIE_SERVER.CLI._stop();
-			if(typeof r !== 'undefined' && typeof r.displayPrompt === 'function')
-				r.displayPrompt();
+			spinner.start()
+			await MAGPIE_SYSTEM.Utility.wait(1000)
+			// await new Promise((resolve) => {
+			// 	MAGPIE_SERVER.NODE_HTTP.close((err) => {
+			// 		if(err) MAGPIE_SERVER.error(ePrefix + err.message, err);
+			// 		spinner.stop(true)
+			// 		process.stdout.write("\n")
+			// 		MAGPIE_SERVER.log(ePrefix + "HTTP server closed.", null, true)
+			// 		resolve();
+			// 	})
+			// })
+			MAGPIE_SERVER.log(ePrefix + "sequence complete.", "console", true)
+			spinner.setSpinnerTitle("Exiting...")
+			spinner.start()
+			await MAGPIE_SYSTEM.Utility.wait(100)
+			// if(typeof r !== 'undefined' && typeof r.displayPrompt === 'function')
+			// 	r.displayPrompt();
+			spinner.stop(true);
 			clearTimeout(fallbackTimeout);
 			return process.exit(signal)
 		}
 		catch(e)
 		{
+			spinner.stop(true);
 			MAGPIE_SERVER.error(ePrefix + e.message, e);
 			clearTimeout(fallbackTimeout);
 			return process.exit(1);
@@ -1041,7 +1051,7 @@ MAGPIE_SERVER.BOOT.shutdown = async function shutdown(signal = 0)
 }
 MAGPIE_SERVER.restart = function restart()
 {
-	return MAGPIE_SERVER.BOOT.shutdown(2);
+	MAGPIE_SERVER.BOOT.shutdown(2);
 }
 // #endregion
 //------------------------------------------------------------------------

@@ -21,9 +21,10 @@
  * 
  * @desc current
  * 
- * @version 0.39.2 2026 06 12
+ * @version 0.39.3 2026 06 12
  * - TWEAKED: documentation
  * - TWEAKED: removed obsolete folders
+ * - TWEAKED: server shutdown sequence
  * 
  * @version 0.39.1 2026 06 11
  * - full pre-production prototype rewrite
@@ -491,7 +492,7 @@ class MAGPIE
 MAGPIE.meta = {
     name: "M.A.G.P.I.E.",
     desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-    version: [0,39,2],
+    version: [0,39,3],
     firmwareName: "MAGPIE",
     firmwareDate: "20260612"
 }

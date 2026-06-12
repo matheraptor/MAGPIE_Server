@@ -20,7 +20,7 @@ version: 0.39.0 20260610
       - [Nodejs](#nodejs)
       - [Express](#express)
       - [Socket.io](#socketio)
-      - [handlers](#handlers)
+      - [Handlers](#handlers)
       - [JWT](#jwt)
       - [Scrypt](#scrypt)
       - [Nodemailer](#nodemailer)
@@ -57,11 +57,81 @@ version: 0.39.0 20260610
 
 ### MMORPG Server
 
+**Structure:**
+
+```markdown
+`MAGPIE_Server`/
+├── `SERVER.js`              # Main entry point & Socket.io orchestrator
+├── `package.json`           # Dependencies & scripts
+├── config/
+│   └── `config.js`          # Processes .env → App Configuration
+├── data/
+│   └── `*.js`               # JSON-like data injected at boot
+├── public/                # Statically served frontend
+│   ├── `index.html`         # Homepage
+│   ├── `main.js`            # Client-side logic
+│   ├── `home.css`           # Homepage styles
+│   └── routes/            # Other HTML/CSS/JS areas
+└── src/
+    ├── `*.js`               # General application code
+    ├── plugins/
+    │   └── `*.js`           # Modular plugin extensions
+    ├── services/
+    │   ├── `*.js`           # Background workers / Business logic
+    │   └── `mailer.js`      # Nodemailer implementation
+    └── handlers/
+        └── `*.js`           # Decoupled io.on() event handlers
+```
+
+[Back to top ⤴️](#top)
+
+---
+
 #### Nodejs
+
+**Require stack:**
+
+[SERVER.js](../../SERVER.js)
+
+```javascript
+MAGPIE_SERVER.config = require("./config/server_config")
+const { timeEnd } = require("node:console")
+const express = require("express")
+const ratelimit = require("express-rate-limit")
+const { createServer } = require("node:http")
+const { Server } = require("socket.io")
+const { instrument } = require("@socket.io/admin-ui")
+const cliSpinner = require("cli-spinner")
+const cliProgress = require("cli-progress")
+const fs = require("fs")
+const path = require("path")
+const vm = require("node:vm")
+const readline = require("readline")
+/** 
+ * @typedef {import("jsonwebtoken")} jwt
+ * @type {jwt} 
+ */
+const jwt = require("jsonwebtoken")
+MAGPIE_SERVER.MAIL = require("./src/services/mailer")
+MAGPIE_SERVER.FS = fs
+MAGPIE_SERVER.PATH = path
+MAGPIE_SERVER.VM = vm
+MAGPIE_SERVER.JWT = jwt
+```
+
+[Back to top ⤴️](#top)
 
 ---
 
 #### Express
+
+```javascript
+//@region IMPORT
+const { express } = require("express")
+const { createServer } = require("node:http")
+```
+
+[Back to top ⤴️](#top)
 
 ---
 
@@ -101,11 +171,47 @@ app.use((req, res, next) => {
 })
 ```
 
+---
+
 **Client-side:**
+
+[`public/` domain homepage:](../../public/main.js):
+
+```javascript
+//========================================================================
+// #region - SOCKET 
+//========================================================================
+/** @type {import("socket.io-client").Socket} */
+const socket = io(window.location.origin, {
+    auth: {
+        token: localStorage.getItem("jwt_token")
+    },
+    query: {
+        entityID: MAGPIE_CLIENT.params.get("entityID"),
+        playerID: MAGPIE_CLIENT.params.get("playerID")
+    },
+    transports: ["websocket", "polling"],
+    secure: MAGPIE_CLIENT.secure_socket
+})
+```
+
+```html
+<script src="/socket.io/socket.io.js"></script>
+<script type="text/javascript" src="/main.js"></script>
+```
+
+[Desktop client app / 'launcher'](../../../ShelderEvo/index.html)
+
+```html
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="js/plugins/app/cli.js"></script>
+```
+
+[Back to top ⤴️](#top)
 
 ---
 
-#### handlers
+#### Handlers
 
 ---
 

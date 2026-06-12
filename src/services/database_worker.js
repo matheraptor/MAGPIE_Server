@@ -72,10 +72,18 @@ parentPort?.on("message", async ({ method, args = [], requestID }) => {
 })
 worker.close = function close()
 {
-	console.log("[DATABASE WORKER]: closing database connections...");
-	worker.world.close();
-	worker.server.close();
-	process.exit(0);
+	// console.log("[DATABASE WORKER]: closing database connections...");
+	try
+	{
+		worker.world.close();
+		worker.server.close();
+		process.exit(0);
+	}
+	catch(e)
+	{
+		process.stderr.write(e.message)
+		process.exit(1)
+	}
 }
 /**
  * 
