@@ -320,6 +320,7 @@ MAGPIE_SERVER.PUBLIC.loginLimiter = ratelimit.rateLimit({
  * @name 
  * @desc 
  * @typedef {import("socket.io").Socket} socket
+ * @typedef {String} socketID
  * @typedef {String} jwt_token
  * @typedef {import("./src/player").playerID} playerID
  * @typedef {import("./src/player").username} username
@@ -703,12 +704,13 @@ MAGPIE_SERVER.SESSION.meta = {
 	//
 }
 /**
- * @typedef {Map<socketID, { 
- * playerID: playerID, 
+ * @typedef {{ 
+ * sockets: socketID[], 
  * username: String, 
- * joined: epoch_real 
- * }} session_data
- * @type {session_data}
+ * joined: epoch_real
+ * graceTimer: () => {}
+ * }} player_cache
+ * @type {player_cache}
  */
 MAGPIE_SERVER.SESSION.active = new Map()
 /**
