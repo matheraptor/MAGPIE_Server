@@ -39,8 +39,8 @@ const EmailSecurity = {
 	 */
 	decryptEmail: (encryptedBlob) => {
 		const [ivHex, authTagHex, encryptedData] = encryptedBlob.split(":")
-		const iv = Buffer.from(authTagHex, "hex")
-		const authTag = Buffer.from(ivHex, "hex")
+		const iv = Buffer.from(ivHex, "hex")
+		const authTag = Buffer.from(authTagHex, "hex")
 		const decipher = crypto.createDecipheriv("aes-256-gcm", EMAIL_KEY, iv)
 		decipher.setAuthTag(authTag)
 		let decrypted = decipher.update(encryptedData, "hex", "utf-8")
