@@ -1,14 +1,20 @@
+/**
+ * @namespace accountHandler
+ * @author Matheraptor
+ * @version 0.36.0
+ * 
+ * @typedef {import("socket.io").Socket} Socket
+ */
+const account = {}
 const jwt = require("jsonwebtoken");
 const { hashPassword, verifyPassword } = require("../src/services/crypto");
 const mailer = require("./email_api")
 // const { MAGPIE } = require("../core/index")
 const ePrefix = "[ACCOUNT HANDLER] "
-/**
- * @namespace accountHandler
- * @author Matheraptor
- * @version 0.36.0
- */
-const account = {}
+account.printPlayerAuth = function(player)
+{
+	return `[PLAYER-${player?.ID} | ${player?.username}] `
+}
 /**
  * @desc Handles incoming player registration events over network sockets
  * @param {Object} data 
@@ -85,7 +91,7 @@ account.resumeSession = async function (data, socket, server)
 	try
 	{
 		const { player, token } = await account.verifyCredentials(data.email, data.password, server)
-		server.log(`${ePrefix} [PLAYER-${player.ID} | ${player.username}] resumed session`)
+		server.log(`${ePrefix}${account.printPlayerAuth(player)}resumed session. `)
 		socket.emit("RESUME_SESSION_SUCCESS", { username: player.username, token })
 	}
 	catch(e)
@@ -94,13 +100,20 @@ account.resumeSession = async function (data, socket, server)
 		server.error(ePrefix + e.message, e)
 	}
 }
+/** @param {Socket} socket */
+account.joinPrivateRoom = function(socket, playerID)
+{
+	socket.join(`account:${player.ID}`)
+	server.log()
+}
 account.login = async function (data, socket, server)
 {
 	try
 	{
 		const { player, token } = await account.verifyCredentials(data.email, data.password, server)
-		server.log(`${ePrefix}[PLAYER-${player.ID} | ${player.username}] logged in.`)
+		server.log(`${ePrefix}${account.printPlayerAuth(player)} logged in. `)
 		player.status = true
+		
 		socket.emit("LOGIN_SUCCESS", { 
 			token,
 			ID: player.ID,
@@ -125,12 +138,12 @@ account.logout = async function (data, socket, server)
 	try
 	{
 		//@todo logout logic here
-		server.log(`${ePrefix}logout called for user: ${data?.username}`)
+		server.log(`${ePrefix}logout called for [USER: ${data?.username}]. `)
 	}
 	catch(e)
 	{
 		server.error(ePrefix + e.message, e)
-		socket.emit("LOGOUT_ERROR", { message: "Logout failed." })
+		socket.emit("LOGOUT_ERROR", { message: "Logout failed. " })
 	}
 }
 account.relog = async function(data, socket, server)
@@ -139,8 +152,8 @@ account.relog = async function(data, socket, server)
 	{
 		const { player, token } = await server.DATABASE.loadPlayer(data?.playerID)
 		if(!player) 
-			return socket.emit("LOGIN_ERROR", { message: "Unable to sync player data." })
-		server.log(`${ePrefix}[PLAYER-${player.ID} | ${player.username}] logged in.`)
+			return socket.emit("LOGIN_ERROR", { message: "Unable to sync player data. " })
+		server.log(`${ePrefix}${account.printPlayerAuth(player)} logged in. `)
 		player.status = true
 		socket.emit("LOGIN_SUCCESS", { 
 			token,
@@ -161,9 +174,8 @@ account.relog = async function(data, socket, server)
 		server.error(ePrefix + e.message, e)
 	}
 }
-// account.processEmailConfirmation = async function(token, server)
+// @todo account.processEmailConfirmation = async function(token, server)
 // {
-// 	const ePrefix = "[ACCOUNT HANDLER] "
 // 	try
 // 	{
 // 		const decoded = jwt.verify(token, server.config.jwtSecret)
@@ -222,7 +234,6 @@ account.requestPasswordReset = async function(data, socket, server)
 		socket.emit("RESET_PASSWORD_ERROR", { message: e.message || "Recovery failed." })
 		// throw e
 	}
-	
 }
 account.processPasswordReset = async function(token, newPassword, server)
 {
@@ -242,7 +253,7 @@ account.processPasswordReset = async function(token, newPassword, server)
 		const updatedPlayer = await db.savePlayer(oldPlayer)
 		if(!updatedPlayer)
 			throw new Error("Unable to update account!")
-		server.log(`${ePrefix}[PLAYER-${decoded.id}].password updated.`)
+		server.log(`${ePrefix}${account.printPlayerAuth(decoded)}password updated.`)
 		return { success: true }
 	}
 	catch(e)
