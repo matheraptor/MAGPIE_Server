@@ -11,7 +11,7 @@ const {
     verifyPassword, 
     hashPassword, 
     EmailSecurity 
-} = require("./services/auth");
+} = require("./services/crypto");
 const { MAGPIE } = require("./index");
 const { 
 	MAGPIE_LOG, 

@@ -21,6 +21,9 @@
  * 
  * @desc current
  * 
+ * @version 0.39.4 2026 06 13
+ * - TWEAKED: renamed handlers
+ * 
  * @version 0.39.3 2026 06 12
  * - TWEAKED: documentation
  * - TWEAKED: removed obsolete folders
@@ -492,9 +495,9 @@ class MAGPIE
 MAGPIE.meta = {
     name: "M.A.G.P.I.E.",
     desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-    version: [0,39,3],
+    version: [0,39,4],
     firmwareName: "MAGPIE",
-    firmwareDate: "20260612"
+    firmwareDate: "20260613"
 }
 /**
  * 
@@ -1884,7 +1887,7 @@ MAGPIE.KEY.ANSI.STYLE_YELLOW = "\x1b[33m"
 /** @type {ansi_escape} */
 MAGPIE.KEY.ANSI.STYLE_BLUE = "\x1b[34m"
 /** @type {ansi_escape} */
-MAGPIE.KEY.ANSI.STYLE_CYAN = "\x1b[35m"
+MAGPIE.KEY.ANSI.STYLE_CYAN = `\x1b[35m`
 /** @type {ansi_escape} */
 MAGPIE.KEY.ANSI.STYLE_BOLD = "\x1b[1m"
 /** @type {ansi_escape} */

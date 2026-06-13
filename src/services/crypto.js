@@ -27,7 +27,7 @@ const EmailSecurity = {
 	encryptEmail: (email) => {
 		const iv = crypto.randomBytes(12)
 		const cipher = crypto.createCipheriv("aes-256-gcm", EMAIL_KEY, iv)
-		let encrypted = cipher.update(email, "utf-8", "hec")
+		let encrypted = cipher.update(email, "utf-8", "hex")
 		encrypted += cipher.final("hex")
 		const authTag = cipher.getAuthTag().toString("hex")
 		return `${iv.toString("hex")}:${authTag}:${encrypted}`
@@ -39,7 +39,7 @@ const EmailSecurity = {
 	 */
 	decryptEmail: (encryptedBlob) => {
 		const [ivHex, authTagHex, encryptedData] = encryptedBlob.split(":")
-		const iv = Buffer.from(ivHex, "hex")
+		const iv = Buffer.from(authTagHex, "hex")
 		const authTag = Buffer.from(ivHex, "hex")
 		const decipher = crypto.createDecipheriv("aes-256-gcm", EMAIL_KEY, iv)
 		decipher.setAuthTag(authTag)
@@ -56,7 +56,7 @@ const EmailSecurity = {
  */
 function hashKey(bytes = 32, base = "hex")
 {
-	return randomBytes(bytes).toString(base)
+	return crypto.randomBytes(bytes).toString(base)
 }
 /**
  * Utility to hash passwords using native Node.js scrypt.
