@@ -1,9 +1,9 @@
-const { MAGPIE } = require("../core/index")
+const { MAGPIE } = require("../src/index")
 /**
  * @version 0.38.2
  * 
  */
-const accountHandler = require("./accountHandler")
+const accountHandler = require("./account")
 const ePrefix = "[CLI HANDLER] "
 module.exports = function(io, socket, server)
 {

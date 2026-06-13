@@ -1,12 +1,12 @@
-const { MAGPIE } = require("../core/index");
+const { MAGPIE } = require("../src/index");
 /**
- * @typedef {import("../core/entity").MAGPIE_ENTITY} MAGPIE_ENTITY
- * @typedef {import("../core/component").MAGPIE_EXP} MAGPIE_EXP
- * @typedef {import("../core/index").state_index} state_index
- * @typedef {import("../core/entity").fitness_index} fitness_index
- * @typedef {import("../core/physics").vector3} vector3
- * @typedef {import("../core/physics").bivector} bivector
- * @typedef {import("../core/entity").action_output} action_output
+ * @typedef {import("../src/entity").MAGPIE_ENTITY} MAGPIE_ENTITY
+ * @typedef {import("../src/component").MAGPIE_EXP} MAGPIE_EXP
+ * @typedef {import("../src/index").state_index} state_index
+ * @typedef {import("../src/entity").fitness_index} fitness_index
+ * @typedef {import("../src/physics").vector3} vector3
+ * @typedef {import("../src/physics").bivector} bivector
+ * @typedef {import("../src/entity").action_output} action_output
  * @typedef {{
  * At: vector3,
  * Tt: bivector,
@@ -26,6 +26,7 @@ const { MAGPIE } = require("../core/index");
  * onRemove: (...args) => {},
  * onExpire: (...args) => {}
  * }} state_data
+ * @type {Object} state index repository
  */
 const INDEX = {};
 /** 
