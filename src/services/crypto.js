@@ -91,10 +91,12 @@ async function verifyPassword(password, storedHash)
 		crypto.scrypt(password, salt, 64, (err, derivedKey) =>
 		{
 			if(err) reject(err);
-			resolve(derivedKey.toString('hex'));
+			resolve(derivedKey);
 		});
 	});
-	return derivedKey === hash;
+	const storedKey = Buffer.from(hash, "hex")
+	if(derivedKey.length !== storedKey.length) return false
+	return crypto.timingSafeEqual(derivedKey, storedKey)
 }
 
 module.exports = {
