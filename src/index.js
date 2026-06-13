@@ -2,24 +2,42 @@
 // #region - META
 //========================================================================
 /**
- * @namespace MAGPIE
+ * @namespace MAGPIE_Server
+ * @name index
+ * @desc dictionary and switchboard
  * @author Matheraptor
  * @licence GPL-3.0
- * 
- * @version 0.38.3
- * 
- * @depdendencies 
- * - Node.js 
- * - express 
- * - JWT 
- * - Socket.io 
- * - better-sqlite3 
- * - repl 
- * - jsonwebtoken 
+ * @desc stack:
+ * - Node.js
+ * - Express
+ * - jsonwebtoken
+ * - Socket.io
+ * - better-sqlite3
+ * - repl
  * - cli-spinner
+ * - cli-progress
  * ------------------------------------------------------------------------
  * {@link MAGPIE.meta.desc}
  * 
+ * @desc current
+ *
+ * @version 0.39.3 2026 06 12
+ * - TWEAKED: documentation
+ * - TWEAKED: removed obsolete folders
+ * - TWEAKED: server shutdown sequence
+ *
+ * @version 0.39.1 2026 06 11
+ * - full pre-production prototype rewrite
+ * - ADDED: spinner
+ * - ADDED: loadbar
+ * - ADDED: ANSI escape codes
+ * - TWEAKED: boot sequence streamlined
+ * - TWEAKED: cleaned up redundant logic
+ * - TWEAKED: restructured handlers
+ * - TWEAKED: restructured services
+ *
+ * ------------------------------------------------------------------------
+ *
  * @version 0.38.6 2026 06 10
  * - TWEAKED: .logs/ => logs/
  * - TWEAKED: boot scripts location and flow
@@ -455,60 +473,100 @@
  * - initial build
  * ------------------------------------------------------------------------
  * 
- * @typedef {Object} MAGPIE
- * @type {MAGPIE}
- * @returns {new MAGPIE}
- * @property {MAGPIE_KEY}       MAGPIE.KEY      {@link MAGPIE_KEY}
- * @property {MAGPIE_SYSTEM}    MAGPIE.SYS      {@link MAGPIE_SYSTEM}
- * @property {MAGPIE_SYSTEM}    MAGPIE.DATA     {@link MAGPIE_DATA}
- * @property {MAGPIE_SYSTEM}    MAGPIE.COMP     {@link MAGPIE_COMPONENT}
- * @property {MAGPIE_SYSTEM}    MAGPIE.ENTITY   {@link MAGPIE_ENTITY}
- * @property {MAGPIE_SYSTEM}    MAGPIE.RUNTIME  {@link MAGPIE_RUNTIME}
- * @property {MAGPIE_SYSTEM}    MAGPIE.CONSOLE  {@link MAGPIE_CONSOLE}
- * @property {MAGPIE_SYSTEM}    MAGPIE.CORE     {@link MAGPIE_CORE}
- * @property {MAGPIE_SYSTEM}    MAGPIE.MCON     {@link MAGPIE_MCON}
- * @property {MAGPIE_SYSTEM}    MAGPIE.DRONE    {@link MAGPIE_DRONE}
- * @property {MAGPIE_SYSTEM}    MAGPIE.ARK      {@link MAGPIE_ARK}
- * @property {MAGPIE_SYSTEM}    MAGPIE.HIMS     {@link MAGPIE_HIMS}
+ *
  */
 //========================================================================
 // #endregion - 
 //========================================================================
+class MAGPIE
+{
+    //
+}
 /**
- * @name CLASS
- * @desc
+ *
  * 
  */
 //========================================================================
-//#region - CLASS
+// #region - INDEX
 //========================================================================
-class MAGPIE {
-	static {
-		this.meta = {
-			name: "M.A.G.P.I.E",
-			desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-			version: [0, 38, 6],
-			firmwareName: "MAGPIE",
-			firmwareDate: "20260610"
-		};
-	}
+MAGPIE.meta = {
+    name: "M.A.G.P.I.E.",
+    desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
+    version: [0,39,3],
+    firmwareName: "MAGPIE",
+    firmwareDate: "20260612"
 }
 /**
  * 
- * back to {@link MAGPIE}
+ * @desc back to {@link }
+ *
  */
-//#endregion - CLASS
+//========================================================================
+// #endregion -
 //========================================================================
 /**
- * @name KEY
+ * @name
  * @desc 
  * 
  */
 //========================================================================
 // #region - KEY
 //========================================================================
-MAGPIE.KEY = {};
-MAGPIE.KEY.STATE = {};
+MAGPIE.KEY = {}
+MAGPIE.KEY.meta = {
+    name: "M.A.G.P.I.E. semantic key dictionary",
+    desc: "",
+    firmwareName: "MAGPIE_KEY"
+}
+/**
+ * @desc {@link MAGPIE.KEY.meta}
+ *
+ */
+//------------------------------------------------------------------------
+// #region > Type
+//------------------------------------------------------------------------
+MAGPIE.KEY.TYPE = {}
+// #endregion
+//------------------------------------------------------------------------
+/**
+ *
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion -
+//========================================================================
+/**
+ * @name
+ * @desc
+ *
+ */
+//========================================================================
+// #region - SRC
+//========================================================================
+MAGPIE.KEY.SYSTEM = {};
+/** {@link MAGPIE.KEY.HTTP.meta} */
+MAGPIE.KEY.HTTP = {};
+/** {@link MAGPIE.KEY.HTML.meta} */
+MAGPIE.KEY.HTML = {}
+/** {@link MAGPIE.KEY.SERVER.meta} */
+MAGPIE.KEY.SERVER = {}
+/** {@link MAGPIE.KEY.RUNTIME.meta} */
+MAGPIE.KEY.RUNTIME = {};
+/** {@link MAGPIE.KEY.HIVE.meta} */
+MAGPIE.KEY.HIVE = {};
+/** {@link MAGPIE.KEY.PHYSICS.meta} */
+MAGPIE.KEY.PHYSICS = {}
+/** {@link MAGPIE.KEY.GEODETIC.meta} */
+MAGPIE.KEY.GEODETIC = {};
+/** {@link MAGPIE.KEY.POVART.meta} */
+MAGPIE.KEY.POVART = {};
+/** {@link MAGPIE.KEY.ORBIT.meta} */
+MAGPIE.KEY.ORBIT = {};
+/** {@link MAGPIE.KEY.ENTITY.meta} */
+MAGPIE.KEY.ENTITY = {};
+/** {@link MAGPIE.KEY.STATE.meta} */
+MAGPIE.KEY.STATE = {}
 /**
  * @name 
  * @desc 
@@ -517,793 +575,170 @@ MAGPIE.KEY.STATE = {};
 //------------------------------------------------------------------------
 // #region > Config
 //------------------------------------------------------------------------
-MAGPIE.config = require("./config");
+MAGPIE.config = require("../config/server_config")
 MAGPIE.KEY.NODE_ENV = MAGPIE.config.NODE_ENV;
 // #endregion
 //------------------------------------------------------------------------
 /**
- * @name semantics
- * @desc component of {@link MAGPIE.KEY}
- * @desc system of {@link MAGPIE}
- * @typedef {Number} keyID
- * @typedef {{
- *  type: Number,
- *  label: String,
- *  origin: keyID[],
- *  component: keyID[],
- *  legacy: keyID[],
- *  compound: keyID[]
- * }} key_data
- * @typedef {index} stamina_index entity.fitness[stamina_index] ({@link MAGPIE.KEY.FITNESS.STAMINA})
- * @typedef {index} state_index entity.fitness[2 + size * 2 + index] 
+ * @name
+ * @desc
  * 
  */
 //------------------------------------------------------------------------
-// #region > Semantics
+// #region > Http
 //------------------------------------------------------------------------
-MAGPIE.KEY.SEMANTICS = {};
-MAGPIE.KEY.SEMANTICS.meta = {
-	firmwareName: "MAGPIE_SEMANTICS",
-	name: "M.A.G.P.I.E. semantic keys"
+MAGPIE.KEY.HTTP.meta = {
+	//
 }
-/** @typedef {Enumerator<Number>} key_type */
-MAGPIE.KEY.TYPE = {};
-/** @type {Map<key_type, String>} */
-MAGPIE.KEY.TYPES = new Map();
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.AXIOM = 0;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.AXIOM, "AXIOM")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.KEY = 1;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.KEY, "KEY")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.METAKEY = 2;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.METAKEY, "METAKEY");
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.SEMANTIC = 3;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.SEMANTIC, "SEMANTIC");
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.CONTEXT = 4;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.CONTEXT, "CONTEXT");
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.TRAIT = 5;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TRAIT, "TRAIT");
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.EXP = 6;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.EXP, "EXP");
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.EMOTE = 7;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.EMOTE, "EMOTE")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.TRIGGER = 8;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TRIGGER, "TRIGGER")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.EVAL = 9;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.EVAL, "EVAL")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.TIME = 10;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TIME, "TIME")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.STATE = 11;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.STATE, "STATE")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.TICKET = 12;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TICKET, "TICKET")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.METAEXP = 20;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.METAEXP, "METAEXP")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.METATICKET = 21;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.METATICKET, "METATICKET")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.METACONTEXT = 22;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.METACONTEXT, "METACONTEXT")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERKEY = 30;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.MASTERKEY, "MASTERKEY")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERCONTEXT = 31;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.MASTERCONTEXT, "MASTERCONTEXT")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTEREXP = 32;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.MASTEREXP, "MASTEREXP")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.MASTERTICKET = 33;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.MASTERTICKET, "MASTERTICKET")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.SUBJECT = 101;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.SUBJECT, "SUBJECT")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.OBJECT = 102;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.OBJECT, "OBJECT")
-/** @type {key_type} */
-MAGPIE.KEY.TYPE.TARGET = 103;
-MAGPIE.KEY.TYPES.set(MAGPIE.KEY.TYPE.TARGET, "TARGET")
 /**
- * 
- * @typedef {Enumerator<Number>} key_index
- * @typedef {import("./component").key_label} key_label
+ * @desc Successful
+ * @desc In simple terms, the HTTP status 200 response code means that a
+ * server has successfully processed a request. Likewise, codes in the
+ * 400s and 500s mean a request has failed.
  */
+MAGPIE.KEY.HTTP.STATUS_200 = {
+	code: 200,
+	message: "Successful",
+	desc: `In simple terms, the HTTP status 200 response code means
+	that a server has successfully processed a request. Likewise,
+	codes in the 400s and 500s mean a request has failed.`
+}
+/**
+ * @desc Bad Request
+ * @desc The 400 (Bad Request) status code indicates that the server
+ * cannot or will not process the request due to something that is
+ * perceived to be a client error. In response to an invalid request,
+ * the server should issue the exact 4xx code in the case of an
+ * unsuccessful request.
+ */
+MAGPIE.KEY.HTTP.STATUS_400 = {
+	code: 400,
+	message: "Bad Request",
+	desc: `The 400 (Bad Request) status code indicates that the server
+	cannot or will not process the request due to something that is
+	perceived to be a client error. In response to an invalid request,
+	the server should issue the exact 4xx code in the case of an
+	unsuccessful request.`
+}
+/**
+ * @desc Unauthorized
+ * @desc The HTTP 401 Unauthorized client error response status
+ * code indicates that a request was not successful because it lacks
+ * valid authentication credentials for the requested resource.
+ */
+MAGPIE.KEY.HTTP.STATUS_401 = {
+	code: 401,
+	message: "Unauthorized",
+	desc: `The  HTTP 401 Unauthorized client error response status code
+	indicates that a request was not successful because it lacks valid
+	authentication credentials for the requested resource.`
+}
+/**
+ * @desc "Forbidden"
+ * @desc A 403 'Forbidden' error is an HTTP status code indicating that
+ * the server understood the request but refuses to authorize it,
+ * usually due to insufficient permissions or intentional blocking.
+ * It means the site is restricted or the user lacks access rights,
+ * making repeated attempts without modification futile.
+ */
+MAGPIE.KEY.HTTP.STATUS_403 = {
+	code: 403,
+	message: "Forbidden",
+	desc: "A 403 'Forbidden' error is an HTTP status code indicating "
+		+ "that the server understood the request but refuses to authorize "
+		+ "it, usually due to insufficient permissions or intentional "
+		+ "blocking. It means the site is restricted or the user lacks "
+		+ "access rights, making repeated attempts without modification futile."
+};
+/**
+ * @desc "Conflict"
+ * @desc The standard HTTP status code for attempting to create a resource
+ * that already exists (causing a unique constraint violation in your
+ * database) is 409 Conflict. Using 409 tells the client specifically
+ * that the server understands the request, but it cannot be completed
+ * due to an asset collision.
+ */
+MAGPIE.KEY.HTTP.STATUS_409 = {
+	code: 409,
+	message: "Conflict",
+	desc: "The standard HTTP status code for attempting to create a resource "
+		+ "that already exists (causing a unique constraint violation in your "
+		+ "database) is 409 Conflict. Using 409 tells the client specifically "
+		+ "that the server understands the request, but it cannot be completed "
+		+ "due to an asset collision."
+}
+/**
+ * @desc Internal Server Error
+ * @desc An HTTP 500 status code (Internal Server Error) indicates
+ * that the server encountered an unexpected condition that prevented
+ * it from fulfilling the request.
+ */
+MAGPIE.KEY.HTTP.STATUS_500 = {
+	code: 500,
+	message: "Internal Server Error",
+	desc: `An HTTP 500 status code (Internal Server Error) indicates
+	that the server encountered an unexpected condition that prevented
+	it from fulfilling the request.`
+}
+/**
+ * @desc "too many requests"
+ * @desc The HTTP 429 "Too Many Requests" status code indicates the user
+ * has sent too many requests to a server within a given timeframe,
+ * triggering rate limiting. This client-side error protects servers
+ * from abuse, such as DDoS attacks, scrapers, or excessive bot activity.
+ * It is commonly resolved by waiting, reducing request frequency, or
+ * checking API limits.
+ */
+MAGPIE.KEY.HTTP.STATUS_429 = {
+	code: 429,
+	message: "Too many requests!",
+	desc: "The HTTP 429 'Too Many Requests' status code indicates the user "
+		+ "has sent too many requests to a server within a given timeframe, "
+		+ "triggering rate limiting. This client-side error protects servers "
+		+ "from abuse, such as DDoS attacks, scrapers, or excessive bot activity. "
+		+ "It is commonly resolved by waiting, reducing request frequency, "
+		+ "or checking API limits."
+};
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name
+ * @desc
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Server
+//------------------------------------------------------------------------
+MAGPIE.KEY.SERVER.meta = {
+	//
+}
+MAGPIE.KEY.SERVER.DOMAIN = MAGPIE.config.domain
+MAGPIE.KEY.SERVER.JWT_SECRET = MAGPIE.config.jwtSecret
+MAGPIE.KEY.SERVER.PORT = MAGPIE.config.PORT
+MAGPIE.KEY.SERVER.EMAIL_MASTER_KEY = MAGPIE.config.EMAIL_MASTER_KEY
+MAGPIE.KEY.SERVER.HASH_SALT = MAGPIE.config.HASH_SALT
+/** @desc 20 max login attemps within cooldown window */
+MAGPIE.KEY.SERVER.LOGIN_MAX_ATTEMPTS = 20
+/** @desc 15m login attempts cooldown window*/
+MAGPIE.KEY.SERVER.LOGIN_COOLDOWN = 15
+/** @type {String} domain without "http/https://" */
+MAGPIE.KEY.SERVER.DOMAIN_STRIPPED = MAGPIE.config.domain.slice(MAGPIE.config.domain.indexOf(":") + 3);
 /** 
- * 
- */
-MAGPIE.KEY.INDEX = {};
-MAGPIE.KEY.INDEX.meta = "";
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TEMPLATE = 0;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.SUBJECT = 10;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.OBJECT = 11;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TARGET = 12;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TRIVIAL = 13;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TIME = 14;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.MARKER = 15;
-/*** @type {Map<keyID, stamina_index>} */
-MAGPIE.KEY.INDEX.STAMINA = new Map();
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_0 = 100;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_0, 0)
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_1 = 101;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_1, 1);
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_2 = 102;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_2, 2);
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_3 = 103;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_3, 3);
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_4 = 104;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_4, 4);
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_5 = 105;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_5, 5);
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_6 = 106;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.STAMINA_6, 6);
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_7 = 107;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_7, 7);
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_8 = 108;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX.STAMINA_8, 8);
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STAMINA_9 = 109;
-MAGPIE.KEY.INDEX.STAMINA.set(MAGPIE.KEY.INDEX_9, 9);
-/** @type {Map<String, keyID>} */
-MAGPIE.KEY.INDEX.ECG = new Map();
-MAGPIE.KEY.INDEX.ECG_FITNESS = 120;
-MAGPIE.KEY.INDEX.ECG.set("FITNESS", MAGPIE.KEY.INDEX.ECG_FITNESS);
-MAGPIE.KEY.INDEX.ECG_RESERVE = 121;
-MAGPIE.KEY.INDEX.ECG.set("RESERVE", MAGPIE.KEY.INDEX.ECG_RESERVE);
-MAGPIE.KEY.INDEX.ECG_STAMINA = 122
-MAGPIE.KEY.INDEX.ECG.set("STAMINA", MAGPIE.KEY.INDEX.ECG_STAMINA);
-MAGPIE.KEY.INDEX.ECG_ENDURANCE = 123;
-MAGPIE.KEY.INDEX.ECG.set("ENDURANCE", MAGPIE.KEY.INDEX.ECG_ENDURANCE);
-MAGPIE.KEY.INDEX.ECG_ENERGY = 124;
-MAGPIE.KEY.INDEX.ECG.set("ENERGY", MAGPIE.KEY.INDEX.ECG_ENERGY);
-MAGPIE.KEY.INDEX.ECG_MASS = 131;
-MAGPIE.KEY.INDEX.ECG.set("MASS", MAGPIE.KEY.INDEX.ECG_MASS);
-MAGPIE.KEY.INDEX.ECG_POWER = 132;
-MAGPIE.KEY.INDEX.ECG.set("POWER", MAGPIE.KEY.INDEX.ECG_POWER);
-MAGPIE.KEY.INDEX.ECG_DEXTERITY = 133;
-MAGPIE.KEY.INDEX.ECG.set("DEXTERITY", MAGPIE.KEY.INDEX.ECG_DEXTERITY);
-MAGPIE.KEY.INDEX.ECG_SENSE = 134;
-MAGPIE.KEY.INDEX.ECG.set("SENSE", MAGPIE.KEY.INDEX.ECG_SENSE);
-MAGPIE.KEY.INDEX.ECG_GROWTH = 141;
-MAGPIE.KEY.INDEX.ECG.set("GROWTH", MAGPIE.KEY.INDEX.ECG_GROWTH);
-MAGPIE.KEY.INDEX.ECG_HUNGRY = 201
-MAGPIE.KEY.INDEX.ECG.set("HUNGRY", MAGPIE.KEY.INDEX.ECG_HUNGRY);
-MAGPIE.KEY.INDEX.ECG_SATIATED = 202
-MAGPIE.KEY.INDEX.ECG.set("SATIATED", MAGPIE.KEY.INDEX.ECG_SATIATED)
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.REQUIREMENTS = 1001;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.COMPOUNDS = 1002;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RECIPES = 1003;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.COMPONENTS = 1004;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.STATS = 1005;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LENGTH = 2010;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.HEIGHT = 2011;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.WIDTH = 2012;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.MASSKG = 2013;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DENSITY = 2014;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.AREA = 2020;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.VOLUME = 2021;
-/** @type {Map<key_index, key_label>} */
-MAGPIE.KEY.INDEX.VSPEEDS = new Map();
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.VMAX = 3000;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.VSAFE = 3001;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.VCRUISE = 3002;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.VCREEP = 3003;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.VDOCK = 3004;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RMAX = 4000;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RSAFE = 4001;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RCRUISE = 4002;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RCREEP = 4003;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RDOCK = 4004;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RMAX_X = 4010;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RSAFE_X = 4011;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RCRUISE_X = 4012;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RCREEP_X = 4013;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RDOCK_X = 4014;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RMAX_Y = 4020;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RSAFE_Y = 4021;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RCRUISE_Y = 4022;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RCREEP_Y = 4023;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RDOCK_Y = 4024;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RMAX_Z = 4030;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RSAFE_Z = 4031;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RCRUISE_Z = 4032;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RCREEP_Z = 4033;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RDOCK_Z = 4034;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.AMAX = 5000;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.ASAFE = 5001;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.ACRUISE = 5002;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.ACREEP = 5003;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.ADOCK = 5004;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TMAX = 6000;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TSAFE = 6001;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TCRUISE = 6002;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TCREEP = 6003;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TDOCK = 6004;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TMAX_X = 6010;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TSAFE_X = 6011;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TCRUISE_X = 6012;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TCREEP_X = 6013;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TDOCK_X = 6014;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TMAX_Y = 6020;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TSAFE_Y = 6021;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TCRUISE_Y = 6022;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TCREEP_Y = 6023;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TDOCK_Y = 6024;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TMAX_Z = 6030;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TSAFE_Z = 6031;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TCRUISE_Z = 6032;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TCREEP_Z = 6033;
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TDOCK_Z = 6034;
-MAGPIE.KEY.INDEX.VSPEEDS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("VMAX"));
-MAGPIE.KEY.INDEX.VSPEEDS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("TDOCK_Z"));
-/**
- * @type {Map<keyID, String>}
- */
-MAGPIE.KEY.INDEX.VELOCITY = new Map();
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.A_ERR = 8000;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.A_ERR, "A_err");
-MAGPIE.KEY.INDEX.CRUISE = 8001;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.CRUISE, "Cruise");
-MAGPIE.KEY.INDEX.ACCELERATE = 8002;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.ACCELERATE, "Accelerate");
-MAGPIE.KEY.INDEX.COAST = 8003;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.COAST, "Coast");
-MAGPIE.KEY.INDEX.BRAKE = 8004;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.BRAKE, "Brake");
-MAGPIE.KEY.INDEX.ON_TARGET = 305;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.ON_TARGET, "On Target");
-MAGPIE.KEY.INDEX.REACHING_TARGET = 303;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.REACHING_TARGET, "Reaching Target");
-MAGPIE.KEY.INDEX.APPROACHING_TARGET = 304;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.APPROACHING_TARGET, "Approaching Targeet");
-MAGPIE.KEY.INDEX.SEEKING_TARGET = 302;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.SEEKING_TARGET, "Seeking Target");
-MAGPIE.KEY.INDEX.IDLING = 206;
-MAGPIE.KEY.INDEX.VELOCITY.set(MAGPIE.KEY.INDEX.IDLING, "Idling");
-/**
- * @type {Map<keyID, String>}
- */
-MAGPIE.KEY.INDEX.ORIENTATION = new Map();
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.T_ERR = 7000;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DEFAULT, "T_err")
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.ALIGNED = 7001;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.ALIGNED, "Aligned")
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.SEEK = 7002;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.SEEK, "Seek")
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DRIFT = 7003;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DRIFT, "Drift")
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.ALIGN = 7004;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.ALIGN, "Align")
-MAGPIE.KEY.INDEX.IDLE = 7005;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.IDLE, "Idle");
-MAGPIE.KEY.INDEX.ALIGNING_TARGET = 311;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.ALIGNING_TARGET, "Alinging Target");
-MAGPIE.KEY.INDEX.LOCKING_TARGET = 312;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.LOCKING_TARGET, "Locking Target");
-MAGPIE.KEY.INDEX.FACING_TARGET = 313;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.FACING_TARGET, "Facing Target");
-MAGPIE.KEY.INDEX.DRIFTING = 314;
-MAGPIE.KEY.INDEX.ORIENTATION.set(MAGPIE.KEY.INDEX.DRIFT, "Drifting");
-/** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.STATES = 0;
-/** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.DRMAG = 1;
-/** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.DR = 2;
-/** @type {index} entity.emote.output.raw[index] */
-MAGPIE.KEY.INDEX.BDIST = 3;
-/**
- * @typedef {{
- * GMAX: velocity,
- * GSAFE: velocity,
- * GCOMFORT: velocity,
- * GMIN: velocity,
- * FMAX: force,
- * FSAFE: force,
- * FCOMFORT: force,
- * DMAX: force,
- * DSAFE: force,
- * DCOMFORT: force,
- * DMIN: force,
- * LMAX: force,
- * LSAFE: force,
- * LCOMFORT: force,
- * LMIN: force,
- * AOAMAX: angle_deg,
- * AOASAFE: angle_deg,
- * AOACOMFORT: angle_deg,
- * AOAMIN: angle_deg,
- * PRESMAX: pressure,
- * PRESSAFE: pressure,
- * PRESCOMFORT: pressure,
- * PRESMIN: pressure,
- * TEMPMAX: temperature,
- * TEMPSAFE: temperature,
- * TEMPCOMFORT: temperature,
- * TEMPMIN: temperature,
- * DEWMAX: percentage,
- * DEWSAFE: percentage,
- * DEWCOMFORT: percentage,
- * DEWMIN: percentage,
- * BREEZEMAX: velocity,
- * BREEZESAFE: velocity,
- * BREEZECOMFORT: velocity,
- * BREEZEMIN: velocity,
- * LITMAX: luminosity,
- * LITSAFE: luminosity,
- * LITCOMFORT: luminosity,
- * LITMIN: luminosity,
- * RADMAX: radioactivity,
- * RADSAFE: radioactivity,
- * RADCOMFORT: radioactivity,
- * RADMIN: radioactivity
- * }} TraitForces
- * @type {Map<key_index, key_label>}
- */
-MAGPIE.KEY.INDEX.FORCES = new Map();
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GMAX = 9001;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GMAX, "GMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GSAFE = 9002;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GSAFE, "GSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GCOMFORT = 9003;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GCOMFORT, "GCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GMIN = 9004;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.GMIN, "GMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.FMAX = 9011;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FMAX, "FMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.FSAFE = 9012;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FSAFE, "FSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.FCOMFORT = 9013;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FCOMFORT, "FCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.FMIN = 9014;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.FMIN, "FMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DMAX = 9021;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DMAX, "DMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DSAFE = 9022;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DSAFE, "DSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DCOMFORT = 9023;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DCOMFORT, "DCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DMIN = 9024;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DMIN, "DMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LMAX = 9031;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LMAX, "LMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LSAFE = 9032;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LSAFE, "LSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LCOMFORT = 9033;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LCOMFORT, "LCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LMIN = 9034;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LMIN, "LMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.AOAMAX = 9041;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOAMAX, "AOAMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.AOASAFE = 9042;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOASAFE, "AOASAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.AOACOMFORT = 9043;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOACOMFORT, "AOACOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.AOAMIN = 9044;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.AOAMIN, "AOAMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PRESMAX = 9051;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESMAX, "PRESMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PRESSAFE = 9052;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESSAFE, "PRESSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PRESCOMFORT = 9053;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESCOMFORT, "PRESCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PRESMIN = 9054;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.PRESMIN, "PRESMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TEMPMAX = 9061;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPMAX, "TEMPMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TEMPSAFE = 9062;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPSAFE, "TEMPSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TEMPCOMFORT = 9063;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPCOMFORT, "TEMPCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.TEMPMIN = 9064;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.TEMPMIN, "TEMPMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DEWMAX = 9071;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWMAX, "DEWMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DEWSAFE = 9072;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWSAFE, "DEWSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DEWCOMFORT = 9073;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWCOMFORT, "DEWCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.DEWMIN = 9074;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.DEWMIN, "DEWMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.BREEZEMAX = 9081;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZEMAX, "BREEZEMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.BREEZESAFE = 9082;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZESAFE, "BREEZESAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.BREEZECOMFORT = 9083;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZECOMFORT, "BREEZECOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.BREEZEMIN = 9084;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.BREEZEMIN, "BREEZEMIN")
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LITMAX = 9091;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITMAX, "LITMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LITSAFE = 9092;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITSAFE, "LITSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LITCOMFORT = 9093;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITCOMFORT, "LITCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.LITMIN = 9094;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.LITMIN, "LITMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RADMAX = 9095;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADMAX, "RADMAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RADSAFE = 9096;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADSAFE, "RADSAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RADCOMFORT = 9097;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADCOMFORT, "RADCOMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.RADMIN = 9098;
-MAGPIE.KEY.INDEX.FORCES.set(MAGPIE.KEY.INDEX.RADMIN, "RADMIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.FORCES.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("GMAX"))
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.FORCES.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("RADMIN"))
-/** 
- * 
- * @typedef {{
- * Ingredients: keyID[],
- * Products: keyID[],
- * rate: coefficient,
- * Rmax: coefficient,
- * Rsafe: coefficient,
- * Rcomfort: coefficient,
- * Rmin: coefficient,
- * Rdegrade: coefficient,
- * Rdamage: coefficient 
- * }} Processors
- * @type {Map<key_index, key_label>} 
+ * @desc admin email route via
+ * {@link [Cloudflare](https://dash.cloudflare.com/f9be63832257af6f7644accd541a4bca/shelderevolution.org/email/routing/routes)}
  * */
-MAGPIE.KEY.INDEX.PROCESSORS = new Map();
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.INGREDIENT = 9501;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.INGREDIENT, "INGREDIENT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PRODUCT = 9502;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PRODUCT, "PRODUCT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESS_RATE = 9503;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_RATE, "PROCESS_RATE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESS_MAX = 9504;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_MAX, "PROCESS_MAX");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESS_SAFE = 9505;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_SAFE, "PROCESS_SAFE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESS_COMFORT = 9506;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_COMFORT, "PROCESS_COMFORT");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESS_MIN = 9507;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_MIN, "PROCESS_MIN");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESS_DEGRADE = 9508;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_DEGRADE, "PROCESS_DEGRADE");
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESS_DAMAGE = 9509;
-MAGPIE.KEY.INDEX.PROCESSORS.set(MAGPIE.KEY.INDEX.PROCESS_DAMAGE, "PROCESS_DAMAGE");
-
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESSORS.set("start", Object.keys(MAGPIE.KEY.INDEX).indexOf("INGREDIENT"));
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.PROCESSORS.set("end", Object.keys(MAGPIE.KEY.INDEX).indexOf("PROCESS_DAMAGE"))
+MAGPIE.KEY.SERVER.ADMIN_EMAIL = `admin@${MAGPIE.KEY.SERVER.DOMAIN_STRIPPED}`
+MAGPIE.KEY.SERVER.NO_REPLY = `noreply@${MAGPIE.KEY.SERVER.DOMAIN_STRIPPED}`
 /**
- * @typedef {Enumerator<Number>} urgency
- * @typedef {{value: Number, desc: String}} urgency_record
- * @type {Map<keyID, {value: urgency, desc: String>}}
+ * @desc server preset messages
+ *
  */
-MAGPIE.KEY.INDEX.URGENCY = new Map();
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.URGENCY_STRATEGIC = 10001;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_STRATEGIC, {
-	name: "STRATEGIC",
-	value: -1, 
-	desc: "neutral urgency to always keep in mind"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE = 10100;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE, {
-	name: "IMMEDIATE",
-	value: 4,
-	desc: "Must do NOW"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.URGENCY_DIRE = 10101;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_DIRE, {
-	name: "DIRE",
-	value: 3,
-	desc: "Must do NEXT"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.URGENCY_CRITICAL = 10102;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_CRITICAL, {
-	name: "CRITICAL",
-	value: 2,
-	desc: "Must do AS SOON AS POSSIBLE (ASAP)"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.URGENCY_SIGNIFICANT = 10103;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_SIGNIFICANT, {
-	name: "SIGNIFICANT",
-	value: 1,
-	desc: "Should do SOON"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.URGENCY_LATENT = 10104;
-MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_LATENT, {
-	name: "LATENT",
-	value: 0,
-	desc: "Can do if and when possible"
-});
-/** 
- * @typedef {Enumerator<Number>} gravity
- * @typedef {{value: Number, desc: String}} gravity_record
- * @type {Map<keyID, {value: gravity, desc: String>}} 
- * 
- * */
-MAGPIE.KEY.INDEX.GRAVITY = new Map()
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GRAVITY_TACTICAL = 10199;
-MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TACTICAL, {
-	name: "TACTICAL",
-	value: -1,
-	desc: "Neutral gravity to keep in mind"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GRAVITY_VITAL = 10200;
-MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_VITAL, {
-	name: "VITAL",
-	value: 4,
-	desc: "Must care about this ABOVE ALL"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GRAVITY_SEVERE = 10201;
-MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_SEVERE, {
-	name: "SEVERE",
-	value: 3,
-	desc: "Must care about this AS MUCH AS POSSIBLE"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GRAVITY_PRESSING = 10202;
-MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_PRESSING, {
-	name: "PRESSING",
-	value: 2,
-	desc: "Should care about this when possible"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT = 10203;
-MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT, {
-	name: "IMPORTANT",
-	value: 1,
-	desc: "Might care sometimes; probably unsafe to ignore"
-});
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL = 10204;
-MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL, {
-	name: "TRIVIAL",
-	value: 0,
-	desc: "Probably safe to ignore"
-});
-/** 
- * @typedef {Enumerator<Number>} ambiguity
- * @typedef {{value: Number, desc: String}} ambiguity_record
- * @type {Map<keyID, {value: ambiguity, desc: String}>} 
- * */
-MAGPIE.KEY.INDEX.AMBIGUITY = new Map();
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.AMBIGUITY_UNIVERSAL = 10300;
-MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_UNIVERSAL, {
-	value: 0,
-	desc: "Anyone can know about this"
-})
-MAGPIE.KEY.INDEX.AMBIGUITY_AMBIGUOUS = 10301;
-MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_AMBIGUOUS, {
-	value: 1,
-	desc: "Must investigate to know"
-})
-MAGPIE.KEY.INDEX.AMBIGUITY_CONTESTED = 10302;
-MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_CONTESTED, {
-	value: 2,
-	desc: "Information about this is unreliable"
-})
-MAGPIE.KEY.INDEX.AMBIGUITY_DISCREET = 10303;
-MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_DISCREET, {
-	value: 3,
-	desc: "Information about this is hard to find"
-})
-MAGPIE.KEY.INDEX.AMBIGUITY_SECRET = 10304;
-MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_SECRET, {
-	value: 4,
-	desc: "Information about this is private"
-})
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.POPULATION = 11001
-/** @type {key_index} */
-MAGPIE.KEY.INDEX.HEALTH = 11002
-/** @type {Map<String, key_index>} */
-MAGPIE.KEY.INDEX.STATS = new Map()
-MAGPIE.KEY.INDEX.STATS.set("FIT", 11101)
-MAGPIE.KEY.INDEX.STATS.set("END", 11102)
-MAGPIE.KEY.INDEX.STATS.set("PWR", 11103)
-MAGPIE.KEY.INDEX.STATS.set("MASS", 11104)
-MAGPIE.KEY.INDEX.STATS.set("SEN", 11105)
-MAGPIE.KEY.INDEX.STATS.set("DEX", 11106)
-MAGPIE.KEY.INDEX.STATS.set("RT", 11107)
-MAGPIE.KEY.INDEX.STATS.set("EVO", 11108)
-MAGPIE.KEY.INDEX.STATS.set("G_LVL", 11109)
-MAGPIE.KEY.INDEX.STATS.set("G_R", 11110)
-MAGPIE.KEY.INDEX.STATS.set("G_I", 11111)
-MAGPIE.KEY.INDEX.STATS.set("INERT_X", 11112)
-MAGPIE.KEY.INDEX.STATS.set("INERT_Y", 11113)
-MAGPIE.KEY.INDEX.STATS.set("INERT_Z", 11114)
-MAGPIE.KEY.INDEX.STATS.set("TMAX_X", 11115)
-MAGPIE.KEY.INDEX.STATS.set("TMAX_Y", 11116)
-MAGPIE.KEY.INDEX.STATS.set("TMAX_Z", 11117)
-MAGPIE.KEY.INDEX.STATS.set("FB", 11118)
-MAGPIE.KEY.INDEX.STATS.set("CM", 11119)
-MAGPIE.KEY.INDEX.STATS.set("MASSKG", 11120)
-MAGPIE.KEY.INDEX.STATS.set("DENSITY", 11121)
-MAGPIE.KEY.INDEX.STATS.set("LENGTH", 11122)
-MAGPIE.KEY.INDEX.STATS.set("HEIGHT", 11123)
-MAGPIE.KEY.INDEX.STATS.set("WIDTH", 11124)
-MAGPIE.KEY.INDEX.STATS.set("VOLUME", 11125)
-MAGPIE.KEY.INDEX.STATS.set("FT", 11126)
-MAGPIE.KEY.INDEX.STATS.set("VMAX", 11127)
-MAGPIE.KEY.INDEX.STATS.set("AMAX", 11128)
-MAGPIE.KEY.INDEX.STATS.set("BMAX", 11129)
-MAGPIE.KEY.INDEX.STATS.set("GMAX", 11130)
-MAGPIE.KEY.INDEX.STATS.set("CF", 11131)
-MAGPIE.KEY.INDEX.STATS.set("CL", 11132)
-MAGPIE.KEY.INDEX.STATS.set("CD", 11133)
-MAGPIE.KEY.INDEX.STATS.set("COM_X", 11134)
-MAGPIE.KEY.INDEX.STATS.set("COM_Y", 11135)
-MAGPIE.KEY.INDEX.STATS.set("COM_Z", 11136)
-MAGPIE.KEY.INDEX.STATS.set("COL_X", 11137)
-MAGPIE.KEY.INDEX.STATS.set("COM_Y", 11138)
-MAGPIE.KEY.INDEX.STATS.set("COM_Z", 11139)
-MAGPIE.KEY.INDEX.STATS.set("MOTHER", 11140)
-MAGPIE.KEY.INDEX.STATS.set("FATHER", 11141)
-MAGPIE.KEY.INDEX.STATS.set("COMPOUND", 11142)
-MAGPIE.KEY.INDEX.STATS.set("HOST", 11143)
-/** @type {key_index} evolution points */
-MAGPIE.KEY.INDEX.EVP = 12001
+MAGPIE.KEY.SERVER.MESSAGE = {}
+MAGPIE.KEY.SERVER.MESSAGE.BOOT = "[BOOT SEQUENCE]"
+MAGPIE.KEY.SERVER.MESSAGE.BOOTED = "SERVER ONLINE listening on: "
+MAGPIE.KEY.SERVER.MESSAGE.INTERNAL_ERROR = `<h1>Internal server error</h1>
+    <p>Please, try again later.</p>
+    <p>If you see this persist for over 1 hour, please, report it to [${MAGPIE.KEY.SERVER.ADMIN_EMAIL}].</p>`
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1314,7 +749,6 @@ MAGPIE.KEY.INDEX.EVP = 12001
 //------------------------------------------------------------------------
 // #region > Runtime
 //------------------------------------------------------------------------
-MAGPIE.KEY.RUNTIME = {};
 MAGPIE.KEY.RUNTIME.meta = {
 	firmwareName: "MAGPIE_RUNTIME",
 	name: "M.A.G.P.I.E. runtime"
@@ -1382,7 +816,6 @@ MAGPIE.KEY.RUNTIME.LAYER.set(5, {
 //------------------------------------------------------------------------
 // #region > Hive
 //------------------------------------------------------------------------
-MAGPIE.KEY.HIVE = {};
 MAGPIE.KEY.HIVE.meta = "";
 /** @type {Enumerator<Number>} amount of HIVE buffer layers */
 MAGPIE.KEY.HIVE.BUFFER_SIZE = 3;
@@ -1391,168 +824,102 @@ MAGPIE.KEY.HIVE.REMOTE_SIZE = 3;
 // #endregion
 //------------------------------------------------------------------------
 /**
- * @name Date
+ * 
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion -
+//========================================================================
+/**
+ * @name 
  * @desc 
  * 
+ */
+//========================================================================
+// #region - SEMANTIC
+//========================================================================
+/**
+ * @name semantics
+ * @desc component of {@link MAGPIE.KEY.meta}
+ * @desc system of {@link MAGPIE}
+ * @typedef {Number} keyID
  * @typedef {{
- * calendarID: Number,
- * days: Number,
- * months: {month: days<Number>},
- * weekDays: {index: String},
- * leapMonth: Number,
- * leapYear: Number,
- * dayLength: Number,
- * epochYear: Number
- * }} calendar_data
+ * type: Number,
+ * label: String,
+ * origin: keyID,
+ * component: keyID,
+ * compound: keyID,
+ * legacy: keyID
+ * }} key_data
+ * @typedef {Number} index array[index]
+ * @typedef {Enumerator<Number>} key_type
+ *
+ */
+MAGPIE.KEY.SEMANTICS = {};
+MAGPIE.KEY.SEMANTICS.meta = {
+    name: "M.A.G.P.I.E. semantic keys"
+}
+/**
+ *
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion -
+//========================================================================
+/**
+ * @name
+ * @desc
+ *
+ */
+//========================================================================
+// #region - DATE/TIME
+//========================================================================
+/**
+ * @name
+ * @desc
+ *
  */
 //------------------------------------------------------------------------
-// #region > Date
+// #region > Calendar
 //------------------------------------------------------------------------
-MAGPIE.KEY.CALENDAR = {};
-/** @type {Enumerator<Number>} */
-MAGPIE.KEY.CALENDAR.GREGORIAN = 0;
-
+MAGPIE.KEY.CALENDAR = {}
+MAGPIE.KEY.CALENDAR.GREGORIAN = {
+	ID: 0
+}
 // #endregion
 //------------------------------------------------------------------------
 /**
- * @name server
- * @desc 
- * 
-*/
-//------------------------------------------------------------------------
-// #region > Server
-//------------------------------------------------------------------------
-MAGPIE.KEY.SERVER = {};
-MAGPIE.KEY.SERVER.DOMAIN = MAGPIE.config.domain;
-MAGPIE.KEY.SERVER.JWT_SECRET = MAGPIE.config.jwtSecret;
-MAGPIE.KEY.SERVER.PORT = MAGPIE.config.port;
-MAGPIE.KEY.SERVER.LOGIN_COOLDOWN = 15;
-MAGPIE.KEY.SERVER.LOGIN_MAX_ATTEMPTS = 20;
-MAGPIE.KEY.SERVER.MESSAGE = {};
-MAGPIE.KEY.SERVER.MESSAGE.BOOT = "[BOOT SEQUENCE]";
-MAGPIE.KEY.SERVER.MESSAGE.BOOTED = "SERVER ONLINE listening on: ";
-MAGPIE.KEY.SERVER.MESSAGE.INTERNAL_ERROR = `<h1>Internal server error</h1><p>Please, try again later</p>
-			<p>If you see this persist for over 1 hour, please, report it to admin@shelderevolution.org</p>`
-/**
- * @name 
- * @desc 
- * 
+ *
+ * @desc back to {@link }
+ *
  */
-//------------------------------------------------------------------------
-// #region > Http
-//------------------------------------------------------------------------
-MAGPIE.KEY.SERVER.HTTP = {};
+//========================================================================
+// #endregion -
+//========================================================================
 /**
- * @desc Successful
- * @desc In simple terms, the HTTP status 200 response code means that a 
- * server has successfully processed a request. Likewise, codes in the 
- * 400s and 500s mean a request has failed.
+ * @name
+ * @desc
+ *
  */
-MAGPIE.KEY.SERVER.HTTP.STATUS_200 = {
-	code: 200,
-	message: "Successful",
-	desc: `In simple terms, the HTTP status 200 response code means 
-	that a server has successfully processed a request. Likewise, 
-	codes in the 400s and 500s mean a request has failed.`
+//========================================================================
+// #region - ENTITY
+//========================================================================
+MAGPIE.KEY.ENTITY.meta = {
+	//
 }
 /**
- * @desc Bad Request
- * @desc The 400 (Bad Request) status code indicates that the server 
- * cannot or will not process the request due to something that is 
- * perceived to be a client error. In response to an invalid request, 
- * the server should issue the exact 4xx code in the case of an 
- * unsuccessful request.
+ * @name
+ * @desc
+ * @typedef {index} stamina_index entity.fitness[stamina_index] ({@link MAGPIE.KEY.FITNESS.STAMINA})
+ * @typedef {index} state_index entity.fitness[2 + size * 2 + index]
  */
-MAGPIE.KEY.SERVER.HTTP.STATUS_400 = {
-	code: 400,
-	message: "Bad Request",
-	desc: `The 400 (Bad Request) status code indicates that the server 
-	cannot or will not process the request due to something that is 
-	perceived to be a client error. In response to an invalid request, 
-	the server should issue the exact 4xx code in the case of an 
-	unsuccessful request.`
-}
-/**
- * @desc Unauthorized
- * @desc The HTTP 401 Unauthorized client error response status 
- * code indicates that a request was not successful because it lacks 
- * valid authentication credentials for the requested resource.
- */
-MAGPIE.KEY.SERVER.HTTP.STATUS_401 = {
-	code: 401,
-	message: "Unauthorized",
-	desc: `The  HTTP 401 Unauthorized client error response status code 
-	indicates that a request was not successful because it lacks valid 
-	authentication credentials for the requested resource.`
-}
-/**
- * @desc "Forbidden"
- * @desc A 403 'Forbidden' error is an HTTP status code indicating that 
- * the server understood the request but refuses to authorize it, 
- * usually due to insufficient permissions or intentional blocking. 
- * It means the site is restricted or the user lacks access rights, 
- * making repeated attempts without modification futile.
- */
-MAGPIE.KEY.SERVER.HTTP.STATUS_403 = {
-	code: 403,
-	message: "Forbidden", 
-	desc: "A 403 'Forbidden' error is an HTTP status code indicating "
-		+ "that the server understood the request but refuses to authorize "
-		+ "it, usually due to insufficient permissions or intentional "
-		+ "blocking. It means the site is restricted or the user lacks "
-		+ "access rights, making repeated attempts without modification futile."
-};
-/**
- * @desc "Conflict"
- * @desc The standard HTTP status code for attempting to create a resource 
- * that already exists (causing a unique constraint violation in your 
- * database) is 409 Conflict. Using 409 tells the client specifically 
- * that the server understands the request, but it cannot be completed 
- * due to an asset collision.
- */
-MAGPIE.KEY.SERVER.HTTP.STATUS_409 = {
-	code: 409,
-	message: "Conflict",
-	desc: "The standard HTTP status code for attempting to create a resource "
-		+ "that already exists (causing a unique constraint violation in your "
-		+ "database) is 409 Conflict. Using 409 tells the client specifically "
-		+ "that the server understands the request, but it cannot be completed "
-		+ "due to an asset collision."
-}
-/**
- * @desc Internal Server Error
- * @desc An HTTP 500 status code (Internal Server Error) indicates 
- * that the server encountered an unexpected condition that prevented 
- * it from fulfilling the request.
- */
-MAGPIE.KEY.SERVER.HTTP.STATUS_500 = {
-	code: 500,
-	message: "Internal Server Error",
-	desc: `An HTTP 500 status code (Internal Server Error) indicates 
-	that the server encountered an unexpected condition that prevented 
-	it from fulfilling the request.`
-}
-/**
- * @desc "too many requests"
- * @desc The HTTP 429 "Too Many Requests" status code indicates the user 
- * has sent too many requests to a server within a given timeframe, 
- * triggering rate limiting. This client-side error protects servers 
- * from abuse, such as DDoS attacks, scrapers, or excessive bot activity. 
- * It is commonly resolved by waiting, reducing request frequency, or 
- * checking API limits.
- */
-MAGPIE.KEY.SERVER.HTTP.STATUS_429 = {
-	code: 429,
-	message: "Too many requests!",
-	desc: "The HTTP 429 'Too Many Requests' status code indicates the user "
-		+ "has sent too many requests to a server within a given timeframe, "
-		+ "triggering rate limiting. This client-side error protects servers "
-		+ "from abuse, such as DDoS attacks, scrapers, or excessive bot activity. "
-		+ "It is commonly resolved by waiting, reducing request frequency, "
-		+ "or checking API limits."
-};
-// #endregion
 //------------------------------------------------------------------------
+// #region > Fitness
+//------------------------------------------------------------------------
+MAGPIE.KEY.FITNESS = {}
+MAGPIE.KEY.FITNESS.STAMINA = 6
 // #endregion
 //------------------------------------------------------------------------
 /**
@@ -1561,9 +928,8 @@ MAGPIE.KEY.SERVER.HTTP.STATUS_429 = {
  * 
  */
 //------------------------------------------------------------------------
-// #region > Entity
+// #region > Type
 //------------------------------------------------------------------------
-MAGPIE.KEY.ENTITY = {};
 MAGPIE.KEY.ENTITY.TYPE = require("../data/entity_types");
 MAGPIE.KEY.ENTITY.UNIVERSE = 101;
 /**
@@ -1581,6 +947,16 @@ MAGPIE.KEY.ENTITY.CONTAINER.meta = {
  * @desc offset = i * values 
  * */
 MAGPIE.KEY.ENTITY.CONTAINER.SERIES = 4;
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name
+ * @desc
+ *
+ */
+//------------------------------------------------------------------------
+// #region > Growth
+//------------------------------------------------------------------------
 /**
  * 
  * 
@@ -1617,154 +993,21 @@ MAGPIE.KEY.GROWTH.ELDER = [MAGPIE.KEY.STATE.ELDER, 1, Infinity]
 // #endregion
 //------------------------------------------------------------------------
 /**
- * @name PHYSICS
- * @desc 
  * 
- * 
+ * @desc back to {@link }
+ *
  */
-//------------------------------------------------------------------------
-// #region > Physics
-//------------------------------------------------------------------------
-MAGPIE.KEY.PHYSICS = {};
+//========================================================================
+// #endregion -
+//========================================================================
 /**
- * @typedef {Number} duration in s
- * @typedef {Number} distance in m
- * @typedef {Number} volume in L
- * @typedef {Number} mass in kg
- * @typedef {Number} velocity in m/s
- * @typedef {Number} acceleration in m/s²
- * @typedef {Number} index array address
- * @typedef {Number} offset array address offset used in "index + offset"
- * @typedef {Number} offset_mult multiplier for index offset
- * @typedef {[x<Number>, y<Number>, z<Number>]} vector3 3D vector [x,y,z]
- * @typedef {[yz<Number>, xz<Number>, xy<Number>]} bivector 3D bivector [yz, xz, xy]
- * @typedef {[yz<Number>, xz<Number>, xy<Number>, w<Number>]} rotor
- * @typedef {Number} theta (θ) angular displacement in rad
- * @typedef {Number} omega (ω) angular velocity in rad/s
- * @typedef {Number} alpha (α) angular acceleration in rad/s²
- * @typedef {Number} torque (𝜏) in N*m
- * @typedef {Number} MoI moment of inertia (I) in kg*m²
- * @typedef {Number} electric_current in Ampere (A)
- * @typedef {Number} temperature in Kelvin (K)
- * @typedef {Number} substance Mole (mol)
- * @typedef {Number} luminosity Candela (cd)
- * @typedef {Number} radioactivity Rad (rad) absorbed dose / amount of energy in matter
- * @typedef {Number} force in Newton (N) = kg * m/s²
- * @typedef {Number} energy in Joule (J) = N * m / kg * m²/s²
- * @typedef {Number} power in Watt (W) = J/s / kg * m²/s³
- * @typedef {Number} pressure in Pascal (Pa) = N/m² or kg/(m*s²)
- * @typedef {Number} frequency in Hertz (Hz) = 1/s
- * @typedef {Number} voltage in Volt (V) = kg * m²/(s³ * A)
- * @typedef {Number} angle_rad in radians (rad) 0 to PI
- * @typedef {Number} angle_deg in degrees (°) 0 to 360
- * @typedef {Number} ratio variable * ratio<0 to 1>
- * @typedef {Number} coefficient variable * coefficient
- * @typedef {Number} percentage %
- * @typedef {Number} density kg/L
- * @typedef {Number} atmo_density atmospheric density = kg/m³ 
- * @typedef {Number} epoch_real_s time in s since epoch J2000
+ * @name
+ * @desc
+ *
  */
-MAGPIE.KEY.PHYSICS.meta = {};
-/**
- * @desc reference plane
- * @type {vector3} [x,y,z]
- */
-MAGPIE.KEY.PHYSICS.K = [0,0,1];
-/**
- * @desc gravitational constant.
- * @desc Multiplied by celestial body's mass to find 'mu' (μ) 
- * @desc {@link MAGPIE.KEY.ORBIT.MU}
- * @type {mass}
- */
-MAGPIE.KEY.PHYSICS.G = 6.67430e-11;
-/**
- * @desc Astronomical unit based on {@link MAGPIE.KEY.PHYSICS.EARTH.A}
- * @type {distance}
- */
-MAGPIE.KEY.PHYSICS.AU = 149597870700;
-/**
- * @desc Nautical Mile in meters
- * @type {distance}
- */
-MAGPIE.KEY.PHYSICS.NM = 1852;
-/**
- * @name Terra
- * @desc 
- */
-MAGPIE.KEY.PHYSICS.EARTH = {};
-/**
- * @desc celestial body radius in meters
- * @desc standardized for obloid geodetic calculations
- * @type {distance}
- */
-MAGPIE.KEY.PHYSICS.EARTH.RADIUS = 6371008;
-/**
- * @desc celestial body mass in kg
- * @type {mass}
- */
-MAGPIE.KEY.PHYSICS.EARTH.MASS = 5.90034e24;
-/**
- * @desc Earth's equatorial radius in meters
- * @type {distance}
- */
-MAGPIE.KEY.PHYSICS.EARTH.R = 6378137;
-/**
- * @desc standard Earth's gravity in m/s²
- * @desc also the reference for {@link MAGPIE.KEY.PHYSICS.FORCES.FG}
- * @type {acceleration}
- */
-MAGPIE.KEY.PHYSICS.EARTH.G = 9.81;
-/**@type {velocity} @desc Escape Velocity (Vₑ) */
-MAGPIE.KEY.PHYSICS.EARTH.VE = 11160;
-/** @type {angle_deg} @desc Axial tilt */
-MAGPIE.KEY.PHYSICS.EARTH.AXIAL = 23.44;
-/** @type {import("./system").hour} @desc rotation period (h) */
-MAGPIE.KEY.PHYSICS.EARTH.ROTATION = 23.9334;
-/** @type {luminosity} @desc Albedo */
-MAGPIE.KEY.PHYSICS.EARTH.ALBEDO = 0.306;
-/** @type {temperature} @desc surface temperature (K) */
-MAGPIE.KEY.PHYSICS.EARTH.SURF_TEMP = 287;
-/** @type {ratio} @desc eccentricity */
-MAGPIE.KEY.PHYSICS.EARTH.E = 0.0167;
-/** @type {percentage} @desc % atmospheric O₂*/
-MAGPIE.KEY.PHYSICS.EARTH.ATMO_O2 = 20.99;
-/** @type {percentage} @desc % atmospheric CO₂ */
-MAGPIE.KEY.PHYSICS.EARTH.ATMO_CO2 = 0.04;
-/** @type {percentage} @desc % atmospheric Ar */
-MAGPIE.KEY.PHYSICS.EARTH.ATMO_AR = 0.93;
-/** @type {percentage} @desc % atmospheric N₂ */
-MAGPIE.KEY.PHYSICS.EARTH.ATMO_N2 = 78.04;
-/** @type {density} @desc atmospheric density = kg/m³ */
-MAGPIE.KEY.PHYSICS.EARTH.ATD = 1.221;
-/** @type {pressure * 1000} @desc 1 atmo, in kPa */
-MAGPIE.KEY.PHYSICS.EARTH.ATMO = 101.3;
-MAGPIE.KEY.PHYSICS.EARTH.J2000 = (new Date("2000-01-01T11:58:55.816Z")).getTime()
-MAGPIE.KEY.PHYSICS.EARTH.ORBIT_DATA = {
-		a: MAGPIE.KEY.PHYSICS.AU,
-		e: MAGPIE.KEY.PHYSICS.EARTH.E,
-		i: 0,
-		raan: 0,
-		aop: 102.94,
-		nu: 65.4,
-		epoch: MAGPIE.KEY.PHYSICS.EARTH.J2000,
-		M0: 357.5171
-	};
-MAGPIE.KEY.PHYSICS.EARTH.DATA = {
-	name: "Terra",
-	type: MAGPIE.KEY.ENTITY.TYPE.PLANET_TERRESTRIAL,
-	orbit: MAGPIE.KEY.PHYSICS.EARTH.ORBIT_DATA
-};
-/**
- * @desc "e" is Euler's number, a mathematical constant approximately 
- * equal to 2.71828. Nature's Constant: Just as π is the constant for circles, 
- * e is the fundamental constant for growth and change. We can
- * consider it the "S-curve-builder".
- * @desc used in:
- * - {@link MAGPIE_ENTITY.growth}
- */
-MAGPIE.KEY.PHYSICS.EULER = 2.71828;
-// #endregion
-//------------------------------------------------------------------------
+//========================================================================
+// #region - COMPON.
+//========================================================================
 /**
  * @name Geodetic
  * @desc 
@@ -1777,7 +1020,7 @@ MAGPIE.KEY.PHYSICS.EULER = 2.71828;
  * component of {@link MAGPIE_GEOGRAPHY}
  * 
  */
-MAGPIE.KEY.GEODETIC = {};
+MAGPIE.KEY.GEODETIC.meta = {};
 MAGPIE.KEY.GEODETIC.DEFAULT = {
 	lat: NaN, 
 	lon: NaN, 
@@ -1785,9 +1028,21 @@ MAGPIE.KEY.GEODETIC.DEFAULT = {
 	geog: [NaN], 
 	forces: [NaN]
 }
+
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name
+ * @desc
+ *
+ */
+//------------------------------------------------------------------------
+// #region > Physics
+//------------------------------------------------------------------------
 /**
  * @typedef {Float64Array} physics_forces [FG, FF, FD, FL, AOA, Atm, OAT, Dew, Breeze, Lit, Rad]
  */
+MAGPIE.KEY.PHYSICS.meta = {}
 /**
  * 
  * @desc component of {@link MAGPIE_ENTITY}
@@ -1817,7 +1072,6 @@ MAGPIE.KEY.PHYSICS.FORCES.ARRAY = MAGPIE.KEY.PHYSICS.FORCES.AOA + 1;
 //------------------------------------------------------------------------
 // #region > Orbit
 //------------------------------------------------------------------------
-MAGPIE.KEY.ORBIT = {};
 /**
  * @typedef {{
  * a: distance, 
@@ -1899,9 +1153,6 @@ MAGPIE.KEY.ORBIT.ARRAY = MAGPIE.KEY.ORBIT.E_ID + 1;
  * @property {bivector[2]} T_XY
  * @property {entityID} E_ID
  * 
- */
-MAGPIE.KEY.POVART = {};
-/**
  * @typedef {Number} P_X position x
  * @typedef {Number} P_Y position y
  * @typedef {Number} P_Z position z
@@ -1932,6 +1183,7 @@ MAGPIE.KEY.POVART = {};
  * @typedef {Number} T_XY torque bivector XY
  * @typedef {Number} E_ID entity ID
  * @typedef {Number[]} orbit [a,e,i,raan,aop,nu,T0,M0]
+ *
  */
 MAGPIE.KEY.POVART.meta = {};
 /** @type {index} position x */
@@ -2506,7 +1758,6 @@ MAGPIE.KEY.CONTEXT.TYPE.set(MAGPIE.KEY.CONTEXT.LOCAL, {
 //------------------------------------------------------------------------
 //#region > State
 //------------------------------------------------------------------------
-
 MAGPIE.KEY.STATE.meta = {};
 /** {@link MAGPIE_STATE.setup} */
 MAGPIE.KEY.STATE.meta.schema = [
@@ -2575,6 +1826,72 @@ MAGPIE.KEY.SWITCHES.LEAP_YEAR = MAGPIE.KEY.SWITCHES.LEAP_MONTH + 1;
 // #endregion
 //------------------------------------------------------------------------
 /**
+ *
+ * @desc back to {@link }
+ *
+ */
+//========================================================================
+// #endregion -
+//========================================================================
+/**
+ * @name
+ * @desc
+ *
+ */
+//========================================================================
+// #region - GENERAL
+//========================================================================
+/**
+ * @name
+ * @desc
+ *
+ */
+//------------------------------------------------------------------------
+// #region > ANSI esc
+//------------------------------------------------------------------------
+MAGPIE.KEY.ANSI = {}
+/**
+ * @desc ANSI escape characters
+ * @typedef {String} ansi_escape
+ */
+MAGPIE.KEY.ANSI.meta = {}
+/** @type {ansi_escape}  */
+MAGPIE.KEY.ANSI.ESC = "\x1b"
+/** @type {ansi_escape}  */
+MAGPIE.KEY.ANSI.SAVE_CURSOR = `${MAGPIE.KEY.ANSI.ESC}[s`
+/** @type {ansi_escape}  */
+MAGPIE.KEY.ANSI.RESTORE_CURSOR = `${MAGPIE.KEY.ANSI.ESC}[u`
+/** @type {ansi_escape}  */
+MAGPIE.KEY.ANSI.CARRIAGE_RETURN = "\x0D"
+/** @type {ansi_escape}  */
+MAGPIE.KEY.ANSI.MOVE_UP = `${MAGPIE.KEY.ANSI.ESC}[1A`
+/** @type {ansi_escape}  */
+MAGPIE.KEY.ANSI.moveUpCustom = (linesUP) => `${MAGPIE.KEY.ANSI.ESC}[${linesUP}A`
+/** @type {ansi_escape}  */
+MAGPIE.KEY.ANSI.moveDownCustom = (linesDown) => `${MAGPIE.KEY.ANSI.ESC}[${linesDown}B`
+/** @type {ansi_escape}  */
+MAGPIE.KEY.ANSI.MOVE_DOWN = `${MAGPIE.KEY.ANSI.ESC}[1B`
+/** @type {ansi_escape} @desc clear the line, reset horizontal position */
+MAGPIE.KEY.ANSI.CLEAR_LINE = `${MAGPIE.KEY.ANSI.ESC}[2K`
+/** @type {ansi_escape} */
+MAGPIE.KEY.ANSI.STYLE_RESET = "\x1b[0m"
+/** @type {ansi_escape} */
+MAGPIE.KEY.ANSI.STYLE_RED = "\x1b[31m"
+/** @type {ansi_escape} */
+MAGPIE.KEY.ANSI.STYLE_GREEN = "\x1b[32m"
+/** @type {ansi_escape} */
+MAGPIE.KEY.ANSI.STYLE_YELLOW = "\x1b[33m"
+/** @type {ansi_escape} */
+MAGPIE.KEY.ANSI.STYLE_BLUE = "\x1b[34m"
+/** @type {ansi_escape} */
+MAGPIE.KEY.ANSI.STYLE_CYAN = "\x1b[35m"
+/** @type {ansi_escape} */
+MAGPIE.KEY.ANSI.STYLE_BOLD = "\x1b[1m"
+/** @type {ansi_escape} */
+MAGPIE.KEY.ANSI.STYLE_DIM = "\x1b[2m"
+// #endregion
+//------------------------------------------------------------------------
+/**
  * @name HTML
  * @desc 
  * 
@@ -2582,7 +1899,7 @@ MAGPIE.KEY.SWITCHES.LEAP_YEAR = MAGPIE.KEY.SWITCHES.LEAP_MONTH + 1;
 //------------------------------------------------------------------------
 // #region > HTML
 //------------------------------------------------------------------------
-MAGPIE.KEY.HTML = {};
+MAGPIE.KEY.HTML.meta = {};
 MAGPIE.KEY.HTML.VENDOR_PREFIX = [
 	["-webkit-", "Chrome, Safari, Edge, iOS"],
 	["-moz-", "Moizlla Firefox"],
@@ -2676,7 +1993,7 @@ MAGPIE.KEY.HTML.INPUT.TYPE.RADIO = "radio"
  * When clicked, it opens the operating system's native color picker palette. 
  * The selected color is typically returned as a Hex code value (e.g., #ff0000 for red).
  */
-MAGPIE.KEY.HTML.INPUT.TYPE.COLOR = "color"
+MAGPIE.KEY.HTML.INPUT.TYPE.STYLE = "color"
 /**
  * @desc A button that allows users to upload files. When clicked, 
  * it opens the file explorer dialog, allowing users to select one or 
@@ -2733,12 +2050,12 @@ MAGPIE.KEY.WMEDIA.CHORD = `${MAGPIE.KEY.WMEDIA.DEFAULT_PATH}chord.wav`;
 //========================================================================
 // #endregion - 
 //========================================================================
-module.exports = { MAGPIE };
 /**
  * 
- * @desc back to {@link }
+ * @desc back to {@link MAGPIE}
  *
  */
+module.exports = { MAGPIE }
 //========================================================================
 // END OF FILE
 //========================================================================

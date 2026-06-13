@@ -1,4 +1,4 @@
-const { MAGPIE_SYSTEM } = require("../core/system")
+const { MAGPIE_SYSTEM } = require("../src/system")
 module.exports = (io, socket) => {
     const leaveEntityRooms = () => {
         socket.rooms.forEach(room => {

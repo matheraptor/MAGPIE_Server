@@ -1,4 +1,4 @@
-const { MAGPIE_SYSTEM, MAGPIE_HIVE } = require("../core/system");
+const { MAGPIE_SYSTEM, MAGPIE_HIVE } = require("../src/system");
 module.exports = (io, socket) => {
     const { playerID } = socket.handshake.query;
     if(!playerID || playerID === "undefined" || playerID === "null") 

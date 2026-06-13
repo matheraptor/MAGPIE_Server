@@ -18,7 +18,7 @@
     --text: #fafafa;
     --text-muted: #71717a;
     --font-default: 'Inter', system-ui, sans-serif;
-    --crt-font-main: 'Courier New', Courier, monospace;
+    --crt-font-main: 'Courier New', monospace;
 }
 
 * {
@@ -59,7 +59,7 @@ body {
 
 /* #region navigation */
 
-.nav-status {
+#nav-status {
     width: 100vw;
     position: fixed;
     bottom: 0;
@@ -67,11 +67,14 @@ body {
     background: var(--crt-dark);
     padding-top: 10px;
     padding-bottom: 10px;
-    display: block;
+    display: flex;
     z-index: 999;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
 
-.nav-breadcrumbs {
+#nav-breadcrumbs {
     width: 100vw;
     position: fixed;
     top: 0;
@@ -379,6 +382,11 @@ body {
     content: "--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------";
 }
 
+.cli-status {
+    color: var(--crt-white);
+    font-family: var(--crt-font-main);
+}
+
 /* #endregion */
 
 /* #region pixel-perfect */
@@ -387,6 +395,7 @@ body {
   image-rendering: crisp-edges;
   font-smooth: never;
   -webkit-font-smoothing: none;
+  padding-right: 20px;
 }
 /* #endregion */
 

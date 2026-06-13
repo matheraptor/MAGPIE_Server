@@ -16,45 +16,14 @@ worker.meta = {};
 //========================================================================
 // #region - THREAD
 //========================================================================
-const { MAGPIE } = require("./index");
-const { 
-	MAGPIE_DATE,
-	MAGPIE_METASTATE,
-	MAGPIE_LOG
-} = require("./system")
-const { MAGPIE_ENTITY } = require("./entity");
-const { MAGPIE_PLAYER } = require("./player");
-const { 
-	MAGPIE_KEY, 
-	MAGPIE_CONTEXT,
-	MAGPIE_EXP,
-	MAGPIE_SYMBOL,
-	MAGPIE_TICKET,
-	MAGPIE_STATE,
-	MAGPIE_COMPONENT,
-	MAGPIE_EMOTE
-} = require("./component");
-worker.REGISTRY = {
-	MAGPIE_LOG,
-	MAGPIE_METASTATE,
-	MAGPIE_DATE,
-	MAGPIE_ENTITY,
-	MAGPIE_PLAYER,
-	MAGPIE_KEY,
-	MAGPIE_CONTEXT,
-	MAGPIE_EXP,
-	MAGPIE_TICKET,
-	MAGPIE_STATE,
-	MAGPIE_SYMBOL,
-	MAGPIE_EMOTE
-}
+const { MAGPIE } = require("../index");
 /**
  * @typedef {import("better-sqlite3").Database} Database
  */
 const Database = require("better-sqlite3");
 const path = require("path");
-const worldPath = path.join(__dirname, "..", "db", "world.db");
-const serverPath = path.join(__dirname, "..", "db", "server.db")
+const worldPath = `${process.cwd()}/db/world.db`
+const serverPath = `${process.cwd()}/db/server.db`
 worker.world = new Database(worldPath);
 /**
  * @desc Why this is a "must" for your VM:
@@ -103,10 +72,18 @@ parentPort?.on("message", async ({ method, args = [], requestID }) => {
 })
 worker.close = function close()
 {
-	console.log("[DATABASE WORKER]: closing database connections...");
-	worker.world.close();
-	worker.server.close();
-	process.exit(0);
+	// console.log("[DATABASE WORKER]: closing database connections...");
+	try
+	{
+		worker.world.close();
+		worker.server.close();
+		process.exit(0);
+	}
+	catch(e)
+	{
+		process.stderr.write(e.message)
+		process.exit(1)
+	}
 }
 /**
  * 

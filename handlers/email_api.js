@@ -1,3 +1,4 @@
+const { MAGPIE } = require("../src/index")
 const nodemailer = require("nodemailer")
 const transporter = nodemailer.createTransport({
 	host: "smtp.sendgrid.net",
@@ -9,12 +10,12 @@ const transporter = nodemailer.createTransport({
 	}
 })
 // const domain = "http://localhost:3000"
-const domain = process.env.domain
+const domain = MAGPIE.KEY.SERVER.DOMAIN
 const mailer = {}
 mailer.sendRecovery = async function(email, token)
 {
 	const line1 = "A password reset has been requested. If you didn't initiate the request, ignore this email. You can report the problem to 'admin@shelderevolution.org'."
-	const link = `http://localhost:3000/reset-password?token=${token}`
+	const link = `${domain}/reset-password?token=${token}`
 	const follow = "Follow this link "
 	const clickhere = "Click here "
 	const reset = "to reset your credentials"
@@ -32,7 +33,7 @@ mailer.sendRecovery = async function(email, token)
 mailer.sendConfirmation = async function(email, token)
 {
 	const line1 = "Welcome to ShelderEvolution MMORPG! To enable your login access, confirm your registration"
-	const link = `http://localhost:3000/verify-email?token=${token}`
+	const link = `${domain}/verify-email?token=${token}`
 	const follow = "Follow this link "
 	const clickhere = "Click here "
 	const verify = "to verify your email address"

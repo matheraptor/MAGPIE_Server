@@ -7,7 +7,11 @@
 // #region - DATABASE
 //========================================================================
 const { response } = require("express");
-const { verifyPassword } = require("./auth_util.js");
+const {
+    verifyPassword,
+    hashPassword,
+    EmailSecurity
+} = require("./services/auth");
 const { MAGPIE } = require("./index");
 const { 
 	MAGPIE_LOG, 
@@ -57,7 +61,7 @@ MAGPIE_DATABASE.timestamp = function timestamp()
 // #region - WORKER
 //========================================================================
 MAGPIE_DATABASE._pending = new Map();
-MAGPIE_DATABASE.sync = require("./database_worker");
+MAGPIE_DATABASE.sync = require("./services/database_worker");
 const { Worker } = require("worker_threads");
 const { MAGPIE_PLAYER } = require("./player.js");
 const { 
@@ -67,7 +71,7 @@ const {
 	MAGPIE_CONTEXT,
 	MAGPIE_TICKET 
 } = require("./component.js");
-MAGPIE_DATABASE.worker = new Worker("./core/database_worker.js");
+MAGPIE_DATABASE.worker = new Worker("./src/services/database_worker.js");
 MAGPIE_DATABASE.call = function call(method, ...args)
 {
 	const requestID = Date.now() + Math.floor(Math.random() * 10000000);
@@ -119,7 +123,7 @@ MAGPIE_DATABASE.pingWorker = async function pingWorker()
  * 
  */
 //========================================================================
-// #region - WRAPPERS
+// #region - WRAP
 //========================================================================
 /**
  * @name 
@@ -1507,6 +1511,197 @@ MAGPIE_DATABASE.initializeTableSchema = function initializeTableSchema(tableName
 // #endregion
 //------------------------------------------------------------------------
 /**
+ * @name
+ * @desc
+ *
+ */
+//------------------------------------------------------------------------
+// #region > Tables
+//------------------------------------------------------------------------
+/**
+ *
+ * @returns
+ */
+MAGPIE_DATABASE.setup = function setupDatabase()
+{
+    const ePrefix = "[DATABASE] "
+    const integer = "INTEGER NOT NULL"
+    const integerNullable = "INTEGER"
+    const integerKey = "INTEGER PRIMARY KEY"
+    const foreignKey = " FOREIGN KEY";
+	const blob = "JSON NOT NULL";
+	const textNullable = "TEXT";
+	const text = "TEXT NOT NULL";
+	const textKey = "TEXT PRIMARY KEY";
+    /** @type {Map<String, worker_result[]>} */
+	const tables = new Map();
+    try
+	{
+		const logs = this.sync.createServerTable("MAGPIE_LOG", {
+			ID: integerKey,
+			gravity: integer,
+			urgency: integer
+		});
+		tables.set("logs", logs);
+		const entities = this.sync.createWorldTable("MAGPIE_ENTITY", {
+			ID: integerKey,
+			type: integer,
+			name: textNullable,
+			updated: integer,
+			compoundID: integerNullable,
+			hostID: integerNullable,
+			data: blob,
+			fk1: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_ENTITY(ID)",
+			fk2: "FOREIGN KEY (hostID) REFERENCES MAGPIE_ENTITY(ID)"
+		});
+		tables.set("entities", entities);
+		const entity_parent = this.sync.createWorldTable("entity_parent", {
+			type: integerKey,
+			desc: text
+		})
+		const entity_children = this.sync.createWorldTable("entity_children", {
+			parentID: integer,
+			childID: integer,
+			parentType: integer,
+			"PRIMARY KEY": "(parentID, childID, parentType)",
+			fk1: "FOREIGN KEY (parentID) REFERENCES MAGPIE_ENTITY(ID)",
+			fk2: "FOREIGN KEY (childID) REFERENCES MAGPIE_ENTITY(ID)",
+			fk3: "FOREIGN KEY (parentType) REFERENCES entity_parent(type)"
+		})
+		tables.set("entity_children", entity_children);
+		const entity_components = this.sync.createWorldTable("entity_components", {
+			compoundID: integer,
+			componentID: integer,
+			"PRIMARY KEY": "(compoundID, componentID)",
+			fk1: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_ENTITY(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (componentID) REFERENCES MAGPIE_ENTITY(ID)"
+		})
+		tables.set("entity_components", entity_components);
+		const entity_equips = this.sync.createWorldTable("entity_equips", {
+			hostID: integer,
+			equipID: integer,
+			"PRIMARY KEY": "(hostID, equipID)",
+			fk1: "FOREIGN KEY (hostID) REFERENCES MAGPIE_ENTITY(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (equipID) REFERENCES MAGPIE_ENTITY(ID)"
+		})
+		tables.set("entity_equips", entity_equips);
+		const events = this.sync.createWorldTable("MAGPIE_EVENT", {
+			ID: integerKey,
+			type: integer,
+			parentID: integerNullable,
+			status: integer,
+			updated: integer,
+			data: blob,
+			fk1: "FOREIGN KEY (parentID) REFERENCES MAGPIE_EVENT(ID)"
+		})
+		tables.set("events", events);
+		const event_children = this.sync.createWorldTable("event_children", {
+			parentID: integer,
+			childID: integer,
+			fk1: "FOREIGN KEY (parentID) REFERENCES MAGPIE_EVENT(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (childID) REFERENCES MAGPIE_EVENT(ID)"
+		})
+		const keys = this.sync.createWorldTable("MAGPIE_KEY", {
+			ID: integerKey,
+			type: integer,
+			label: textNullable,
+			originID: integerNullable,
+			compoundID: integerNullable,
+			symbolID: integerNullable,
+			fk1: "FOREIGN KEY (originID) REFERENCES MAGPIE_KEY(ID)",
+			fk2: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_KEY(ID)",
+			fk3: "FOREIGN KEY (symbolID) REFERENCES MAGPIE_SYMBOL(ID)"
+		});
+		tables.set("keys", keys);
+		const exps = this.sync.createWorldTable("MAGPIE_EXP", {
+			ID: integerKey,
+			subjectID: integerNullable,
+			targetID: integerNullable,
+			data: blob,
+			fk1: "FOREIGN KEY (subjectID) REFERENCES MAGPIE_ENTITY(ID)",
+			fk2: "FOREIGN KEY (targetID) REFERENCES MAGPIE_ENTITY(ID)"
+		})
+		tables.set("exps", exps);
+		const exp_keys = this.sync.createWorldTable("EXP_KEYS", {
+			expID: integer,
+			keyID: integer,
+			"PRIMARY KEY": "(expID, keyID)",
+			fk1: "FOREIGN KEY (expID) REFERENCES MAGPIE_EXP(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (keyID) REFERENCES MAGPIE_KEY(ID)"
+		})
+		tables.set("exp_keys", exp_keys);
+		const key_legacies = this.sync.createWorldTable("key_legacies", {
+			keyID: integer,
+			legacyID: integer,
+			"PRIMARY KEY": "(keyID, legacyID)",
+			fk1: "FOREIGN KEY (keyID) REFERENCES MAGPIE_KEY(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (legacyID) REFERENCES MAGPIE_KEY(ID)"
+		});
+		tables.set("key_legacies", key_legacies);
+		const key_components = this.sync.createWorldTable("key_components", {
+			keyID: integer,
+			componentID: integer,
+			"PRIMARY KEY": "(keyID, componentID)",
+			fk1: "FOREIGN KEY (keyID) REFERENCES MAGPIE_KEY(ID) ON DELETE CASCADE",
+			fk2: "FOREIGN KEY (componentID) REFERENCES MAGPIE_KEY(ID)"
+		});
+		tables.set("key_components", key_components);
+		const symbols = this.sync.createWorldTable("MAGPIE_SYMBOL", {
+			ID: integerKey,
+			type: integer,
+			name: textNullable,
+			data: blob,
+		});
+		tables.set("symbols", symbols);
+		const symbol_recipes = this.sync.createWorldTable("symbol_recipes", {
+			requirementID: integer,
+			recipeID: integer,
+			"PRIMARY KEY": "(requirementID, recipeID)",
+			fk1: "FOREIGN KEY (requirementID) REFERENCES MAGPIE_SYMBOL(ID)",
+			fk2: "FOREIGN KEY (recipeID) REFERENCES MAGPIE_SYMBOL(ID)"
+		});
+		tables.set("symbol_recipes", symbol_recipes);
+		const symbol_components = this.sync.createWorldTable("symbol_components", {
+			compoundID: integer,
+			componentID: integer,
+			"PRIMARY KEY": "(compoundID, componentID)",
+			fk1: "FOREIGN KEY (compoundID) REFERENCES MAGPIE_SYMBOL(ID)",
+			fk2: "FOREIGN KEY (componentID) REFERENCES MAGPIE_SYMBOL(ID)"
+		});
+		tables.set("symbol_components", symbol_components);
+		const metastate = this.sync.createWorldTable("MAGPIE_METASTATE", {
+			key: textKey,
+			data: blob
+		});
+		tables.set("metastate", metastate);
+		const contexts = this.sync.createWorldTable("MAGPIE_CONTEXT", {
+			ID: integerKey,
+			type: integer,
+			name: textNullable,
+			updated: integer,
+			data: blob
+		})
+		const players = this.sync.createServerTable("MAGPIE_PLAYER", {
+			ID: integerKey,
+			username: text,
+			email: text,
+			PASS: text,
+			isFrozen: integer,
+			data: blob
+		})
+		tables.set("players", players);
+		const results = Array.from(tables.entries());
+		if(results.every((r) => r[1])) return results
+			throw new Error(`unable to setup [${results.filter(r => !r[1])}]`);
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
+}
+// #endregion
+//------------------------------------------------------------------------
+/**
  * 
  * @desc back to {@link }
  *
@@ -1514,7 +1709,7 @@ MAGPIE_DATABASE.initializeTableSchema = function initializeTableSchema(tableName
 //========================================================================
 // #endregion - 
 //========================================================================
-module.exports = MAGPIE_DATABASE;
+module.exports = { MAGPIE_DATABASE };
 /**
  * 
  * @desc back to {@link }

@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const { hashPassword, verifyPassword } = require("../core/auth_util");
+const { hashPassword, verifyPassword } = require("../src/services/auth");
 const mailer = require("./email_api")
 // const { MAGPIE } = require("../core/index")
 const ePrefix = "[ACCOUNT HANDLER] "
