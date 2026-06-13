@@ -86,6 +86,7 @@ body {
     padding: 10px 10px;
     align-items: stretch;
     z-index: 999;
+    justify-content: space-between; 
 }
 
 .nav-button {

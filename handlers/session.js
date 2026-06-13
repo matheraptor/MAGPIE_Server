@@ -53,7 +53,7 @@ module.exports = function(io, socket, server)
 		io.on("connection", (socket) => {
 			socket.on("disconnect", () => {
 				session.active.delete(socket.id)
-				server.log(`${ePrefix} disconnected. Total players: ${manager.active.size}`)
+				server.log(`${ePrefix} disconnected. Total players: ${session.active.size}`)
 			})
 		})
 	}

@@ -21,7 +21,8 @@
  * 
  * @desc current
  * 
- * @version 0.39.4 2026 06 13
+ * @version 0.39.5 2026 06 13
+ * - TWEAKED: revised docs
  * - TWEAKED: renamed handlers
  * 
  * @version 0.39.3 2026 06 12
@@ -495,7 +496,7 @@ class MAGPIE
 MAGPIE.meta = {
     name: "M.A.G.P.I.E.",
     desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-    version: [0,39,4],
+    version: [0,39,5],
     firmwareName: "MAGPIE",
     firmwareDate: "20260613"
 }
@@ -1844,6 +1845,165 @@ MAGPIE.KEY.SWITCHES.LEAP_YEAR = MAGPIE.KEY.SWITCHES.LEAP_MONTH + 1;
 //========================================================================
 // #region - GENERAL
 //========================================================================
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Urgency
+//------------------------------------------------------------------------
+/**
+ * @typedef {Enumerator<Number>} urgency
+ * @typedef {{value: Number, desc: String}} urgency_record
+ * @type {Map<keyID, {value: urgency, desc: String>}}
+ */
+MAGPIE.KEY.INDEX.URGENCY = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_STRATEGIC = 10001;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_STRATEGIC, {
+	name: "STRATEGIC",
+	value: -1, 
+	desc: "neutral urgency to always keep in mind"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE = 10100;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_IMMEDIATE, {
+	name: "IMMEDIATE",
+	value: 4,
+	desc: "Must do NOW"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_DIRE = 10101;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_DIRE, {
+	name: "DIRE",
+	value: 3,
+	desc: "Must do NEXT"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_CRITICAL = 10102;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_CRITICAL, {
+	name: "CRITICAL",
+	value: 2,
+	desc: "Must do AS SOON AS POSSIBLE (ASAP)"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_SIGNIFICANT = 10103;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_SIGNIFICANT, {
+	name: "SIGNIFICANT",
+	value: 1,
+	desc: "Should do SOON"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.URGENCY_LATENT = 10104;
+MAGPIE.KEY.INDEX.URGENCY.set(MAGPIE.KEY.INDEX.URGENCY_LATENT, {
+	name: "LATENT",
+	value: 0,
+	desc: "Can do if and when possible"
+});
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Gravity
+//------------------------------------------------------------------------
+/** 
+ * @typedef {Enumerator<Number>} gravity
+ * @typedef {{value: Number, desc: String}} gravity_record
+ * @type {Map<keyID, {value: gravity, desc: String>}} 
+ * 
+ * */
+MAGPIE.KEY.INDEX.GRAVITY = new Map()
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_TACTICAL = 10199;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TACTICAL, {
+	name: "TACTICAL",
+	value: -1,
+	desc: "Neutral gravity to keep in mind"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_VITAL = 10200;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_VITAL, {
+	name: "VITAL",
+	value: 4,
+	desc: "Must care about this ABOVE ALL"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_SEVERE = 10201;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_SEVERE, {
+	name: "SEVERE",
+	value: 3,
+	desc: "Must care about this AS MUCH AS POSSIBLE"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_PRESSING = 10202;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_PRESSING, {
+	name: "PRESSING",
+	value: 2,
+	desc: "Should care about this when possible"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT = 10203;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_IMPORTANT, {
+	name: "IMPORTANT",
+	value: 1,
+	desc: "Might care sometimes; probably unsafe to ignore"
+});
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL = 10204;
+MAGPIE.KEY.INDEX.GRAVITY.set(MAGPIE.KEY.INDEX.GRAVITY_TRIVIAL, {
+	name: "TRIVIAL",
+	value: 0,
+	desc: "Probably safe to ignore"
+});
+// #endregion
+//------------------------------------------------------------------------
+/**
+ * @name 
+ * @desc 
+ * 
+ */
+//------------------------------------------------------------------------
+// #region > Ambig.
+//------------------------------------------------------------------------
+/** 
+ * @typedef {Enumerator<Number>} ambiguity
+ * @typedef {{value: Number, desc: String}} ambiguity_record
+ * @type {Map<keyID, {value: ambiguity, desc: String}>} 
+ * */
+MAGPIE.KEY.INDEX.AMBIGUITY = new Map();
+/** @type {key_index} */
+MAGPIE.KEY.INDEX.AMBIGUITY_UNIVERSAL = 10300;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_UNIVERSAL, {
+	value: 0,
+	desc: "Anyone can know about this"
+})
+MAGPIE.KEY.INDEX.AMBIGUITY_AMBIGUOUS = 10301;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_AMBIGUOUS, {
+	value: 1,
+	desc: "Must investigate to know"
+})
+MAGPIE.KEY.INDEX.AMBIGUITY_CONTESTED = 10302;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_CONTESTED, {
+	value: 2,
+	desc: "Information about this is unreliable"
+})
+MAGPIE.KEY.INDEX.AMBIGUITY_DISCREET = 10303;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_DISCREET, {
+	value: 3,
+	desc: "Information about this is hard to find"
+})
+MAGPIE.KEY.INDEX.AMBIGUITY_SECRET = 10304;
+MAGPIE.KEY.INDEX.AMBIGUITY.set(MAGPIE.KEY.INDEX.AMBIGUITY_SECRET, {
+	value: 4,
+	desc: "Information about this is private"
+})
+// #endregion
+//------------------------------------------------------------------------
+// #endregion
+//------------------------------------------------------------------------
 /**
  * @name 
  * @desc 

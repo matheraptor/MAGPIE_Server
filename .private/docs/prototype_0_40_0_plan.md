@@ -1,7 +1,7 @@
 ---
 name: MAGPIE ShelderEvo MMORPG pre-production 0.4*.* prototype plan
 type: implementation plan
-version: 0.39.0 20260610
+version: 0.39.5 20260613
 ---
 
 # M.A.G.P.I.E. Shelder Evolution
@@ -10,52 +10,65 @@ version: 0.39.0 20260610
 
 - [M.A.G.P.I.E. Shelder Evolution](#magpie-shelder-evolution)
   - [Pre-production Prototype {#top}](#pre-production-prototype-top)
-  - [SPEC](#spec)
-    - [Purpose](#purpose)
-    - [Package](#package)
-    - [Current state](#current-state)
-      - [Prototype attempt 0.38.\*](#prototype-attempt-038)
-    - [Full-stack](#full-stack)
-    - [MMORPG Server](#mmorpg-server)
-      - [Nodejs](#nodejs)
-      - [Express](#express)
-      - [Socket.io](#socketio)
-      - [Handlers](#handlers)
-      - [JWT](#jwt)
-      - [Scrypt](#scrypt)
-      - [Nodemailer](#nodemailer)
-      - [Better-sqlite3](#better-sqlite3)
-    - [MMORPG Client](#mmorpg-client)
-      - [NWjs](#nwjs)
-      - [RPG Maker MZ](#rpg-maker-mz)
-      - [Socket.io-client](#socketio-client)
-    - [External dependencies](#external-dependencies)
-    - [Resources](#resources)
-    - [Assets](#assets)
-    - [Budget](#budget)
-  - [TARGET architecture](#target-architecture)
+  - [1. SPEC](#1-spec)
+    - [1.1. Purpose](#11-purpose)
+    - [1.2. Package](#12-package)
+    - [1.3. Current state](#13-current-state)
+    - [1.4. Prototype attempt 0.38.\*](#14-prototype-attempt-038)
+    - [1.5. Full-stack](#15-full-stack)
+  - [2. MMORPG Server](#2-mmorpg-server)
+    - [2.1. Nodejs](#21-nodejs)
+    - [2.2. Express](#22-express)
+    - [2.3. Socket.io](#23-socketio)
+    - [2.4. Handlers](#24-handlers)
+    - [2.5. JWT](#25-jwt)
+    - [2.6. Scrypt](#26-scrypt)
+    - [2.7. Nodemailer](#27-nodemailer)
+    - [2.8. Better-sqlite3](#28-better-sqlite3)
+    - [2.9. Security \& Cryptography](#29-security--cryptography)
+    - [2.10. Handshake Gatekeeping \& Connection Security](#210-handshake-gatekeeping--connection-security)
+    - [2.11. Game Metrics \& Retro UI Scaffolding](#211-game-metrics--retro-ui-scaffolding)
+  - [3. MMORPG Client](#3-mmorpg-client)
+    - [3.1. NWjs](#31-nwjs)
+    - [3.2. RPG Maker MZ](#32-rpg-maker-mz)
+    - [3.3. Socket.io-client](#33-socketio-client)
+  - [4. External dependencies](#4-external-dependencies)
+  - [5. Resources](#5-resources)
+  - [6. Assets](#6-assets)
+  - [7. Budget](#7-budget)
+  - [8. TARGET architecture](#8-target-architecture)
 
 [Back to top ⤴️](#top)
 
 ---
 
-## SPEC
+## 1. SPEC
 
-### Purpose
+---
 
-### Package
+### 1.1. Purpose
 
-### Current state
+---
 
-#### Prototype attempt 0.38.*
+### 1.2. Package
 
-### Full-stack
+---
+
+### 1.3. Current state
+
+---
+
+### 1.4. Prototype attempt 0.38.*
+
+---
+
+### 1.5. Full-stack
 
 [Back to top ⤴️](#top)
 
 ---
 
-### MMORPG Server
+## 2. MMORPG Server
 
 **Structure:**
 
@@ -87,7 +100,7 @@ version: 0.39.0 20260610
 
 ---
 
-#### Nodejs
+### 2.1. Nodejs
 
 **Require stack:**
 
@@ -123,7 +136,7 @@ MAGPIE_SERVER.JWT = jwt
 
 ---
 
-#### Express
+### 2.2. Express
 
 ```javascript
 //@region IMPORT
@@ -135,7 +148,7 @@ const { createServer } = require("node:http")
 
 ---
 
-#### Socket.io
+### 2.3. Socket.io
 
 **Server-side:**
 
@@ -211,15 +224,15 @@ const socket = io(window.location.origin, {
 
 ---
 
-#### Handlers
+### 2.4. Handlers
 
 ---
 
-#### JWT
+### 2.5. JWT
 
 ---
 
-#### Scrypt
+### 2.6. Scrypt
 
 Native Nodejs 'crypto' & Identity Security.
 
@@ -250,40 +263,81 @@ To ensure player privacy and GDPR compliance while maintaining high-performance 
 
 ---
 
-#### Nodemailer
+### 2.7. Nodemailer
 
 ---
 
-#### Better-sqlite3
+### 2.8. Better-sqlite3
 
 [Back to top ⤴️](#top)
 
 ---
 
-### MMORPG Client
+### 2.9. Security & Cryptography
 
-#### NWjs
+**Dual-Column Email Privacy & Password Hashing:**
 
-#### RPG Maker MZ
+- **Email Storage:** Implements a dual-column strategy. Column A uses HMAC-SHA256 for deterministic $O(1)$ lookups. Column B uses AES-256-GCM for encrypted data storage.
+- **Password Security:** Uses `crypto.scrypt` with 16-byte random salts. Verification logic strictly mandates `crypto.timingSafeEqual()` to mitigate timing attacks.
 
-#### Socket.io-client
+---
+
+### 2.10. Handshake Gatekeeping & Connection Security
+
+**Ephemeral vs. Absolute Security Zones:**
+
+- **The Gate:** Socket.io auth handshake verifies JWTs against database lookups.
+- **Ephemeral Zone:** High-frequency socket events utilize an in-memory `socket.role`.
+- **Absolute Zone:** Low-frequency, high-impact operations query a live database row.
+- **Anti-F5 Spam Memory:** Connection handlers utilize a 10-second grace period powered by a `Map` (disconnect timers) and a `Set` (active cache) to prevent reconnections from spamming server events.
+
+---
+
+### 2.11. Game Metrics & Retro UI Scaffolding
+
+**Server-Side Metrics:**
+
+- Connects to the database to manage a `game_metrics` table tracking global usage (e.g., `visitor_count`, `peak_concurrent_players`).
+- Atomic increments broadcast real-time updates to connected clients via a `counter-update` event.
+
+**Client-Side Presentation:**
+
+- **RetroOdometer Class:** A 7-digit animated slot structure rendering with vertical ribbons (0-9 columns).
+- **Styling:** Adheres strictly to `image-rendering: pixelated` to maintain aesthetic fidelity.
+- **State Check:** Uses `localStorage.getItem("has_been_counted")` to prevent duplicate metric bumps on refresh.
+
+---
+
+## 3. MMORPG Client
+
+### 3.1. NWjs
+
+### 3.2. RPG Maker MZ
+
+### 3.3. Socket.io-client
 
 [Back to top ⤴️](#top)
 
 ---
 
-### External dependencies
+## 4. External dependencies
 
-### Resources
+---
 
-### Assets
+## 5. Resources
 
-### Budget
+---
+
+## 6. Assets
+
+---
+
+## 7. Budget
 
 [Back to top ⤴️](#top)
 
 ---
 
-## TARGET architecture
+## 8. TARGET architecture
 
 ---
