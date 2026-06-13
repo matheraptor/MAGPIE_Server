@@ -7,11 +7,21 @@ priority: high
 
 # READ-ONLY Codebase Audit: MAGPIE_Server Prototype 0.39.3
 
+## ⚠️ CRITICAL: Use the `prototype` branch
+
+**You MUST work on the `prototype` branch.** Do NOT use `main`.
+
+```bash
+git checkout prototype
+```
+
+All analysis, all file reads, and your final commit MUST be on the `prototype` branch. The `main` branch is outdated and irrelevant to this task.
+
 ## What This Is
 This is a **documentation task, not an implementation task.** You are reading code and writing a report. You are NOT implementing features, fixing bugs, or modifying application files.
 
 ## Your Job
-1. **Read every file** in the prototype branch and build a complete map of the codebase: what each file/module does, what it exports, what it depends on.
+1. **Read every file** in the `prototype` branch and build a complete map of the codebase: what each file/module does, what it exports, what it depends on.
 2. **Read `README.md`** at the branch root. For each claim the README makes about the system, check whether the code supports that claim. Note matches and mismatches.
 3. **Read `.private/docs/prototype_0_40_0_plan.md`**. For each planned feature/task, check whether the code already implements it (fully, partially, or not at all). Note the status of each.
 4. **Write a structured report** called `AUDIT_CodebaseMapping_0_39_3.md` with:
@@ -28,4 +38,4 @@ This is a **documentation task, not an implementation task.** You are reading co
 - The ONLY file you create is the audit report
 
 ## Output
-Commit `AUDIT_CodebaseMapping_0_39_3.md` to `.private/tasklet_sync/` and push to the prototype branch. That is your only deliverable.
+Commit `AUDIT_CodebaseMapping_0_39_3.md` to `.private/tasklet_sync/` on the **`prototype` branch** and push. That is your only deliverable.
