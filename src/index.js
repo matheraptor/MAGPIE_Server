@@ -733,7 +733,7 @@ MAGPIE.KEY.SERVER.DOMAIN_STRIPPED = MAGPIE.config.domain.slice(MAGPIE.config.dom
  * */
 MAGPIE.KEY.SERVER.ADMIN_EMAIL = `admin@${MAGPIE.KEY.SERVER.DOMAIN_STRIPPED}`
 MAGPIE.KEY.SERVER.NO_REPLY = `noreply@${MAGPIE.KEY.SERVER.DOMAIN_STRIPPED}`
-/** @type {Enumerator<Number>} */
+/** @type {Enumerator<Number>} @desc grace time on socket disconnect (anti-F5 spam) */
 MAGPIE.KEY.SERVER.GRACE_TIMER_DISCONNECTION = 10_000
 /**
  * @desc server preset messages 

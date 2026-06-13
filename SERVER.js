@@ -704,11 +704,12 @@ MAGPIE_SERVER.SESSION.meta = {
 	//
 }
 /**
+ * @typedef {() => {}} graceTimer Enforce n-second grace period on disconnects (Anti-F5 spam) cancel timers upon successful reconnection.
  * @typedef {{ 
  * sockets: socketID[], 
  * username: String, 
  * joined: epoch_real
- * graceTimer: () => {}
+ * graceTimer: graceTimer
  * }} player_cache
  * @type {player_cache}
  */

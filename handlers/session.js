@@ -7,7 +7,7 @@
  * @typedef {import("socket.io").Socket} socket
  * @typedef {import("../SERVER").socketID} socketID
  * @typedef {import("../SERVER").auth} auth
- * @typedef {Function} timeout
+ * @typedef {import("../SERVER").graceTimer} graceTimer Enforce n-second grace period on disconnects (Anti-F5 spam) cancel timers upon successful reconnection.
  * @typedef {import("../SERVER").MAGPIE_SERVER} MAGPIE_SERVER
  * @typedef {import("../src/player").playerID} playerID
  * @typedef {import("../SERVER").player_cache} player_cache
@@ -57,6 +57,7 @@ module.exports = function(io, socket, server)
 				sockets: [],
 				username: auth?.username,
 				joinedAt: Date.now(),
+				/** @type {graceTimer} */
 				graceTimer: null
 			}
 		}
