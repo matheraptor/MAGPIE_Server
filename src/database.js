@@ -1145,6 +1145,7 @@ MAGPIE_DATABASE.loadWorldRowByName = function loadWorldRowByName(tableName, name
  */
 MAGPIE_DATABASE.prepareContext = function prepareContext(context)
 {
+	if(!context) return
 	/** @type {context_payload} */
 	const payload = {
 		ID: context.ID,

@@ -551,6 +551,21 @@ MAGPIE_PHYSICS._geod_checkCollisions = function _geod_checkCollisions(data)
 // #region > Metastate
 //------------------------------------------------------------------------
 // MAGPIE_SERVER.SYS._metastate_tick_base = MAGPIE_METASTATE._TICK_base;
+MAGPIE_METASTATE.__getSync = function(method, arguments)
+{
+	const callback = MAGPIE_DATABASE[method]
+	return callback(...arguments)
+}
+MAGPIE_METASTATE.__set = async function(method, arguments)
+{
+	const callback = MAGPIE_DATABASE[method]
+	return await callback(...arguments)
+}
+MAGPIE_METASTATE.__setSync = function(method, arguments)
+{
+	const callback = MAGPIE_DATABASE[method]
+	return callback(...arguments)
+}
 MAGPIE_METASTATE.prototype.TICK_base = async function TICK_base(layerID, switchID)
 {
 	const now = performance.now();
@@ -578,14 +593,6 @@ MAGPIE_METASTATE.prototype.TICK_mega = async function TICK_mega()
 	//
 }
 MAGPIE_METASTATE.prototype.TICK_ultra = async function TICK_ultra()
-{
-	//
-}
-MAGPIE_METASTATE.prototype.save = function save()
-{
-	//
-}
-MAGPIE_METASTATE.prototype.load = function load()
 {
 	//
 }
@@ -617,6 +624,7 @@ MAGPIE_METASTATE.prototype._socketEmit = function _socketEmit()
 // #region > Hive
 //------------------------------------------------------------------------
 MAGPIE_HIVE.__server = {};
+
 /**
  * @name 
  * @typedef {import("./core/index").duration} duration 
@@ -654,42 +662,42 @@ MAGPIE_HIVE.refresh = function refresh(runtimeID, switchID, layer_frame)
 		const layerUltra = layer.get(Ultra);
 		const f = layer_frame
 		if(switchID === 0)
-			this.tick_buffer(layerBase.name, Base, Base, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerBase.name, Base, Base, layerBase.dt, f);
 		if(switchID === 1)
 		{
-			this.tick_buffer(layerBase.name, Base, Game, layerBase.dt, f);
-			this.tick_buffer(layerGame.name, Game, Game, layerGame.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerBase.name, Base, Game, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerGame.name, Game, Game, layerGame.dt, f);
 		}
 		if(switchID === 2)
 		{
-			this.tick_buffer(layerBase.name, Base, TICK, layerBase.dt, f);
-			this.tick_buffer(layerGame.name, Game, TICK, layerBase.dt, f);
-			this.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerBase.name, Base, TICK, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerGame.name, Game, TICK, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerTICK.name, TICK, TICK, layerTICK.dt, f);
 		}
 		if(switchID === 3)
 		{
-			this.tick_buffer(layerBase.name, Base, Super, layerBase.dt, f);
-			this.tick_buffer(layerGame.name, Game, Super, layerBase.dt, f);
-			this.tick_buffer(layerTICK.name, TICK, Super, layerBase.dt, f);
-			this.tick_remote(layerSuper.name, Super, Super, layerSuper.dt, f);
-			this.save()
+			MAGPIE_HIVE.tick_buffer(layerBase.name, Base, Super, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerGame.name, Game, Super, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerTICK.name, TICK, Super, layerBase.dt, f);
+			MAGPIE_HIVE.tick_remote(layerSuper.name, Super, Super, layerSuper.dt, f);
+			MAGPIE_HIVE.save()
 		}
 		if(switchID === 4)
 		{
-			this.tick_buffer(layerBase.name, Base, Mega, layerBase.dt, f);
-			this.tick_buffer(layerGame.name, Game, Mega, layerBase.dt, f);
-			this.tick_buffer(layerTICK.name, TICK, Mega, layerBase.dt, f);
-			this.tick_remote(layerSuper.name, Super, Mega, layerBase.dt, f);
-			this.tick_remote(layerMega.name, Mega, Mega, layerMega.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerBase.name, Base, Mega, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerGame.name, Game, Mega, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerTICK.name, TICK, Mega, layerBase.dt, f);
+			MAGPIE_HIVE.tick_remote(layerSuper.name, Super, Mega, layerBase.dt, f);
+			MAGPIE_HIVE.tick_remote(layerMega.name, Mega, Mega, layerMega.dt, f);
 		}
 		if(switchID === 5)
 		{
-			this.tick_buffer(layerBase.name, Base, Ultra, layerBase.dt, f);
-			this.tick_buffer(layerGame.name, Game, Ultra, layerBase.dt, f);
-			this.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.dt, f);
-			this.tick_remote(layerSuper.name, Super, Ultra, layerBase.dt, f);
-			this.tick_remote(layerMega.name, Mega, Ultra, layerBase.dt, f);
-			this.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerBase.name, Base, Ultra, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerGame.name, Game, Ultra, layerBase.dt, f);
+			MAGPIE_HIVE.tick_buffer(layerTICK.name, TICK, Ultra, layerBase.dt, f);
+			MAGPIE_HIVE.tick_remote(layerSuper.name, Super, Ultra, layerBase.dt, f);
+			MAGPIE_HIVE.tick_remote(layerMega.name, Mega, Ultra, layerBase.dt, f);
+			MAGPIE_HIVE.tick_remote(layerUltra.name, Ultra, Ultra, layerUltra.dt, f);
 		}
 		return true
 	}
@@ -745,28 +753,28 @@ MAGPIE_HIVE.tick_buffer = function tick_buffer(layerName, layerID, switchID, dt,
 MAGPIE_HIVE.tick_remote = function tick_remote(layerName, layerID, switchID, dt)
 {
 	const ePrefix = "[HIVE].tick_remote: ";
-	for(let i = 0; i < this[layerName].length; i++)
+	for(let i = 0; i < MAGPIE_HIVE[layerName].length; i++)
 	{
-		const entityID = this[layerName][i];
+		const entityID = MAGPIE_HIVE[layerName][i];
 		try
 		{
 			if(isNaN(entityID))
-				this[layerName][i] = 0;
+				MAGPIE_HIVE[layerName][i] = 0;
 			if(!entityID) continue
-			const entity = this.loadEntitySync(entityID);
+			const entity = MAGPIE_HIVE.loadEntitySync(entityID);
 			if(!entity instanceof MAGPIE_ENTITY)
 				throw new Error(`[ENTITY-${entityID}] is invalid entity`)
 			const pass = entity.refresh(switchID, dt);
 			if(!pass) 
 				throw new Error(`[ENTITY-${entityID}] has failed to refresh`)
-			const save = this.saveEntitySync(entity);
+			const save = MAGPIE_HIVE.saveEntitySync(entity);
 			if(!save)
 				throw new Error(`unable to update [ENTITY-${this.ID}]`)
 		}
 		catch(e)
 		{
 			MAGPIE_SERVER.error(ePrefix + e.message, e)
-			this.kick(entityID, layerID, i);
+			MAGPIE_HIVE.kick(entityID, layerID, i);
 			continue
 		}
 	}
@@ -809,6 +817,10 @@ MAGPIE_HIVE.tick_remote = function tick_remote(layerName, layerID, switchID, dt)
 // 		MAGPIE_SERVER.error(ePrefix + e.message, e)
 // 	}
 // }
+MAGPIE_SERVER._get_Metastate = function()
+{
+	return r.context.METASTATE
+}
 /**
  * 
  * @param {entityID} entityID 
@@ -1010,123 +1022,6 @@ MAGPIE_HIVE.awake = async function awake()
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e);
 		this.pause();
-	}
-}
-MAGPIE_HIVE.save = async function save()
-{
-	const ePrefix = "[HIVE].save: ";
-	try
-	{
-		const results = await MAGPIE_HIVE._save_buffers();
-		if(!results)
-			throw new Error("unable to save buffers")
-		r.context.METASTATE.hive = {
-			registry: MAGPIE_HIVE._registry,
-			contexts: Array.from(MAGPIE_HIVE._contextBuffer.keys())
-		}
-		const metastate = MAGPIE_DATABASE.saveMetastate(r.context.METASTATE);
-		if(!metastate) return
-		const state = r.context.METASTATE;
-		const message = `${results.length}x buffers saved at `
-			+ `[${state.meta.updated}-${state.date.printDate()}]`
-		MAGPIE_SERVER.log(ePrefix + message, "console", false)
-		return results;
-	}
-	catch(e)
-	{
-		MAGPIE_SERVER.error(ePrefix + e.message, e)
-	}
-}
-/**
- * 
- * 
- * @returns {Promise<Number>}
- */
-MAGPIE_HIVE.saveEntities = async function saveEntities()
-{
-	const ePrefix = "[HIVE].saveEntities: ";
-	try
-	{
-		const layer = MAGPIE.KEY.RUNTIME.LAYER;
-		const base = this[layer.get(0).name].filter(entity => entity?.type > 0);
-		const game = this[layer.get(1).name].filter(entity => entity?.type > 0);
-		const TICK = this[layer.get(2).name].filter(entity => entity?.type > 0);
-		if(base.length > 0)
-		{
-			const base_result = await MAGPIE_DATABASE.transactionSaveEntities(base);
-			if(!base_result) 
-				throw new Error(`unable to save ${base.length}x entities in layer0`)
-		}
-		if(game.length > 0)
-		{
-			const game_result = await MAGPIE_DATABASE.transactionSaveEntities(game);
-			if(!game_result)
-				throw new Error(`unable to save ${game.length}x entities in layer1`)
-		}
-		if(TICK.length > 0)
-		{
-			const TICK_result = await MAGPIE_DATABASE.transactionSaveEntities(TICK);
-			if(!TICK_result)
-				throw new Error(`unable to save ${TICK.length}x entities in layer2`)
-		}
-		return base.length + game.length + TICK.length
-	}
-	catch(e)
-	{
-		MAGPIE_SERVER.error(ePrefix + e.messag, e)
-		return 0
-	}
-}
-/**
- * @returns {Promise<database_result[]>}
- */
-MAGPIE_HIVE._save_buffers = async function _save_buffers()
-{
-	const ePrefix = "[HIVE].saveBuffers: ";
-	try
-	{
-		const entity_buffer = [];
-		const entityIDs = Array.from(MAGPIE_HIVE._registry.entries())
-			.filter(entry => entry[0] > 10 && entry[1].layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE)
-			.map(entry => entry[0])
-		for(let i = 0; i < entityIDs.length; i++)
-		{
-			try
-			{
-				const entityID = entityIDs[i]
-				const entity = MAGPIE_HIVE._get_entity(entityID);
-				if(entity?.constructor?.name !== "MAGPIE_ENTITY")
-					throw new Error(`[ENTITY-${entityID}] @ ${entity} is invalid entity`)
-				const payload = MAGPIE_DATABASE.prepareEntity(entity)
-				entity_buffer.push(payload);
-			}
-			catch(e)
-			{
-				MAGPIE_SERVER.error(ePrefix + e.message, e)
-			}
-		}
-		// MAGPIE_SERVER._debug(entityIDs)
-		const exp_buffer = Array.from(MAGPIE_HIVE._expBuffer.values())
-			.map(value => MAGPIE_DATABASE.prepareExp(value.data))
-		const key_buffer = Array.from(MAGPIE_HIVE._keyBuffer.values())
-			.map(value => MAGPIE_DATABASE.prepareKey(value.data));
-		const symbol_buffer = Array.from(MAGPIE_HIVE._symbolBuffer.values())
-			.map(value => MAGPIE_DATABASE.prepareSymbol(value.data));
-		const context_buffer = Array.from(MAGPIE_HIVE._contextBuffer.values())
-			.map(value => MAGPIE_DATABASE.prepareContext(value))
-		const buffers = [
-			["MAGPIE_ENTITY", entity_buffer],
-			["MAGPIE_EXP", exp_buffer],
-			["MAGPIE_KEY", key_buffer],
-			["MAGPIE_SYMBOL", symbol_buffer],
-			["MAGPIE_CONTEXT", context_buffer]
-		]
-		// MAGPIE_SERVER._debug(buffers)
-		return await MAGPIE_DATABASE.call("saveBuffers", buffers)
-	}
-	catch(e)
-	{
-		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
 }
 // #endregion

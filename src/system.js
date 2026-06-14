@@ -1690,23 +1690,137 @@ MAGPIE_HIVE.tick_remote = function tick_remote(layerName, layerID, switchID, dt,
 {
 	//
 }
-MAGPIE_HIVE.save = async function save()
+/**
+ * @audit @desc saveHive
+ * 
+ */
+MAGPIE_HIVE.save = async function saveHive()
 {
-	//
+	const ePrefix = "[HIVE].save: ";
+	try
+	{
+		const results = await MAGPIE_HIVE._save_buffers();
+		if(!results)
+			throw new Error("unable to save buffers")
+		/** @type {MAGPIE_METASTATE} */
+		const context_state = MAGPIE_HIVE.__get_serverSync("_get_Metastate", [])
+		context_state.hive = {
+			registry: MAGPIE_HIVE._registry,
+			contexts: Array.from(MAGPIE_HIVE._contextBuffer.keys())
+		}
+		const metastate = await context_state.set()
+		// const metastate = MAGPIE_HIVE._set_database("call", ["saveMetastate", context_state])
+		// const metastate = MAGPIE_DATABASE.saveMetastate(r.context.METASTATE);
+		if(!metastate) return
+		const state = context_state;
+		const message = `${results.length}x buffers saved at `
+			+ `[${state.meta.updated}-${state.date.printDate()}]`
+		MAGPIE_SYSTEM.log(ePrefix + message, "console", false)
+		return results;
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 /**
+ * @audit @desc saveHiveEntities
+ * 
  * @returns {Promise<Number>}
  */
-MAGPIE_HIVE.saveEntities = async function saveEntities()
+MAGPIE_HIVE.saveEntities = async function saveHiveEntities()
 {
-	//
+	const ePrefix = "[HIVE].saveEntities: ";
+	try
+	{
+		const layer = MAGPIE.KEY.RUNTIME.LAYER;
+		const base = this[layer.get(0).name].filter(entity => entity?.type > 0);
+		const game = this[layer.get(1).name].filter(entity => entity?.type > 0);
+		const TICK = this[layer.get(2).name].filter(entity => entity?.type > 0);
+		const transact = async (buffer) => {return await MAGPIE_HIVE._set_database("transactionSaveEntities", [buffer])} 
+		if(base.length > 0)
+		{
+			const base_result = await transact(base)
+			// const base_result = await MAGPIE_DATABASE.transactionSaveEntities(base);
+			if(!base_result) 
+				throw new Error(`unable to save ${base.length}x entities in layer0`)
+		}
+		if(game.length > 0)
+		{
+			const game_result = await transact(game)
+			// const game_result = await MAGPIE_DATABASE.transactionSaveEntities(game);
+			if(!game_result)
+				throw new Error(`unable to save ${game.length}x entities in layer1`)
+		}
+		if(TICK.length > 0)
+		{
+			const TICK_result = await transact(TICK)
+			// const TICK_result = await MAGPIE_DATABASE.transactionSaveEntities(TICK);
+			if(!TICK_result)
+				throw new Error(`unable to save ${TICK.length}x entities in layer2`)
+		}
+		return base.length + game.length + TICK.length
+	}
+	catch(e)
+	{
+		MAGPIE_SERVER.error(ePrefix + e.messag, e)
+		return 0
+	}
 }
 /**
+ * @audit @desc saveHiveBuffers
  * @returns {Promise<database_result[]>}
  */
-MAGPIE_HIVE._save_buffers = async function _save_buffers()
+MAGPIE_HIVE._save_buffers = async function saveHiveBuffers()
 {
-	//
+	const ePrefix = "[HIVE].saveBuffers: ";
+	try
+	{
+		const entity_buffer = [];
+		const entityIDs = Array.from(MAGPIE_HIVE._registry.entries())
+			.filter(entry => entry[0] > 10 && entry[1].layerID < MAGPIE.KEY.HIVE.BUFFER_SIZE)
+			.map(entry => entry[0])
+		for(let i = 0; i < entityIDs.length; i++)
+		{
+			try
+			{
+				const entityID = entityIDs[i]
+				const entity = MAGPIE_HIVE._get_entity(entityID);
+				if(entity?.constructor?.name !== "MAGPIE_ENTITY")
+					throw new Error(`[ENTITY-${entityID}] @ ${entity} is invalid entity`)
+				const payload = MAGPIE_HIVE._get_databaseSync("prepareEntity", [entity])
+				entity_buffer.push(payload);
+			}
+			catch(e)
+			{
+				MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+			}
+		}
+		// MAGPIE_SERVER._debug(entityIDs)
+		const exp_buffer = Array.from(MAGPIE_HIVE._expBuffer.values())
+			.map(value => MAGPIE_HIVE._get_databaseSync("prepareExp", [value.data]))
+		const key_buffer = Array.from(MAGPIE_HIVE._keyBuffer.values())
+			.map(value => MAGPIE_HIVE._get_databaseSync("prepareKey", [value.data]));
+		const symbol_buffer = Array.from(MAGPIE_HIVE._symbolBuffer.values())
+			.map(value => MAGPIE_HIVE._get_databaseSync("prepareSymbol", [value.data]));
+		const context_buffer = Array.from(MAGPIE_HIVE._contextBuffer.values())
+			.map(value => MAGPIE_HIVE._get_databaseSync("prepareContext", [value]))
+		const buffers = [
+			["MAGPIE_ENTITY", entity_buffer],
+			["MAGPIE_EXP", exp_buffer],
+			["MAGPIE_KEY", key_buffer],
+			["MAGPIE_SYMBOL", symbol_buffer],
+			["MAGPIE_CONTEXT", context_buffer]
+		]
+		// MAGPIE_SERVER._debug(buffers)
+		/**  */
+		return await MAGPIE_HIVE._set_database("call", ["saveBuffers", buffers])
+		// return await MAGPIE_DATABASE.call("saveBuffers", buffers)
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+	}
 }
 // #endregion
 //------------------------------------------------------------------------
@@ -3173,13 +3287,70 @@ MAGPIE_METASTATE.prototype.TICK_ultra = async function TICK_ultra()
 //------------------------------------------------------------------------
 // #region > Utility
 //------------------------------------------------------------------------
-MAGPIE_METASTATE.prototype.save = function save()
+/**
+ * @param {String} method
+ * @param {[]} arguments
+ * @returns {*}
+ */
+MAGPIE_METASTATE.__get = function(method, arguments)
 {
 	//
 }
-MAGPIE_METASTATE.prototype.load = function load()
+/**
+ * @param {String} method
+ * @param {[]} arguments
+ * @returns {Promise<*>}
+ */
+MAGPIE_METASTATE.__set = async function(method, arguments)
 {
 	//
+}
+/**
+ * @param {String} method
+ * @param {[]} arguments
+ * @returns {*}
+ */
+MAGPIE_METASTATE.__setSync = async function(method, arguments)
+{
+	//
+}
+/**
+ * @returns {Promise<database_result>}
+ */
+MAGPIE_METASTATE.prototype.set = async function saveMetastate()
+{
+	const ePrefix = "[METASTATE].save: "
+	try
+	{
+		const result = await MAGPIE_METASTATE.__set("saveMetastate", [this])
+		if(!result)
+			throw new Error("unable to save. ")
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return false
+	}
+}
+/**
+ * @returns {database_result}
+ */
+MAGPIE_METASTATE.prototype.setSync = function saveMetastateSync()
+{
+	const ePrefix = "[METASTATE].save: "
+	try
+	{
+		const result = MAGPIE_METASTATE.__setSync("saveMetastate", [this])
+		if(!result)
+			throw new Error("unable to save. ")
+		return result
+	}
+	catch(e)
+	{
+		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
+		return false
+	}
 }
 MAGPIE_METASTATE.prototype.syncDate = function syncDate()
 {

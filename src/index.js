@@ -21,10 +21,11 @@
  * 
  * @desc current
  * 
- * @version 0.39.6 2026 06 14
+ * @version 0.39.7 2026 06 14
  * - ADDED: full dual-layer email security
  * - TWEAKED: import SERVER.js src mods from 0.38.3 @todo deferred rewrite
  * - TWEAKED: metastate nav-status on homepage
+ * - FIXED: Hive and metastate handling improperly imported from 0.38.3
  * 
  * @version 0.39.5 2026 06 13
  * - TWEAKED: revised docs
@@ -501,7 +502,7 @@ class MAGPIE
 MAGPIE.meta = {
     name: "M.A.G.P.I.E.",
     desc: "(M)odular (A)lgorithmic (G)eneral-(P)urpose (I)ntelligence (E)ngine",
-    version: [0,39,6],
+    version: [0,39,7],
     firmwareName: "MAGPIE",
     firmwareDate: "20260614"
 }
