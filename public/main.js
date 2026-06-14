@@ -72,19 +72,21 @@ socket.on("connect", () => {
         MAGPIE_ROUTER.go("monitor")
     }
 })
-// @todo socket.on('metastate', (data) => { 
-// 	// Update your HTML elements
-// 	const date = data.date;
-// 	const year = date.year;
-// 	const month = Object.keys(data.calendar.months)[date.month - 1];
-// 	const day = date.day.toString().padStart(2,0);
-// 	const hour = date.hour.toString().padStart(2,0);
-// 	const minute = date.minute.toString().padStart(2,0);
-// 	const second = date.second.toString().padStart(2,0);
-// 	const weekDay = data.weekDayName;
-// 	const timestring = `Y: ${year} M: ${month} D: ${day} ${weekDay} - ${hour}:${minute}:${second}Z`
-// 	document.getElementById('metadate').textContent = `server metadate: ${timestring}`;
-// });
+socket.on('metastate', (data) => { 
+	// Update your HTML elements
+	const pad = (num, length = 2) => {return num.toString().padStart(length, "0")}
+    const date = data.date;
+	const year = date.year;
+    const month = pad(date.month)
+	const monthName = Object.keys(data.calendar.months)[date.month - 1];
+	const day = pad(date.day);
+	const hour = pad(date.hour)
+	const minute = pad(date.minute)
+	const second = pad(date.second)
+	const weekDay = data.weekDayName;
+	const timestring = `📅︎ [CALENDAR-${data?.calendarName} | ◴ ${weekDay} — ${year}/${month}/${day} — ${hour}:${minute}:${second} UTC]`
+	document.getElementById('metadate').textContent = `server metadate: ${timestring}`;
+});
 // #endregion
 //------------------------------------------------------------------------
 /**

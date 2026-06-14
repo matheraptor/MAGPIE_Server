@@ -384,7 +384,7 @@ body {
 }
 
 .cli-status {
-    color: var(--crt-white);
+    color: var(--crt-green);
     font-family: var(--crt-font-main);
 }
 
