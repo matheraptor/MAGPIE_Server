@@ -5,14 +5,16 @@ const HASH_SALT = MAGPIE.KEY.SERVER.HASH_SALT
 /**
  * @typedef {String} email
  * @typedef {String} encryptedBlob iv:authTag:encryptedData
- * @typedef {encryptedBlob} email_encrypted 
+ * @typedef {encryptedBlob} email_encrypted
+ * @typedef {String} hmacDigest HMAC-SHA256 digest
+ * @typedef {hmacDigest} email_hashed
  */
 const EmailSecurity = {
 	/**
 	 * @desc Creates a deterministic hash for database lookups.
      * Use this for: SELECT * FROM users WHERE email_hash = ?
 	 * @param {email} email 
-	 * @returns {crypto.Hmac}
+	 * @returns {email_hashed}
 	 */
 	hashEmail: (email) => {
 		return crypto.createHmac("sha256", HASH_SALT)

@@ -41,13 +41,15 @@ function MAGPIE_PLAYER(data)
  * @desc
  * @typedef {Number} playerID
  * @typedef {String} username
- * @typedef {String} email_encrypted 
+ * @typedef {import("./services/crypto").email_encrypted} email_encrypted
+ * @typedef {import("./services/crypto").email_hashed} email_hashed 
  * @typedef {String} pass_encrypted
  * @typedef {import("./entity").entityID} entityID
  * @typedef {{
  * ID: playerID,
  * username: username,
- * email: email_encrypted,
+ * email_hash: email_hashed,
+ * email_encrypted: email_encrypted,
  * PASS: pass_encrypted,
  * isFrozen: Boolean,
  * EVP: Number,
@@ -75,13 +77,14 @@ function MAGPIE_PLAYER(data)
  * @param {player_data} data 
  * @returns {new MAGPIE_PLAYER}
  */
-MAGPIE_PLAYER.prototype.initialize = function initialize(data)
+MAGPIE_PLAYER.prototype.initialize = function initializePlayer(data)
 {
 	this._firmware = "MAGPIE_PLAYER"
 	const now = Date.now();
 	this.ID = Number(data?.ID) || now;
     this.username = String(data?.username);
-    this.email = String(data?.email);
+    this.email_hash = String(data?.email_hash);
+	this.email_encrypted = String(data?.email_encrypted)
     this.PASS = String(data?.PASS);
     this.isFrozen = Boolean(data?.isFrozen);
     this.EVP = Number(data?.EVP);

@@ -28,7 +28,7 @@
     - [Roadmap](#roadmap)
   - [Index](#index)
   - [NodeJS server + NWjs client](#nodejs-server--nwjs-client)
-    - [Pseudo-server](#pseudo-server)
+    - [Security](#security)
     - [Hosting and Domain](#hosting-and-domain)
     - [RMMZ-based client](#rmmz-based-client)
   - [ECS/OOP hybrid architecture](#ecsoop-hybrid-architecture)
@@ -297,17 +297,17 @@ The base goal of the metagame/community is the acquisition of **CLOUT POINTS**, 
 
 The architecture relies on Node.js inherently present in modern browsers, making it easily implementable without complicated or heavy system requirements. Android app integration is on the roadmap (though not guaranteed), making it a portable game that can be played asynchronously, keeping it 'always on' in the background to maximize its strategic card game architecture.
 
-### Pseudo-server
+---
 
-Through the use of tools like Discord and the integrations possible between it and the game app, we can emulate an MMORPG experience even without having everything physically necessary to do so yet. The bulk of the work is done on Discord, where players sync with the rest of the community. Then, the actual experiences take place in-game, leveraging the JRPG architecture of RPG Maker MZ and the modularity of cards thanks to the Card Game Combat plugin, transforming RMMZ into an expandable card game like Pokémon or Magic.
+### Security
+
+[Email security architecture](./private/docs/../../.private/docs/spec/email_security.md)
 
 ---
 
 ### Hosting and Domain
 
-[DuckDNS](https://www.duckdns.org/) for free dynamic DNS.
-
-- [Ephemeral Stabilizer](./core/duckdns/ephemeral_stabilizer.md) script to keep the IP updated.
+**Shelder Evolution** <https://www.shelderevolution.org> via [Cloudflare](https://www.cloudflare.com/)
 
 [Back to Top ⤴️](#top)
 
@@ -315,7 +315,7 @@ Through the use of tools like Discord and the integrations possible between it a
 
 ### RMMZ-based client
 
-For those unfamiliar, RMMZ is a game engine focused on JRPGs, based on the NW.js architecture. It is therefore a Javascript web app that also allows the integration of internal plugins or direct Javascript code. It is not strictly limited to the JRPG architecture, which is why, in our case, we are implementing a CCG (collectible card game) genre.
+For those unfamiliar, [RMMZ (RPG Maker MZ)](https://www.rpgmakerweb.com/products/rpg-maker-mz) is a game engine focused on JRPGs, based on the NW.js architecture. It is therefore a Javascript web app that also allows the integration of internal plugins or direct Javascript code. It is not strictly limited to the JRPG architecture, which is why, in our case, we are implementing a CCG (collectible card game) genre.
 
 [Back to Top ⤴️](#top)
 

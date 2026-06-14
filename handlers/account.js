@@ -9,6 +9,7 @@ const account = {}
 const jwt = require("jsonwebtoken");
 const { hashPassword, verifyPassword } = require("../src/services/crypto");
 const mailer = require("./email_api")
+const crypto = require("../src/services/crypto")
 // const { MAGPIE } = require("../core/index")
 const ePrefix = "[ACCOUNT HANDLER] "
 account.printPlayerAuth = function(player)
@@ -54,6 +55,30 @@ account.register = async function(data, socket, server)
 	{
 		server.error(ePrefix + e.message, e)
 		socket.emit("REGISTER_ERROR", { message: e.message || "Registration failed." })
+	}
+}
+account.processEmailConfirmation = async function(token, server)
+{
+	try
+	{
+		const decoded = jwt.verify(token, server.config.jwtSecret)
+		if(!decoded?.isRegistrationToken)
+			throw new Error("Invalid token type")
+		const email = decoded?.email
+		const emailHash = crypto.EmailSecurity.hashEmail(email)
+		const emailEncrypted = crypto.EmailSecurity.encryptEmail(email)
+		const newPlayer = {
+			username: decoded.username,
+			PASS: decoded.PASS,
+			email_hash: emailHash,
+			email_encrypted: emailEncrypted
+		}
+		const PLAYER = await server.DATABASE.createPlayer(newPlayer)
+		return PLAYER
+	}
+	catch(e)
+	{
+		server.error(ePrefix + e.message, e)
 	}
 }
 account.verifyCredentials = async function(email, password, server)
@@ -174,24 +199,6 @@ account.relog = async function(data, socket, server)
 		server.error(ePrefix + e.message, e)
 	}
 }
-// @todo account.processEmailConfirmation = async function(token, server)
-// {
-// 	try
-// 	{
-// 		const decoded = jwt.verify(token, server.config.jwtSecret)
-// 		if(!decoded.isRecoveryToken)
-// 			throw new Error("Invalid token type")
-// 		const newPlayer = {
-// 			username: decoded.username,
-// 			PASS: decoded.PASS,
-// 			email: decoded.email
-// 		}
-// 	}
-// 	catch(e)
-// 	{
-// 		server.error(ePrefix + e.message, e)
-// 	}
-// }
 account.requestPasswordReset = async function(data, socket, server)
 {
 	try

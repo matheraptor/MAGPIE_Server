@@ -187,12 +187,16 @@ MAGPIE_DATABASE.saveMetastate = function saveMetastate(metastate)
 //------------------------------------------------------------------------
 // #region > Player
 //------------------------------------------------------------------------
+/**
+ * @param {email} email
+ */
 MAGPIE_DATABASE.getPlayerByEmail = async function (email)
 {
 	const ePrefix = "[DATABASE].getPlayerByEmail: "
 	try
 	{
-		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email: email})
+		const emailHash = EmailSecurity.hashEmail(email)
+		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email_hash: emailHash})
 		if(!player)
 			return null
 		// 	throw new Error(`[USER-${email}] not found`)
@@ -203,6 +207,10 @@ MAGPIE_DATABASE.getPlayerByEmail = async function (email)
 	{
 		MAGPIE_SYSTEM.error(ePrefix + e.message, e)
 	}
+}
+MAGPIE_DATABASE.getPlayerEmail = async function (playerID)
+{
+	const ePrefix = "[DATABASE]"
 }
 MAGPIE_DATABASE.getPlayerByUsername = async function (username)
 {
@@ -274,7 +282,8 @@ MAGPIE_DATABASE.loginPlayer = async function loginPlayer(email, pass)
 	try
 	{
 		if(!MAGPIE_DATABASE.isValidEmail(email)) return
-		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email: email});
+		const emailHash = EmailSecurity.hashEmail(email)
+		const player = await MAGPIE_DATABASE.call("loadServerRow", "MAGPIE_PLAYER", {email_hash: emailHash});
 		if(!player)
 			throw new Error(`No record matches the provided identity`)
 		const valid = await MAGPIE_DATABASE.isValidPass(pass, player)
@@ -403,7 +412,8 @@ MAGPIE_DATABASE.preparePlayer = function preparePlayer(player)
 		const payload = {
 			ID: player.ID,
 			username: player.username,
-			email: player.email,
+			email_hash: player?.email_hash,
+			email_encrypted: player?.email_encrypted,
 			PASS: player.PASS,
 			isFrozen: player.isFrozen ? 1 : 0,
 			data: player
@@ -1684,7 +1694,8 @@ MAGPIE_DATABASE.setup = function setupDatabase()
 		const players = this.sync.createServerTable("MAGPIE_PLAYER", {
 			ID: integerKey,
 			username: text,
-			email: text,
+			email_hash: text,
+			email_encrypted: text,
 			PASS: text,
 			isFrozen: integer,
 			data: blob
