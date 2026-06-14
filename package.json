@@ -29,5 +29,8 @@
   },
   "overrides": {
     "ws": "^8.20.1"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^10.1.8"
   }
 }

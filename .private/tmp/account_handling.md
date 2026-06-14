@@ -1,6 +1,6 @@
 # Account handling
 
-Source: [SERVER.js](../../SERVER.js)
+Source: [main/SERVER.js](https://github.com/Hastral-org/MAGPIE_Server/blob/main/SERVER.js)
 
 ```javascript
 /**

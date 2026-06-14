@@ -219,6 +219,36 @@ MAGPIE_LOG.meta = {
 	firmwareName: "MAGPIE_LOG"
 }
 MAGPIE_LOG.errors = []
+MAGPIE_LOG.console = []
+/**
+ * @param {Error} error
+ * @param {urgency} urgency
+ * @param {gravity} gravity
+ * @returns {new MAGPIE_LOG}
+ */
+MAGPIE_LOG.pushError = function pushErrorLog(error, urgency = -1, gravity = -1)
+{
+	/** @type {log_data} */
+	const data = {contents: error, urgency: urgency, gravity: gravity}
+	const log = new MAGPIE_LOG(data)
+	MAGPIE_LOG.errors.push(log)
+	return log
+}
+
+/**
+ * @param {String} message
+ * @param {urgency} urgency
+ * @param {gravity} gravity
+ * @returns {new MAGPIE_LOG}
+ */
+MAGPIE_LOG.pushConsole = function pushConsoleLog(message, urgency = -1, gravity = -1)
+{
+	/** @type {log_data} */
+	const data = {contents: message, urgency: urgency, gravity: gravity}
+	const log = new MAGPIE_LOG(data)
+	MAGPIE_LOG.console.push(log)
+	return log
+}
 /**
  * 
  * @param {log_data} data
@@ -333,6 +363,12 @@ MAGPIE_SYSTEM.log = function systemLog(message, prefix = "console", logToConsole
 		MAGPIE_IO.workerAppend(filename, timestamp, level, log)
 	}
 }
+MAGPIE_SYSTEM.silentLog = function systemSilentLog(message, prefix)
+{
+	MAGPIE_LOG.pushConsole(message)
+	const logToConsole = false
+	MAGPIE_SYSTEM.log(message, prefix, logToConsole)
+}
 /**
  * 
  * @param {String} errorMessage 
@@ -351,6 +387,7 @@ MAGPIE_SYSTEM.error = function error(errorMessage, error)
 	const message = log + "\n" + error?.stack + "\n---\n"
 	const logged = MAGPIE_IO.workerAppend(filename, 
 		timestamp, level, message);
+	MAGPIE_LOG.pushError(error)
 	// r.displayPrompt();
 }
 /**
@@ -1076,7 +1113,7 @@ MAGPIE_RUNTIME.prototype.awake = function awake()
 		this._loop = setInterval(() => {
 			this.refresh()
 		}, 1)
-		MAGPIE_SYSTEM.log(ePrefix + `awakened with ${this._registry.size} guests`);
+		MAGPIE_SYSTEM.silentLog(ePrefix + `awakened with ${this._registry.size} guests`);
 		this.isActive = true;
 	}
 	catch(e)

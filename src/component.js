@@ -1955,7 +1955,7 @@ MAGPIE_KEY.prototype.initialize = function initialize(data)
 	this.symbolID = Number(data?.symbolID) || 0;
 }
 /**
- * @returns {Promise<Boolean>}
+ * @returns {Promise<Object>}
  */
 MAGPIE_KEY.setup = async function setup()
 {
