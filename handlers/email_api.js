@@ -6,7 +6,7 @@ const transporter = nodemailer.createTransport({
 	secure: true,
 	auth: {
 		user: "apikey",
-		pass: process.env.sendGrid_API
+		pass: MAGPIE.config.sendGrid_API
 	}
 })
 // const domain = "http://localhost:3000"
