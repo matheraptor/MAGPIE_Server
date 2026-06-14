@@ -1702,9 +1702,10 @@ MAGPIE_DATABASE.setup = function setupDatabase()
 			data: blob
 		})
 		tables.set("players", players);
-		const metrics = this.sync.createServerTable("MAGPIE_METRICS", {
-			
-		})
+		// const metrics = this.sync.createServerTable("MAGPIE_METRICS", {
+
+		// })
+		// tables.set("metrics", metrics)
 		const results = Array.from(tables.entries());
 		if(results.every((r) => r[1])) return results
 			throw new Error(`unable to setup [${results.filter(r => !r[1])}]`);

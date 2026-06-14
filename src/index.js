@@ -543,11 +543,15 @@ MAGPIE.KEY.TYPE = {}
 /**
  * @name 
  * @desc 
- * 
+ * @typedef {Enumerator<Number>} key_index
+ * @typedef {import("./component").key_label} key_label
  */
 //========================================================================
 // #region - SRC
 //========================================================================
+/** @desc Dictionary of keys */
+MAGPIE.KEY.INDEX = {}
+/** @desc  */
 MAGPIE.KEY.SYSTEM = {};
 /** {@link MAGPIE.KEY.HTTP.meta} */
 MAGPIE.KEY.HTTP = {};
